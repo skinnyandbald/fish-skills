@@ -11,13 +11,21 @@ argument-hint: "[path/to/plan.md] [num-reviewers]"
 $ARGUMENTS
 
 Parse `$ARGUMENTS` for:
-- **Plan path** (required): The first argument that looks like a file path. Resolve to absolute and read it. If not provided, ask.
+- **Plan path** (optional): The first argument that looks like a file path. Resolve to absolute and read it.
 - **Reviewer count** (optional): A number (1-10). Defaults to **3** if not provided.
+
+**If no plan path is provided**, auto-detect it by looking at the current conversation context:
+1. Check if a plan file was recently created, read, or discussed in this session
+2. Check `git diff --name-only` and `git log --oneline -5 --diff-filter=A` for recently added plan/doc files
+3. Look for the most recently modified file matching `docs/plans/**/*.md`
+
+If a candidate is found, confirm with the user: "Is this the plan? `<path>`". If no candidate, ask.
 
 Examples:
 - `/analyze-feedback docs/plans/my-plan.md` → 3 reviewers
 - `/analyze-feedback docs/plans/my-plan.md 2` → 2 reviewers
-- `/analyze-feedback` → ask for plan path, default 3 reviewers
+- `/analyze-feedback 2` → auto-detect plan, 2 reviewers
+- `/analyze-feedback` → auto-detect plan, 3 reviewers
 
 ## Step 2: Collect feedback interactively
 
