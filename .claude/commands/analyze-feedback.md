@@ -1,28 +1,33 @@
 ---
 name: analyze-feedback
 description: Analyze and prioritize peer review feedback from multiple AI reviewers on a plan
-argument-hint: "[path/to/plan.md]"
+argument-hint: "[path/to/plan.md] [num-reviewers]"
 ---
 
 # Feedback Analysis & Prioritization
 
-## Step 1: Resolve the plan
+## Step 1: Parse arguments
 
 $ARGUMENTS
 
-If `$ARGUMENTS` contains a file path, resolve it to its absolute path and read it. If no argument was provided, ask which plan was reviewed.
+Parse `$ARGUMENTS` for:
+- **Plan path** (required): The first argument that looks like a file path. Resolve to absolute and read it. If not provided, ask.
+- **Reviewer count** (optional): A number (1-10). Defaults to **3** if not provided.
+
+Examples:
+- `/analyze-feedback docs/plans/my-plan.md` → 3 reviewers
+- `/analyze-feedback docs/plans/my-plan.md 2` → 2 reviewers
+- `/analyze-feedback` → ask for plan path, default 3 reviewers
 
 ## Step 2: Collect feedback interactively
 
-Ask the user to paste feedback **one reviewer at a time**. After each paste, confirm receipt and ask for the next.
+Ask the user to paste feedback **one reviewer at a time**, up to the reviewer count. After each paste, confirm receipt and ask for the next.
 
-1. Ask: "Paste the **first** reviewer's feedback (e.g. Gemini):"
-2. After receiving it, ask: "Paste the **second** reviewer's feedback (e.g. Opus), or say 'done' if that's all:"
-3. If they continue, ask: "Paste the **third** reviewer's feedback (e.g. ChatGPT), or say 'done':"
+For each reviewer (1 through N):
+- Ask: "Paste **reviewer N** feedback:"
+- The user may paste text directly or provide a file path — if it looks like a path, read the file.
 
-Accept 1-3 feedback blocks. The user may also provide a file path instead of pasting — if so, read the file.
-
-**Do NOT proceed to analysis until the user says 'done' or has provided all three.**
+**Do NOT proceed to analysis until all N reviewers' feedback has been collected.**
 
 ## Step 3: Analyze
 
@@ -91,7 +96,7 @@ For each action item, estimate:
 ...
 
 ## Reviewer Agreement Matrix
-| Topic | Reviewer 1 | Reviewer 2 | Reviewer 3 | Verdict |
+| Topic | Reviewer 1 | ... | Reviewer N | Verdict |
 ```
 
 After presenting the analysis, ask if the user wants to apply any of the feedback directly to the plan.
