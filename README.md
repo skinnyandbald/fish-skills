@@ -134,16 +134,16 @@ ln -s ~/code/fish-skills/.claude/commands/* ~/.claude/commands/
 Or cherry-pick individual commands:
 
 ```sh
-cp ~/code/fish-skills/.claude/commands/review-plan.md ~/.claude/commands/
+cp ~/code/fish-skills/.claude/commands/prepare-plan.md ~/.claude/commands/
 ```
 
-### review-plan
+### prepare-plan
 
 Generates a **copyable prompt** for multi-model peer review of an implementation plan. Resolves the plan file path to an absolute path, substitutes it into the prompt template, and outputs a fenced code block you can paste into Cursor's multi-model agent flow.
 
 ```
-/review-plan docs/plans/my-feature.md
-/review-plan                              # prompts for plan path
+/prepare-plan docs/plans/my-feature.md
+/prepare-plan                              # prompts for plan path
 ```
 
 Output: A ready-to-copy TDD analysis prompt with the plan file path baked in.
@@ -170,7 +170,7 @@ Output: Priority-classified action items with effort estimates and a reviewer ag
 /plan "Add transcript import feature"
 
 # 2. Get a copyable peer review prompt
-/review-plan docs/plans/transcript-import.md
+/prepare-plan docs/plans/transcript-import.md
 # → paste into Gemini, ChatGPT, Claude web
 
 # 3. Analyze the feedback interactively (auto-detects plan)
@@ -347,7 +347,7 @@ After installing, start a new Claude Code session. Both plugins auto-register th
 ```
 fish-skills/
 ├── .claude/commands/       # Slash commands (single-file prompt templates)
-│   ├── review-plan.md      # Multi-model plan peer review
+│   ├── prepare-plan.md      # Multi-model plan peer review
 │   └── analyze-feedback.md # Feedback analysis & prioritization
 ├── pr-resolution/          # PR comment resolution (v3, parallel agents)
 │   ├── SKILL.md            # Skill definition + workflow
