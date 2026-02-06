@@ -6,7 +6,7 @@ argument-hint: "[path/to/plan.md]"
 
 # Generate Plan Peer Review Prompt
 
-## Resolve the plan path
+## Step 1: Resolve the plan path
 
 If `$ARGUMENTS` contains a path, resolve it to its **absolute path**. If no argument was provided, ask which plan to review.
 
@@ -16,25 +16,43 @@ If `$ARGUMENTS` contains a path, resolve it to its **absolute path**. If no argu
 
 Verify the path exists.
 
-## Output
+## Step 2: Detect the project's tech stack
 
-Output the following prompt template as a single fenced code block (triple backticks) with the `<FILE PATH TO PLAN>` placeholder replaced by the resolved absolute path.
+Read the project's `package.json`, `CLAUDE.md`, `README.md`, and/or config files (e.g. `tsconfig.json`, `next.config.*`, `biome.json`, `eslint.*`, `.env.example`) to identify:
 
-The user will copy this prompt and paste it into Cursor's multi-model agent flow. Make sure the code block is complete and self-contained.
+- **Framework** (e.g. Next.js 16, Remix, Express, FastAPI, Rails)
+- **Language** (e.g. TypeScript 5.9, Python 3.12)
+- **Database** (e.g. Supabase/PostgreSQL, Prisma, Drizzle, MongoDB)
+- **API layer** (e.g. tRPC, REST, GraphQL)
+- **Auth** (e.g. Supabase Auth, Auth.js, Clerk)
+- **Validation** (e.g. Zod, Yup, io-ts)
+- **Testing** (e.g. Vitest, Jest, Playwright, agent-browser)
+- **Linting/Formatting** (e.g. Biome, ESLint+Prettier)
+- **UI** (e.g. Tailwind, Radix, shadcn/ui, MUI)
+- **Key patterns** (e.g. RSC, Server Actions, App Router)
+
+Use this to fill in the `<TECH STACK>`, `<ANALYSIS SCOPE>`, `<BEST PRACTICES SECTION>`, and `<ANALYSIS FORMAT>` placeholders below.
+
+## Step 3: Output the prompt
+
+Output the following as a single fenced code block with all placeholders replaced:
 
 ```
-You are an AI development consultant specializing in Test-Driven Development implementation for T3 Stack applications. Conduct a comprehensive end-to-end TDD implementation analysis of this proposed plan:
+You are an AI development consultant specializing in Test-Driven Development implementation. Conduct a comprehensive end-to-end TDD implementation analysis of this proposed plan:
+
+**TECH STACK:** <TECH STACK — one-liner, e.g. "Next.js 16, TypeScript 5.9, tRPC 11, Supabase, Zod 4, Vitest, Tailwind 4">
 
 **ANALYSIS SCOPE:**
-- Backend: tRPC procedures, Prisma database operations, Auth.js authentication flows
+<ANALYSIS SCOPE — 3-5 bullet points derived from the detected stack, e.g.:
+- Backend: tRPC procedures, Supabase database operations, auth flows
 - Frontend: React Server Components, Client Components, form validation with Zod
-- Integration: End-to-end type safety, API contract validation
+- Integration: End-to-end type safety, API contract validation>
 
 **REQUIRED DELIVERABLES:**
 1. **Test Coverage Assessment** (30-40% of analysis):
-   - Unit tests: tRPC procedures, utility functions, validation schemas
-   - Integration tests: Database operations with Prisma, auth flows
-   - E2E tests: Complete user journeys using Playwright/Cypress
+   - Unit tests: procedures, utility functions, validation schemas
+   - Integration tests: Database operations, auth flows
+   - E2E tests: Complete user journeys
    - Coverage gaps with specific file/function references
 
 2. **TDD Cycle Compliance Review** (25-30% of analysis):
@@ -43,12 +61,13 @@ You are an AI development consultant specializing in Test-Driven Development imp
    - Refactor phase: Code improvement while maintaining test pass
    - Evidence of proper cycle adherence per feature
 
-3. **T3 Stack Best Practices Validation** (25-30% of analysis):
+3. **Stack Best Practices Validation** (25-30% of analysis):
+   <BEST PRACTICES — 4-6 bullet points specific to detected stack, e.g.:
    - TypeScript strict mode compliance (no 'any' types)
    - Server Component usage prioritized over Client Components
    - tRPC end-to-end type safety implementation
    - Zod schema validation in both client and server
-   - Prisma schema and migration best practices
+   - Supabase RLS policies and migration best practices>
 
 4. **Actionable Recommendations** (15-20% of analysis):
    - Specific code examples for missing tests
@@ -56,10 +75,11 @@ You are an AI development consultant specializing in Test-Driven Development imp
    - Technology-specific optimization suggestions
 
 **ANALYSIS FORMAT:**
-- Use TypeScript code examples with T3 Stack patterns
+<ANALYSIS FORMAT — 4-5 bullet points with file path patterns from the actual project, e.g.:
+- Use TypeScript code examples matching the project's patterns
 - Reference specific files: `src/server/api/routers/*.ts`, `src/app/*/page.tsx`
 - Include test file examples: `__tests__/*`, `*.test.ts`
-- Provide before/after code comparisons where applicable
+- Provide before/after code comparisons where applicable>
 - DO NOT test the actual implemented codebase, you're purely giving feedback on the proposed plan
 
 Plan: <FILE PATH TO PLAN>
@@ -70,5 +90,7 @@ Plan: <FILE PATH TO PLAN>
 - Zero TypeScript 'any' types in production code
 - End-to-end type safety from database to UI
 ```
+
+**IMPORTANT:** Replace ALL angle-bracket placeholders with real values. The output must be a clean, ready-to-copy prompt with no placeholders remaining.
 
 After outputting the code block, tell the user it's ready to copy into Cursor.
