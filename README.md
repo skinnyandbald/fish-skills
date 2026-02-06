@@ -188,15 +188,7 @@ Capture problem-solving narratives with a 6-element structure:
 
 Saves to `<project-root>/.claude/learnings/YYYY-MM-DD-problem-description.md`. Falls back to `~/.claude/learnings/` if not in a git repo. Trigger with phrases like "Great job, log this" or "Capture this learning".
 
-**Setup for your project (two steps):**
-
-1. Create the learnings directory in your project:
-
-```sh
-mkdir -p .claude/learnings
-```
-
-2. Add this to your project's `CLAUDE.md` so Claude reads and writes learnings:
+**Setup:** Add this to your project's `CLAUDE.md` so Claude reads past learnings and captures new ones:
 
 ```markdown
 ## Learnings
@@ -209,7 +201,7 @@ discovering something that contradicts an initial assumption, invoke
 `/capture-learning` before moving on. Do not skip this step.
 ```
 
-Without step 1, learnings fall back to `~/.claude/learnings/` (global, not tied to any project). Without step 2, Claude won't read existing learnings or know to capture new ones.
+The `.claude/learnings/` directory is created automatically on first capture. Without the `CLAUDE.md` snippet, Claude won't check for existing learnings or know to capture new ones.
 
 ### vercel-react-best-practices
 
