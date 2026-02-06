@@ -41,8 +41,8 @@ Symlink each skill into your skills directory so they sit alongside any skills y
 
 ```sh
 mkdir -p ~/.claude/skills
-for d in ~/code/fish-skills/*/; do
-  [ -f "$d/SKILL.md" ] && ln -s "$d" ~/.claude/skills/
+for d in ~/code/fish-skills/skills/*/; do
+  ln -s "$d" ~/.claude/skills/
 done
 ```
 
@@ -52,8 +52,8 @@ Cherry-pick specific skills:
 
 ```sh
 mkdir -p ~/.claude/skills
-ln -s ~/code/fish-skills/pr-resolution ~/.claude/skills/pr-resolution
-ln -s ~/code/fish-skills/simplify ~/.claude/skills/simplify
+ln -s ~/code/fish-skills/skills/pr-resolution ~/.claude/skills/pr-resolution
+ln -s ~/code/fish-skills/skills/simplify ~/.claude/skills/simplify
 ```
 
 **Option C: Install into a specific project**
@@ -63,7 +63,7 @@ Add skills to a single project's `.claude/skills/` directory:
 ```sh
 cd ~/my-project
 mkdir -p .claude/skills
-ln -s ~/code/fish-skills/pr-resolution .claude/skills/pr-resolution
+ln -s ~/code/fish-skills/skills/pr-resolution .claude/skills/pr-resolution
 ```
 
 After symlinking, restart Claude Code (or start a new session). Skills are auto-discovered and show up as `/skill-name` commands.
@@ -121,20 +121,22 @@ Each skill runs in Claude Code's context with access to your codebase, git histo
 
 ## Slash Commands
 
-Standalone prompt templates that work across any project. Unlike skills (which have their own directories), commands are single `.md` files in `.claude/commands/`.
+Standalone prompt templates that work across any project. Unlike skills (which have their own directories), commands are single `.md` files in `commands/`.
 
 ### Installation
 
-Symlink the commands directory into your global Claude Code config:
+Symlink all commands into your global Claude Code config:
 
 ```sh
-ln -s ~/code/fish-skills/.claude/commands/* ~/.claude/commands/
+mkdir -p ~/.claude/commands
+ln -s ~/code/fish-skills/commands/*.md ~/.claude/commands/
 ```
 
 Or cherry-pick individual commands:
 
 ```sh
-cp ~/code/fish-skills/.claude/commands/prepare-plan-for-review.md ~/.claude/commands/
+mkdir -p ~/.claude/commands
+ln -s ~/code/fish-skills/commands/prepare-plan-for-review.md ~/.claude/commands/
 ```
 
 ### prepare-plan-for-review
@@ -348,38 +350,40 @@ After installing, start a new Claude Code session. Both plugins auto-register th
 
 ```
 fish-skills/
-├── .claude/commands/       # Slash commands (single-file prompt templates)
-│   ├── prepare-plan-for-review.md      # Multi-model plan peer review
-│   └── analyze-plan-feedback.md # Feedback analysis & prioritization
-├── pr-resolution/          # PR comment resolution (v3, parallel agents)
-│   ├── SKILL.md            # Skill definition + workflow
-│   ├── bin/                # 5 executable scripts (get-pr-comments, etc.)
-│   └── references/         # 6 domain knowledge docs
-├── simplify/               # Code simplification (single pass)
-│   └── SKILL.md
-├── simplify-parallel/      # Parallel codebase simplification
-│   ├── SKILL.md            # Orchestrator workflow
-│   ├── analyze.md          # Analysis phase
-│   └── orchestrator.md     # Parallel dispatch logic
-├── git-worktree/           # Worktree management
-│   ├── SKILL.md
-│   └── scripts/            # worktree-manager.sh (323 lines)
-├── capture-learning/       # Problem-solving narrative capture
-│   ├── SKILL.md
-│   └── scripts/            # capture-learning.ts
-├── process-meeting-notes/  # Fireflies → GitHub issues
-│   ├── SKILL.md
-│   ├── references/         # EOS format, GitHub config
-│   ├── templates/          # Output templates
-│   └── workflows/          # Workflow definitions
-├── last30days/             # Trending topic research (submodule → mvanhorn/last30days-skill)
-│   └── ...
-├── web-design-guidelines/  # Web UI compliance checker
-│   └── SKILL.md
-└── vercel-react-best-practices/  # React/Next.js optimization
-    ├── SKILL.md
-    ├── AGENTS.md           # Full compiled guide (60KB)
-    └── rules/              # 45+ individual rule files
+├── commands/                    # Slash commands (single-file prompt templates)
+│   ├── prepare-plan-for-review.md   # Multi-model plan peer review
+│   └── analyze-plan-feedback.md     # Feedback analysis & prioritization
+├── skills/                      # Skills (directories with SKILL.md)
+│   ├── pr-resolution/           # PR comment resolution (v3, parallel agents)
+│   │   ├── SKILL.md
+│   │   ├── bin/                 # 5 executable scripts
+│   │   └── references/          # 6 domain knowledge docs
+│   ├── simplify/                # Code simplification (single pass)
+│   │   └── SKILL.md
+│   ├── simplify-parallel/       # Parallel codebase simplification
+│   │   ├── SKILL.md
+│   │   ├── analyze.md
+│   │   └── orchestrator.md
+│   ├── git-worktree/            # Worktree management
+│   │   ├── SKILL.md
+│   │   └── scripts/
+│   ├── capture-learning/        # Problem-solving narrative capture
+│   │   ├── SKILL.md
+│   │   └── scripts/
+│   ├── process-meeting-notes/   # Fireflies → GitHub issues
+│   │   ├── SKILL.md
+│   │   ├── references/
+│   │   ├── templates/
+│   │   └── workflows/
+│   ├── last30days/              # Trending topic research (submodule)
+│   │   └── ...
+│   ├── web-design-guidelines/   # Web UI compliance checker
+│   │   └── SKILL.md
+│   └── vercel-react-best-practices/  # React/Next.js optimization
+│       ├── SKILL.md
+│       ├── AGENTS.md
+│       └── rules/
+└── README.md
 ```
 
 ### Skill Anatomy
@@ -450,10 +454,10 @@ This registers the `code-simplifier:code-simplifier` agent that both `/simplify`
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feat/my-skill`
-3. Add your skill directory with a `SKILL.md`
+3. Add your skill to `skills/` (directory with `SKILL.md`) or command to `commands/` (single `.md` file)
 4. Submit a pull request
 
-Each skill must have a `SKILL.md` with valid YAML frontmatter. See [Skill Anatomy](#skill-anatomy) for the required structure.
+Skills must have a `SKILL.md` with valid YAML frontmatter. See [Skill Anatomy](#skill-anatomy) for the required structure. Commands are single markdown files with YAML frontmatter (`name`, `description`, `argument-hint`).
 
 ## License
 
