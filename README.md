@@ -148,6 +148,8 @@ Generates a **copyable prompt** for multi-model peer review of an implementation
 
 Output: A ready-to-copy TDD analysis prompt with the plan file path baked in.
 
+On first run, auto-detects the project's tech stack and caches it to `.claude/stack-profile.md`. Subsequent runs use the cache instantly. To refresh after a stack change, delete `.claude/stack-profile.md` and run the command again — it'll re-detect automatically.
+
 ### analyze-plan-feedback
 
 Interactively collect and analyze peer review feedback from multiple reviewers. Asks for each reviewer's feedback one at a time, then categorizes as Critical/High/Medium/Low, resolves conflicts, and creates an ordered action plan.
