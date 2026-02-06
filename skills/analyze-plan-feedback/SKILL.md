@@ -1,7 +1,13 @@
 ---
 name: analyze-plan-feedback
 description: Analyze and prioritize peer review feedback from multiple AI reviewers on a plan
-argument-hint: "[path/to/plan.md] [num-reviewers]"
+arguments:
+  - name: plan-path
+    description: "Path to the plan file (optional — auto-detects from context if omitted)"
+    required: false
+  - name: num-reviewers
+    description: "Number of reviewers to collect feedback from (default: 3)"
+    required: false
 ---
 
 # Feedback Analysis & Prioritization
@@ -22,10 +28,10 @@ Parse `$ARGUMENTS` for:
 If a candidate is found, confirm with the user: "Is this the plan? `<path>`". If no candidate, ask.
 
 Examples:
-- `/analyze-feedback docs/plans/my-plan.md` → 3 reviewers
-- `/analyze-feedback docs/plans/my-plan.md 2` → 2 reviewers
-- `/analyze-feedback 2` → auto-detect plan, 2 reviewers
-- `/analyze-feedback` → auto-detect plan, 3 reviewers
+- `/analyze-plan-feedback docs/plans/my-plan.md` → 3 reviewers
+- `/analyze-plan-feedback docs/plans/my-plan.md 2` → 2 reviewers
+- `/analyze-plan-feedback 2` → auto-detect plan, 2 reviewers
+- `/analyze-plan-feedback` → auto-detect plan, 3 reviewers
 
 ## Step 2: Collect feedback interactively
 

@@ -78,7 +78,7 @@ Most skills work out of the box, but some require additional setup:
 | [code-simplifier plugin](#required-plugin-code-simplifier) | simplify, simplify-parallel | See [setup instructions](#required-plugin-code-simplifier) below |
 | [Fireflies MCP](https://www.fireflies.ai/) | process-meeting-notes | Configure in Claude Code MCP settings |
 
-Skills not listed above (git-worktree, capture-learning, last30days, web-design-guidelines, vercel-react-best-practices) work with no additional setup.
+Skills not listed above (git-worktree, capture-learning, last30days, web-design-guidelines, vercel-react-best-practices, prepare-plan-for-review, analyze-plan-feedback) work with no additional setup.
 
 ## Quick Start
 
@@ -112,6 +112,13 @@ Each skill runs in Claude Code's context with access to your codebase, git histo
 | **git-worktree** | `/git-worktree [cmd] [args]` | Manage Git worktrees for isolated parallel development |
 | **capture-learning** | `/capture-learning` | Capture problem-solving narratives as structured learnings |
 
+### Planning & Review
+
+| Skill | Command | Description |
+|-------|---------|-------------|
+| **prepare-plan-for-review** | `/prepare-plan-for-review [path]` | Generate a copyable peer review prompt for Cursor's multi-model agent flow |
+| **analyze-plan-feedback** | `/analyze-plan-feedback [path] [N]` | Interactively collect and analyze peer review feedback from N reviewers |
+
 ### Research & Knowledge
 
 | Skill | Command | Description |
@@ -119,25 +126,7 @@ Each skill runs in Claude Code's context with access to your codebase, git histo
 | **last30days** | `/last30days [topic]` | Research trending topics from Reddit, X, and the web |
 | **process-meeting-notes** | `/process-meeting-notes` | Process Fireflies transcripts into action items and GitHub issues |
 
-## Slash Commands
-
-Standalone prompt templates that work across any project. Unlike skills (which have their own directories), commands are single `.md` files in `commands/`.
-
-### Installation
-
-Symlink all commands into your global Claude Code config:
-
-```sh
-mkdir -p ~/.claude/commands
-ln -s ~/code/fish-skills/commands/*.md ~/.claude/commands/
-```
-
-Or cherry-pick individual commands:
-
-```sh
-mkdir -p ~/.claude/commands
-ln -s ~/code/fish-skills/commands/prepare-plan-for-review.md ~/.claude/commands/
-```
+## Skill Details
 
 ### prepare-plan-for-review
 
@@ -167,7 +156,7 @@ When no plan path is given, it auto-detects from conversation context, recent gi
 
 Output: Priority-classified action items with effort estimates and a reviewer agreement matrix.
 
-### Typical Workflow
+### Typical Plan Review Workflow
 
 ```
 # 1. Write a plan
@@ -182,8 +171,6 @@ Output: Priority-classified action items with effort estimates and a reviewer ag
 
 # 4. Apply the prioritized improvements to your plan
 ```
-
-## Skill Details
 
 ### pr-resolution
 
@@ -350,39 +337,40 @@ After installing, start a new Claude Code session. Both plugins auto-register th
 
 ```
 fish-skills/
-├── commands/                    # Slash commands (single-file prompt templates)
-│   ├── prepare-plan-for-review.md   # Multi-model plan peer review
-│   └── analyze-plan-feedback.md     # Feedback analysis & prioritization
-├── skills/                      # Skills (directories with SKILL.md)
-│   ├── pr-resolution/           # PR comment resolution (v3, parallel agents)
-│   │   ├── SKILL.md
-│   │   ├── bin/                 # 5 executable scripts
-│   │   └── references/          # 6 domain knowledge docs
-│   ├── simplify/                # Code simplification (single pass)
+├── skills/                          # All skills (directories with SKILL.md)
+│   ├── analyze-plan-feedback/       # Peer review feedback analysis
 │   │   └── SKILL.md
-│   ├── simplify-parallel/       # Parallel codebase simplification
-│   │   ├── SKILL.md
-│   │   ├── analyze.md
-│   │   └── orchestrator.md
-│   ├── git-worktree/            # Worktree management
+│   ├── capture-learning/            # Problem-solving narrative capture
 │   │   ├── SKILL.md
 │   │   └── scripts/
-│   ├── capture-learning/        # Problem-solving narrative capture
+│   ├── git-worktree/                # Worktree management
 │   │   ├── SKILL.md
 │   │   └── scripts/
-│   ├── process-meeting-notes/   # Fireflies → GitHub issues
+│   ├── last30days/                  # Trending topic research (submodule)
+│   │   └── ...
+│   ├── pr-resolution/               # PR comment resolution (v3, parallel agents)
+│   │   ├── SKILL.md
+│   │   ├── bin/
+│   │   └── references/
+│   ├── prepare-plan-for-review/     # Multi-model plan peer review prompt
+│   │   └── SKILL.md
+│   ├── process-meeting-notes/       # Fireflies → GitHub issues
 │   │   ├── SKILL.md
 │   │   ├── references/
 │   │   ├── templates/
 │   │   └── workflows/
-│   ├── last30days/              # Trending topic research (submodule)
-│   │   └── ...
-│   ├── web-design-guidelines/   # Web UI compliance checker
+│   ├── simplify/                    # Code simplification (single pass)
 │   │   └── SKILL.md
-│   └── vercel-react-best-practices/  # React/Next.js optimization
-│       ├── SKILL.md
-│       ├── AGENTS.md
-│       └── rules/
+│   ├── simplify-parallel/           # Parallel codebase simplification
+│   │   ├── SKILL.md
+│   │   ├── analyze.md
+│   │   └── orchestrator.md
+│   ├── vercel-react-best-practices/ # React/Next.js optimization
+│   │   ├── SKILL.md
+│   │   ├── AGENTS.md
+│   │   └── rules/
+│   └── web-design-guidelines/       # Web UI compliance checker
+│       └── SKILL.md
 └── README.md
 ```
 
@@ -454,10 +442,10 @@ This registers the `code-simplifier:code-simplifier` agent that both `/simplify`
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feat/my-skill`
-3. Add your skill to `skills/` (directory with `SKILL.md`) or command to `commands/` (single `.md` file)
+3. Add your skill to `skills/` as a directory with a `SKILL.md`
 4. Submit a pull request
 
-Skills must have a `SKILL.md` with valid YAML frontmatter. See [Skill Anatomy](#skill-anatomy) for the required structure. Commands are single markdown files with YAML frontmatter (`name`, `description`, `argument-hint`).
+Skills must have a `SKILL.md` with valid YAML frontmatter. See [Skill Anatomy](#skill-anatomy) for the required structure.
 
 ## License
 

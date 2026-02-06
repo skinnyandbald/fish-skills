@@ -1,7 +1,10 @@
 ---
 name: prepare-plan-for-review
 description: Generate a copyable multi-model peer review prompt with plan file path filled in
-argument-hint: "[path/to/plan.md]"
+arguments:
+  - name: plan-path
+    description: "Path to the plan file or directory to review"
+    required: false
 ---
 
 # Generate Plan Peer Review Prompt
