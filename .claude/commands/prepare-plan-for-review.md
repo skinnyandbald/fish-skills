@@ -67,7 +67,15 @@ Use the detected/cached values to fill in all placeholders below.
 
 ## Step 3: Output the prompt
 
-Output the filled-in prompt wrapped in triple backticks (```) so the user can copy it cleanly. The opening ``` and closing ``` must be on their own lines.
+Your output MUST start with a line containing ONLY three backticks, then the prompt content, then end with a line containing ONLY three backticks. Like this:
+
+\`\`\`
+[prompt content here]
+\`\`\`
+
+This is critical — the user needs to see the literal backtick fences to know where to copy from and to.
+
+Here is the template to fill in and output:
 
 ```
 You are an AI development consultant specializing in Test-Driven Development implementation. Conduct a comprehensive end-to-end TDD implementation analysis of this proposed plan:
