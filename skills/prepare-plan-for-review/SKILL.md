@@ -11,10 +11,42 @@ arguments:
 
 ## Step 1: Resolve the plan path
 
-If `$ARGUMENTS` contains a path, resolve it to its **absolute path**. If no argument was provided, ask which plan to review.
+If `$ARGUMENTS` contains a path, resolve it to its **absolute path** and skip the interactive selection below.
 
+**If no argument was provided**, auto-detect plan candidates and present an interactive selection:
+
+1. **Detect candidates** (run these in parallel):
+   - Check `git diff --name-only` for recently modified plan/doc files
+   - Check `git log --oneline -5 --diff-filter=AM -- 'docs/plans/**/*.md'` for recently added/modified plans
+   - Look for plan files/directories matching `docs/plans/**/*.md`
+   - Check if a plan file was recently read or discussed in this session
+
+2. **ALWAYS present an `AskUserQuestion` multiple-choice UI** with up to 4 detected candidates. Never just ask a text question — always use the interactive chip UI. Example:
+   ```
+   AskUserQuestion(questions: [{
+     question: "Which plan do you want to review?",
+     header: "Plan",
+     options: [
+       { label: "phase-15-transcript-import/", description: "Modified 2 mins ago — 8 files" },
+       { label: "phase-14-streaming.md", description: "Modified 3 days ago" },
+       { label: "phase-13-host-notes.md", description: "Modified 1 week ago" }
+     ],
+     multiSelect: false
+   }])
+   ```
+   The user can always select "Other" (built into AskUserQuestion) to type a custom path.
+
+3. If zero candidates are found, still use `AskUserQuestion` with 2 common locations as options:
+   ```
+   options: [
+     { label: "docs/plans/", description: "Browse the plans directory" },
+     { label: "Browse recent files", description: "Show recently modified .md files" }
+   ]
+   ```
+
+**After selection**, resolve the chosen path:
 - If it's a **file**, use the absolute file path directly.
-- If it's a **directory**, use the absolute directory path with a trailing `/`. Cursor will read all files in it — no need to enumerate individual files.
+- If it's a **directory**, use the absolute directory path with a trailing `/`. The model will read all files in it — no need to enumerate individual files.
 - If the path is relative, resolve it to absolute.
 
 Verify the path exists.

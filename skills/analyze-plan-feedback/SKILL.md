@@ -20,12 +20,34 @@ Parse `$ARGUMENTS` for:
 - **Plan path** (optional): The first argument that looks like a file path. Resolve to absolute and read it.
 - **Reviewer count** (optional): A number (1-10). Defaults to **3** if not provided.
 
-**If no plan path is provided**, auto-detect it by looking at the current conversation context:
-1. Check if a plan file was recently created, read, or discussed in this session
-2. Check `git diff --name-only` and `git log --oneline -5 --diff-filter=A` for recently added plan/doc files
-3. Look for the most recently modified file matching `docs/plans/**/*.md`
+**If no plan path is provided**, auto-detect candidates and present an interactive selection:
 
-If a candidate is found, confirm with the user: "Is this the plan? `<path>`". If no candidate, ask.
+1. **Detect candidates** (run these in parallel):
+   - Check if a plan file was recently created, read, or discussed in this session
+   - Check `git diff --name-only` and `git log --oneline -5 --diff-filter=AM -- 'docs/plans/**/*.md'` for recently added/modified plans
+   - Look for plan files/directories matching `docs/plans/**/*.md`
+
+2. **ALWAYS present an `AskUserQuestion` multiple-choice UI** with up to 4 detected candidates. Never just ask a text question — always use the interactive chip UI. Example:
+   ```
+   AskUserQuestion(questions: [{
+     question: "Which plan should I collect feedback for?",
+     header: "Plan",
+     options: [
+       { label: "phase-15-transcript-import/", description: "Modified 2 mins ago — 8 files" },
+       { label: "phase-14-streaming.md", description: "Modified 3 days ago" }
+     ],
+     multiSelect: false
+   }])
+   ```
+   The user can always select "Other" (built into AskUserQuestion) to type a custom path.
+
+3. If zero candidates are found, still use `AskUserQuestion` with helpful options:
+   ```
+   options: [
+     { label: "docs/plans/", description: "Browse the plans directory" },
+     { label: "Browse recent files", description: "Show recently modified .md files" }
+   ]
+   ```
 
 Examples:
 - `/analyze-plan-feedback docs/plans/my-plan.md` → 3 reviewers
