@@ -70,10 +70,12 @@ Claude Code doesn't automatically read the learnings directory. Add this to your
 ```markdown
 ## Learnings
 Before starting work, check `.claude/learnings/` for relevant past
-problem-solving narratives. These document assumptions that turned out
-wrong, debugging journeys, and solutions that worked. When you encounter
-a similar problem, apply those lessons instead of repeating mistakes.
-After solving a tricky problem, use `/capture-learning` to record it.
+problem-solving narratives. Apply those lessons instead of repeating
+mistakes.
+
+**IMPORTANT:** After solving any non-trivial debugging session or
+discovering something that contradicts an initial assumption, invoke
+`/capture-learning` before moving on. Do not skip this step.
 ```
 
 ## Implementation
