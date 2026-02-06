@@ -192,7 +192,11 @@ Saves to `<project-root>/.claude/learnings/YYYY-MM-DD-problem-description.md`. F
 
 ```markdown
 ## Learnings
-Before starting work, check `.claude/learnings/` for relevant past problem-solving narratives.
+Before starting work, check `.claude/learnings/` for relevant past
+problem-solving narratives. These document assumptions that turned out
+wrong, debugging journeys, and solutions that worked. When you encounter
+a similar problem, apply those lessons instead of repeating mistakes.
+After solving a tricky problem, use `/capture-learning` to record it.
 ```
 
 ### vercel-react-best-practices
