@@ -67,7 +67,7 @@ Use the detected/cached values to fill in all placeholders below.
 
 ## Step 3: Output the prompt
 
-Output the following as a single fenced code block with all placeholders replaced:
+Output the filled-in prompt wrapped in triple backticks (```) so the user can copy it cleanly. The opening ``` and closing ``` must be on their own lines.
 
 ```
 You are an AI development consultant specializing in Test-Driven Development implementation. Conduct a comprehensive end-to-end TDD implementation analysis of this proposed plan:
