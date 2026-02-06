@@ -1,5 +1,5 @@
 ---
-name: analyze-feedback
+name: analyze-plan-feedback
 description: Analyze and prioritize peer review feedback from multiple AI reviewers on a plan
 argument-hint: "[path/to/plan.md] [num-reviewers]"
 ---

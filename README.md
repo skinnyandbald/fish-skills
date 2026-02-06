@@ -148,15 +148,15 @@ Generates a **copyable prompt** for multi-model peer review of an implementation
 
 Output: A ready-to-copy TDD analysis prompt with the plan file path baked in.
 
-### analyze-feedback
+### analyze-plan-feedback
 
 Interactively collect and analyze peer review feedback from multiple reviewers. Asks for each reviewer's feedback one at a time, then categorizes as Critical/High/Medium/Low, resolves conflicts, and creates an ordered action plan.
 
 ```
-/analyze-feedback docs/plans/my-feature.md      # 3 reviewers (default)
-/analyze-feedback docs/plans/my-feature.md 2    # 2 reviewers
-/analyze-feedback 2                              # auto-detect plan, 2 reviewers
-/analyze-feedback                                # auto-detect plan, 3 reviewers
+/analyze-plan-feedback docs/plans/my-feature.md      # 3 reviewers (default)
+/analyze-plan-feedback docs/plans/my-feature.md 2    # 2 reviewers
+/analyze-plan-feedback 2                              # auto-detect plan, 2 reviewers
+/analyze-plan-feedback                                # auto-detect plan, 3 reviewers
 ```
 
 When no plan path is given, it auto-detects from conversation context, recent git changes, or the most recently modified file in `docs/plans/`.
@@ -174,7 +174,7 @@ Output: Priority-classified action items with effort estimates and a reviewer ag
 # → paste into Gemini, ChatGPT, Claude web
 
 # 3. Analyze the feedback interactively (auto-detects plan)
-/analyze-feedback
+/analyze-plan-feedback
 
 # 4. Apply the prioritized improvements to your plan
 ```
@@ -348,7 +348,7 @@ After installing, start a new Claude Code session. Both plugins auto-register th
 fish-skills/
 ├── .claude/commands/       # Slash commands (single-file prompt templates)
 │   ├── prepare-plan-for-review.md      # Multi-model plan peer review
-│   └── analyze-feedback.md # Feedback analysis & prioritization
+│   └── analyze-plan-feedback.md # Feedback analysis & prioritization
 ├── pr-resolution/          # PR comment resolution (v3, parallel agents)
 │   ├── SKILL.md            # Skill definition + workflow
 │   ├── bin/                # 5 executable scripts (get-pr-comments, etc.)
