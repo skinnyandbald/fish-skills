@@ -139,7 +139,7 @@ cp ~/code/fish-skills/.claude/commands/review-plan.md ~/.claude/commands/
 
 ### review-plan
 
-Generates a **copyable prompt** for multi-model peer review of an implementation plan. Resolves the plan file path to an absolute path, substitutes it into the prompt template, and outputs a fenced code block you can paste into Gemini, ChatGPT, Claude web, or Cursor.
+Generates a **copyable prompt** for multi-model peer review of an implementation plan. Resolves the plan file path to an absolute path, substitutes it into the prompt template, and outputs a fenced code block you can paste into Cursor's multi-model agent flow.
 
 ```
 /review-plan docs/plans/my-feature.md

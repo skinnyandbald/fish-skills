@@ -16,7 +16,7 @@ Verify the file(s) exist. If a path is relative, resolve it to absolute.
 
 Output the following prompt template as a single fenced code block (triple backticks) with the `<FILE PATH TO PLAN>` placeholder replaced by the actual absolute path(s). If multiple plan files were provided, list them all in the Plan section.
 
-The user will copy this prompt and paste it into other AI tools (Cursor, ChatGPT, Gemini, Claude web). Make sure the code block is complete and self-contained.
+The user will copy this prompt and paste it into Cursor's multi-model agent flow. Make sure the code block is complete and self-contained.
 
 ```
 You are an AI development consultant specializing in Test-Driven Development implementation for T3 Stack applications. Conduct a comprehensive end-to-end TDD implementation analysis of this proposed plan:
@@ -67,4 +67,4 @@ Plan: <FILE PATH TO PLAN>
 - End-to-end type safety from database to UI
 ```
 
-After outputting the code block, tell the user it's ready to copy into Gemini, ChatGPT, Claude web, or Cursor.
+After outputting the code block, tell the user it's ready to copy into Cursor.
