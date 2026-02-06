@@ -37,10 +37,13 @@ Claude Code looks for skills in two places:
 
 **Option A: Install all skills globally (user-level)**
 
-Symlink the entire repo so every skill is available everywhere:
+Symlink each skill into your skills directory so they sit alongside any skills you add yourself:
 
 ```sh
-ln -s ~/code/fish-skills ~/.claude/skills
+mkdir -p ~/.claude/skills
+for d in ~/code/fish-skills/*/; do
+  [ -f "$d/SKILL.md" ] && ln -s "$d" ~/.claude/skills/
+done
 ```
 
 **Option B: Install individual skills globally**
