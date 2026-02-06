@@ -188,6 +188,17 @@ Capture problem-solving narratives with a 6-element structure:
 
 Saves to `~/.claude/context/learnings/YYYY-MM-DD-problem-description.md`. Trigger with phrases like "Great job, log this" or "Capture this learning".
 
+**Important:** Claude Code does not automatically load files from `~/.claude/context/`. To make captured learnings influence future sessions, add a reference in your `CLAUDE.md`:
+
+```markdown
+# In your project's CLAUDE.md (or ~/.claude/CLAUDE.md for global)
+
+## Learnings
+Before starting work, check `~/.claude/context/learnings/` for relevant past problem-solving narratives. These contain documented solutions, assumptions that turned out wrong, and patterns to follow.
+```
+
+This tells Claude to consult your learnings directory at the start of each session, turning passive notes into active institutional memory.
+
 ### vercel-react-best-practices
 
 45 optimization rules across 8 priority categories:
