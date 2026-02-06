@@ -1,3 +1,16 @@
+```
+          o
+     o   /         __
+      \ / ___     /  \        <3
+       |/     \   \__/      <3
+       /   o   \_____|     <3
+      /  o  o        \___/
+     /_______________/
+         \  \  \
+          \  \  `.
+           `--`---'
+```
+
 # fish-skills
 
 Personal [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skills for development workflows — PR resolution, code simplification, worktree management, meeting processing, and more.
