@@ -139,14 +139,14 @@ cp ~/code/fish-skills/.claude/commands/review-plan.md ~/.claude/commands/
 
 ### review-plan
 
-Multi-model peer review of an implementation plan. Sends the plan to three models in parallel (Gemini for codebase context, Opus for deep reasoning, ChatGPT for production perspective) and consolidates their feedback.
+Generates a **copyable prompt** for multi-model peer review of an implementation plan. Resolves the plan file path to an absolute path, substitutes it into the prompt template, and outputs a fenced code block you can paste into Gemini, ChatGPT, Claude web, or Cursor.
 
 ```
 /review-plan docs/plans/my-feature.md
 /review-plan                              # prompts for plan path
 ```
 
-Output: Consensus points, conflicts, critical issues, top 5 improvements, and a risk matrix.
+Output: A ready-to-copy TDD analysis prompt with the plan file path baked in.
 
 ### analyze-feedback
 

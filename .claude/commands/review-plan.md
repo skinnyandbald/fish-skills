@@ -1,86 +1,70 @@
 ---
 name: review-plan
-description: Multi-model peer review of an implementation plan (Gemini, Opus, ChatGPT in parallel)
+description: Generate a copyable multi-model peer review prompt with plan file path filled in
 argument-hint: "[path/to/plan.md]"
 ---
 
-# Multi-Model Plan Peer Review
-
-## Plan to Review
-
-$ARGUMENTS
+# Generate Plan Peer Review Prompt
 
 ## Resolve the plan file
 
-If `$ARGUMENTS` contains a file path, read that file now. If no argument was provided, ask which plan to review.
+If `$ARGUMENTS` contains a file path (or multiple), resolve each to its **absolute path** using the filesystem. If no argument was provided, ask which plan file(s) to review.
 
-## Task
+Verify the file(s) exist. If a path is relative, resolve it to absolute.
 
-You are an AI development consultant specializing in Test-Driven Development implementation. Conduct a comprehensive peer review of this plan by running **three parallel analyses** using `vibe-tools`.
+## Output
 
-Launch all three in parallel using the Bash tool with `run_in_background=true`:
+Output the following prompt template as a single fenced code block (triple backticks) with the `<FILE PATH TO PLAN>` placeholder replaced by the actual absolute path(s). If multiple plan files were provided, list them all in the Plan section.
 
-### 1. Gemini Analysis (codebase-aware)
+The user will copy this prompt and paste it into other AI tools (Cursor, ChatGPT, Gemini, Claude web). Make sure the code block is complete and self-contained.
 
-```bash
-vibe-tools repo "You are an AI development consultant specializing in TDD implementation. Conduct a comprehensive analysis of this plan:
+```
+You are an AI development consultant specializing in Test-Driven Development implementation for T3 Stack applications. Conduct a comprehensive end-to-end TDD implementation analysis of this proposed plan:
 
-ANALYSIS SCOPE:
-- Backend: tRPC procedures, database operations, authentication flows
+**ANALYSIS SCOPE:**
+- Backend: tRPC procedures, Prisma database operations, Auth.js authentication flows
 - Frontend: React Server Components, Client Components, form validation with Zod
 - Integration: End-to-end type safety, API contract validation
 
-REQUIRED DELIVERABLES:
-1. Test Coverage Assessment (30-40%): Unit, integration, E2E coverage gaps with specific file references
-2. TDD Cycle Compliance (25-30%): Red-Green-Refactor adherence per feature
-3. Stack Best Practices (25-30%): TypeScript strict mode, Zod validation, schema patterns
-4. Actionable Recommendations (15-20%): Specific code examples for missing tests
+**REQUIRED DELIVERABLES:**
+1. **Test Coverage Assessment** (30-40% of analysis):
+   - Unit tests: tRPC procedures, utility functions, validation schemas
+   - Integration tests: Database operations with Prisma, auth flows
+   - E2E tests: Complete user journeys using Playwright/Cypress
+   - Coverage gaps with specific file/function references
 
-DO NOT test the actual codebase - give feedback on the proposed plan only.
+2. **TDD Cycle Compliance Review** (25-30% of analysis):
+   - Red phase: Failing tests written first with clear assertions
+   - Green phase: Minimal code to pass tests
+   - Refactor phase: Code improvement while maintaining test pass
+   - Evidence of proper cycle adherence per feature
 
-Plan: [PASTE PLAN CONTENT HERE]" --provider gemini
+3. **T3 Stack Best Practices Validation** (25-30% of analysis):
+   - TypeScript strict mode compliance (no 'any' types)
+   - Server Component usage prioritized over Client Components
+   - tRPC end-to-end type safety implementation
+   - Zod schema validation in both client and server
+   - Prisma schema and migration best practices
+
+4. **Actionable Recommendations** (15-20% of analysis):
+   - Specific code examples for missing tests
+   - Implementation steps for TDD cycle improvements
+   - Technology-specific optimization suggestions
+
+**ANALYSIS FORMAT:**
+- Use TypeScript code examples with T3 Stack patterns
+- Reference specific files: `src/server/api/routers/*.ts`, `src/app/*/page.tsx`
+- Include test file examples: `__tests__/*`, `*.test.ts`
+- Provide before/after code comparisons where applicable
+- DO NOT test the actual implemented codebase, you're purely giving feedback on the proposed plan
+
+Plan: <FILE PATH TO PLAN>
+
+**SUCCESS CRITERIA:**
+- 90%+ test coverage on critical paths
+- Complete Red-Green-Refactor cycle evidence
+- Zero TypeScript 'any' types in production code
+- End-to-end type safety from database to UI
 ```
 
-### 2. Opus Analysis (deep reasoning)
-
-```bash
-vibe-tools ask "You are a senior staff engineer reviewing an implementation plan. Focus on:
-1. Complexity and edge cases the plan misses
-2. Security and performance implications
-3. Failure modes and error handling gaps
-4. Whether the TDD approach is sound
-5. Architecture risks
-
-Be specific - reference plan sections and suggest concrete improvements.
-
-Plan: [PASTE PLAN CONTENT HERE]" --provider anthropic --model claude-opus-4-6 --reasoning-effort high
-```
-
-### 3. ChatGPT Analysis (production perspective)
-
-```bash
-vibe-tools ask "You are a production engineer reviewing an implementation plan before it ships. Focus on:
-1. Operational concerns (monitoring, alerting, rollback)
-2. Database migration safety
-3. Deployment strategy gaps
-4. Load and scale considerations
-5. What will break at 3am
-
-Be direct and practical. No theoretical concerns - only things that matter in production.
-
-Plan: [PASTE PLAN CONTENT HERE]" --provider openai --model o3
-```
-
-**IMPORTANT:** Replace `[PASTE PLAN CONTENT HERE]` with the actual plan content in each command. Use `--save-to` to capture each output to a temp file if the plan is very long.
-
-## After All Three Complete
-
-Consolidate the three reviews into a single structured assessment:
-
-1. **Consensus** - Points all three agree on (highest confidence)
-2. **Conflicts** - Where reviewers disagree (needs judgment call)
-3. **Critical Issues** - Anything flagged as blocking by any reviewer
-4. **Top 5 Improvements** - Prioritized by impact, with effort estimates
-5. **Risk Matrix** - Highest-risk areas mapped to mitigation steps
-
-Save the consolidated feedback so it can be fed into `/analyze-feedback` if the user wants deeper analysis.
+After outputting the code block, tell the user it's ready to copy into Gemini, ChatGPT, Claude web, or Cursor.
