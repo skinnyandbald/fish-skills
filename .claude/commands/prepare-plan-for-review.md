@@ -6,15 +6,19 @@ argument-hint: "[path/to/plan.md]"
 
 # Generate Plan Peer Review Prompt
 
-## Resolve the plan file
+## Resolve the plan path
 
-If `$ARGUMENTS` contains a file path (or multiple), resolve each to its **absolute path** using the filesystem. If no argument was provided, ask which plan file(s) to review.
+If `$ARGUMENTS` contains a path, resolve it to its **absolute path**. If no argument was provided, ask which plan to review.
 
-Verify the file(s) exist. If a path is relative, resolve it to absolute.
+- If it's a **file**, use the absolute file path directly.
+- If it's a **directory**, use the absolute directory path with a trailing `/`. Cursor will read all files in it — no need to enumerate individual files.
+- If the path is relative, resolve it to absolute.
+
+Verify the path exists.
 
 ## Output
 
-Output the following prompt template as a single fenced code block (triple backticks) with the `<FILE PATH TO PLAN>` placeholder replaced by the actual absolute path(s). If multiple plan files were provided, list them all in the Plan section.
+Output the following prompt template as a single fenced code block (triple backticks) with the `<FILE PATH TO PLAN>` placeholder replaced by the resolved absolute path.
 
 The user will copy this prompt and paste it into Cursor's multi-model agent flow. Make sure the code block is complete and self-contained.
 
