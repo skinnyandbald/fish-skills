@@ -4,20 +4,57 @@ Personal [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skills fo
 
 ## Installation
 
-Clone and symlink into Claude Code's skills directory:
+Clone the repo (includes submodules for `last30days`):
 
 ```sh
 git clone --recursive https://github.com/skinnyandbald/fish-skills.git ~/code/fish-skills
-ln -s ~/code/fish-skills ~/.claude/skills
 ```
 
 If you already cloned without `--recursive`, pull the submodules:
 
 ```sh
+cd ~/code/fish-skills
 git submodule update --init
 ```
 
-Skills are automatically discovered by Claude Code on next session start.
+### Adding skills to Claude Code
+
+Claude Code looks for skills in two places:
+
+| Location | Scope | Path |
+|----------|-------|------|
+| **User skills** | Available in every project on your machine | `~/.claude/skills/` |
+| **Project skills** | Available only in a specific project | `<project-root>/.claude/skills/` |
+
+**Option A: Install all skills globally (user-level)**
+
+Symlink the entire repo so every skill is available everywhere:
+
+```sh
+ln -s ~/code/fish-skills ~/.claude/skills
+```
+
+**Option B: Install individual skills globally**
+
+Cherry-pick specific skills:
+
+```sh
+mkdir -p ~/.claude/skills
+ln -s ~/code/fish-skills/pr-resolution ~/.claude/skills/pr-resolution
+ln -s ~/code/fish-skills/simplify ~/.claude/skills/simplify
+```
+
+**Option C: Install into a specific project**
+
+Add skills to a single project's `.claude/skills/` directory:
+
+```sh
+cd ~/my-project
+mkdir -p .claude/skills
+ln -s ~/code/fish-skills/pr-resolution .claude/skills/pr-resolution
+```
+
+After symlinking, restart Claude Code (or start a new session). Skills are auto-discovered and show up as `/skill-name` commands.
 
 ### Required dependencies
 
