@@ -244,6 +244,28 @@ XAI_API_KEY=xai-...      # enables X/Twitter research
 
 Without these, `last30days` falls back to web-only research mode.
 
+## Recommended Plugins
+
+These Claude Code plugins pair well with fish-skills. They're not required, but they make your workflow significantly better.
+
+### [Superpowers](https://github.com/obra/superpowers)
+
+Adds structured workflows for test-driven development, systematic debugging, parallel agent dispatch, git worktrees, code review, and plan execution. Teaches Claude to work more methodically instead of jumping straight to code.
+
+```sh
+claude plugins:add obra/superpowers
+```
+
+### [Episodic Memory](https://github.com/obra/episodic-memory)
+
+Gives Claude persistent memory across sessions. It indexes your conversation history so Claude can search past sessions for decisions, solutions, and context you've already discussed. Pairs especially well with `/capture-learning` — learnings you capture become searchable knowledge.
+
+```sh
+claude plugins:add obra/episodic-memory
+```
+
+After installing, start a new Claude Code session. Both plugins auto-register their skills and agents.
+
 ## Architecture
 
 ```
