@@ -150,13 +150,16 @@ Output: A ready-to-copy TDD analysis prompt with the plan file path baked in.
 
 ### analyze-feedback
 
-Analyze and prioritize peer review feedback from multiple reviewers. Categorizes feedback as Critical/High/Medium/Low, resolves conflicts between reviewers, and creates an ordered action plan.
+Interactively collect and analyze peer review feedback from multiple reviewers. Asks for each reviewer's feedback one at a time, then categorizes as Critical/High/Medium/Low, resolves conflicts, and creates an ordered action plan.
 
 ```
-/analyze-feedback docs/plans/my-feature.md /tmp/gemini.md /tmp/opus.md /tmp/chatgpt.md
-/analyze-feedback docs/plans/my-feature.md    # paste feedback inline
-/analyze-feedback                              # prompts for all inputs
+/analyze-feedback docs/plans/my-feature.md      # 3 reviewers (default)
+/analyze-feedback docs/plans/my-feature.md 2    # 2 reviewers
+/analyze-feedback 2                              # auto-detect plan, 2 reviewers
+/analyze-feedback                                # auto-detect plan, 3 reviewers
 ```
+
+When no plan path is given, it auto-detects from conversation context, recent git changes, or the most recently modified file in `docs/plans/`.
 
 Output: Priority-classified action items with effort estimates and a reviewer agreement matrix.
 
@@ -166,11 +169,12 @@ Output: Priority-classified action items with effort estimates and a reviewer ag
 # 1. Write a plan
 /plan "Add transcript import feature"
 
-# 2. Get three-model peer review
+# 2. Get a copyable peer review prompt
 /review-plan docs/plans/transcript-import.md
+# → paste into Gemini, ChatGPT, Claude web
 
-# 3. Save each model's feedback, then analyze
-/analyze-feedback docs/plans/transcript-import.md feedback-gemini.md feedback-opus.md feedback-chatgpt.md
+# 3. Analyze the feedback interactively (auto-detects plan)
+/analyze-feedback
 
 # 4. Apply the prioritized improvements to your plan
 ```
