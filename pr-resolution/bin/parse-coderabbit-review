@@ -1,0 +1,143 @@
+#!/bin/bash
+set -e
+
+PR_NUM="$1"
+if [ -z "$PR_NUM" ]; then
+  PR_NUM=$(gh pr view --json number -q '.number' 2>/dev/null || echo "")
+  if [ -z "$PR_NUM" ]; then echo "Error: No PR number" >&2; exit 1; fi
+fi
+
+REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner')
+TEMP=$(mktemp)
+gh api "repos/$REPO/pulls/$PR_NUM/reviews" \
+  --jq '[.[] | select(.user.login == "coderabbitai[bot]")] | max_by(.body | length) | .body // ""' > "$TEMP"
+
+node -e '
+const fs = require("fs");
+let body = fs.readFileSync(process.argv[1], "utf-8");
+const results = [];
+if (!body || body.length < 100) { console.log("[]"); process.exit(0); }
+
+body = body.replace(/^> ?/gm, "");
+
+function extractComments(sectionContent, category) {
+  const fileRegex = /<details>\n<summary>([^(<\n]+?)\s*\((\d+)\)<\/summary><blockquote>/g;
+  
+  let m;
+  while ((m = fileRegex.exec(sectionContent)) !== null) {
+    const filePath = m[1].trim();
+    if (/^[💡🧹🤖📝🛡️⚠️]/.test(filePath) || !filePath.includes(".")) continue;
+    
+    const contentStart = m.index + m[0].length;
+    const searchArea = sectionContent.substring(contentStart);
+    
+    let depth = 0;
+    let pos = 0;
+    let fileEnd = -1;
+    
+    while (pos < searchArea.length) {
+      const nextOpen = searchArea.indexOf("<details>", pos);
+      const nextCloseBq = searchArea.indexOf("</blockquote></details>", pos);
+      const nextCloseD = searchArea.indexOf("</details>", pos);
+      
+      let nextClose = -1;
+      let closeLen = 0;
+      let isBqClose = false;
+      
+      if (nextCloseBq !== -1 && (nextCloseD === -1 || nextCloseBq <= nextCloseD)) {
+        nextClose = nextCloseBq;
+        closeLen = 23;
+        isBqClose = true;
+      } else if (nextCloseD !== -1) {
+        nextClose = nextCloseD;
+        closeLen = 10;
+        isBqClose = false;
+      }
+      
+      if (nextClose === -1) break;
+      
+      if (nextOpen !== -1 && nextOpen < nextClose) {
+        depth++;
+        pos = nextOpen + 9;
+      } else {
+        if (depth === 0 && isBqClose) {
+          fileEnd = nextClose;
+          break;
+        }
+        depth--;
+        pos = nextClose + closeLen;
+      }
+    }
+    
+    if (fileEnd === -1) continue;
+    
+    const fileContent = searchArea.substring(0, fileEnd);
+    const cmRegex = /`(\d+(?:-\d+)?)`:\s*(?:_[^_]*_\s*\|\s*_[^_]*_\s*)?\*\*([^*]+)\*\*/g;
+    
+    let cm;
+    while ((cm = cmRegex.exec(fileContent)) !== null) {
+      const line = cm[1];
+      const title = cm[2].trim();
+      const start = cm.index + cm[0].length;
+      const rest = fileContent.substring(start);
+      const nextCm = rest.match(/\n\n`\d/);
+      const end = nextCm ? start + nextCm.index : fileContent.length;
+      
+      let bodyText = fileContent.substring(start, end)
+        .replace(/<details>[\s\S]*?<\/details>/g, "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/```[\s\S]*?```/g, "[code]")
+        .replace(/\n+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      
+      results.push({
+        category, file: filePath, line, title,
+        body: bodyText.substring(0, 300) + (bodyText.length > 300 ? "..." : ""),
+        source: "coderabbit-review-body"
+      });
+    }
+  }
+}
+
+// Outside diff
+const outsideMarker = "<summary>⚠️ Outside diff range comments";
+const outsideStart = body.indexOf(outsideMarker);
+if (outsideStart !== -1) {
+  const bqStart = body.indexOf("<blockquote>", outsideStart);
+  if (bqStart !== -1) {
+    const doubleClose = body.indexOf("</blockquote></details>\n\n</blockquote></details>", bqStart);
+    if (doubleClose !== -1) {
+      extractComments(body.substring(bqStart + 12, doubleClose + 23), "outside-diff");
+    }
+  }
+}
+
+// Nitpick - look for end followed by new section OR comment marker
+const nitpickMarker = "<summary>🧹 Nitpick comments";
+const nitpickStart = body.indexOf(nitpickMarker);
+if (nitpickStart !== -1) {
+  const bqStart = body.indexOf("<blockquote>", nitpickStart);
+  if (bqStart !== -1) {
+    let searchPos = bqStart + 12;
+    let nitpickEnd = -1;
+    while (searchPos < body.length) {
+      const closePos = body.indexOf("</blockquote></details>", searchPos);
+      if (closePos === -1) break;
+      const after = body.substring(closePos + 23, closePos + 40).trim();
+      // End markers: **, <!--, empty, </blockquote>
+      if (after.startsWith("**") || after.startsWith("<!--") || after === "" || after.startsWith("</blockquote>")) {
+        nitpickEnd = closePos + 23;
+        break;
+      }
+      searchPos = closePos + 23;
+    }
+    if (nitpickEnd !== -1) {
+      extractComments(body.substring(bqStart + 12, nitpickEnd), "nitpick");
+    }
+  }
+}
+
+console.log(JSON.stringify(results, null, 2));
+' "$TEMP"
+rm -f "$TEMP"

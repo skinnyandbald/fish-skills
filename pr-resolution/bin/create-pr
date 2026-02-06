@@ -1,0 +1,148 @@
+#!/bin/bash
+# Create a PR with auto-linked issue based on branch naming convention
+#
+# This script:
+# 1. Detects the issue from branch name (e.g., feature/auth-003-* → #20)
+# 2. Creates a PR with "Closes #X" automatically included
+# 3. Uses the PR template but fills in the issue reference
+#
+# Usage: ~/.claude/skills/pr-resolution/bin/create-pr [--draft] [--title "Custom title"]
+#
+# Options:
+#   --draft    Create as draft PR
+#   --title    Override the PR title (default: derived from branch)
+#   --base     Target branch (default: develop)
+#   --no-link  Skip auto-linking issue
+
+set -e
+
+# Parse arguments
+DRAFT=""
+TITLE=""
+BASE="develop"
+NO_LINK=false
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --draft)
+      DRAFT="--draft"
+      shift
+      ;;
+    --title)
+      if [ -z "$2" ] || [[ "$2" == --* ]]; then
+        echo "Error: --title requires a value" >&2
+        exit 1
+      fi
+      TITLE="$2"
+      shift 2
+      ;;
+    --base)
+      if [ -z "$2" ] || [[ "$2" == --* ]]; then
+        echo "Error: --base requires a branch name" >&2
+        exit 1
+      fi
+      BASE="$2"
+      shift 2
+      ;;
+    --no-link)
+      NO_LINK=true
+      shift
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      exit 1
+      ;;
+  esac
+done
+
+BRANCH=$(git branch --show-current)
+
+# Prevent creating PR from main/develop
+if [[ "$BRANCH" == "main" || "$BRANCH" == "develop" ]]; then
+  echo "Error: Cannot create PR from $BRANCH branch" >&2
+  echo "Please checkout a feature branch first" >&2
+  exit 1
+fi
+
+# Try to find the linked issue
+ISSUE_NUM=""
+CLOSES_LINE=""
+if [ "$NO_LINK" = false ]; then
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  ISSUE_NUM=$("$SCRIPT_DIR/get-issue-for-branch" "$BRANCH" 2>/dev/null || echo "")
+  if [ -n "$ISSUE_NUM" ]; then
+    CLOSES_LINE="Closes #$ISSUE_NUM"
+    echo "✓ Found linked issue: #$ISSUE_NUM"
+  else
+    echo "⚠ No linked issue found for branch: $BRANCH"
+    echo "  PR will be created without issue link"
+  fi
+fi
+
+# Generate default title from branch name if not provided
+if [ -z "$TITLE" ]; then
+  # Convert branch name to title: feature/auth-003-team-management → Team management
+  # Note: Using awk for title case as sed's \u is a GNU extension (not available on macOS)
+  TITLE=$(echo "$BRANCH" | sed -E 's|^[^/]+/||' | sed -E 's|^[a-z]+-[0-9]+-||i' | tr '-' ' ' | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
+
+  # Try to get issue title for better PR title
+  if [ -n "$ISSUE_NUM" ]; then
+    ISSUE_TITLE=$(gh issue view "$ISSUE_NUM" --json title -q '.title' 2>/dev/null || echo "")
+    if [ -n "$ISSUE_TITLE" ]; then
+      TITLE="$ISSUE_TITLE"
+    fi
+  fi
+fi
+
+# Build the PR body
+PR_BODY="## Summary
+<!-- Brief description of what this PR does -->
+
+## Related Issues
+$CLOSES_LINE
+
+## Type of Change
+- [ ] Feature (new functionality)
+- [ ] Bug fix (fixes an issue)
+- [ ] Refactor (code improvement without behavior change)
+- [ ] Documentation
+- [ ] Performance improvement
+
+## Changes Made
+<!-- Bullet points of specific changes -->
+-
+
+## Testing
+- [ ] Unit tests added/updated
+- [ ] E2E tests added/updated
+- [ ] Manual testing performed
+- [ ] Build completes successfully
+
+## Checklist
+- [ ] Code follows project conventions
+- [ ] TypeScript types are properly defined
+- [ ] No console.log() statements left in code
+- [ ] Tests pass locally
+- [ ] No secrets committed
+
+## CodeRabbit Summary
+@coderabbitai summary"
+
+echo ""
+echo "Creating PR:"
+echo "  Title: $TITLE"
+echo "  Base:  $BASE"
+echo "  Issue: ${ISSUE_NUM:-none}"
+echo ""
+
+# Create the PR
+# Build args array for proper quoting
+PR_ARGS=(--base "$BASE" --title "$TITLE" --body "$PR_BODY")
+if [ -n "$DRAFT" ]; then
+  PR_ARGS+=("$DRAFT")
+fi
+
+gh pr create "${PR_ARGS[@]}"
+
+echo ""
+echo "✓ PR created successfully"

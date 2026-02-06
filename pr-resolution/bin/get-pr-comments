@@ -1,0 +1,87 @@
+#!/bin/bash
+# Fetch all PR comments (review threads, inline comments, discussion) as JSON
+#
+# Usage: bin/get-pr-comments [PR_NUMBER]
+#
+# If PR_NUMBER is not provided, uses the current branch's PR.
+#
+# Output: JSON with all comment data including thread IDs for resolution
+
+set -e
+
+PR_NUM="$1"
+
+# If no PR number provided, try to get it from current branch
+if [ -z "$PR_NUM" ]; then
+  PR_NUM=$(gh pr view --json number -q '.number' 2>/dev/null || echo "")
+  if [ -z "$PR_NUM" ]; then
+    echo "Error: No PR number provided and couldn't detect from current branch" >&2
+    echo "Usage: bin/get-pr-comments [PR_NUMBER]" >&2
+    exit 1
+  fi
+  echo "Auto-detected PR #$PR_NUM" >&2
+fi
+
+# Get repo info
+REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner')
+
+echo "Fetching comments for PR #$PR_NUM in $REPO..." >&2
+
+# Fetch all review threads with inline comments using GraphQL
+THREADS=$(gh api graphql -f query='
+query($owner: String!, $repo: String!, $pr: Int!) {
+  repository(owner: $owner, name: $repo) {
+    pullRequest(number: $pr) {
+      reviewThreads(first: 100) {
+        nodes {
+          id
+          isResolved
+          isOutdated
+          path
+          line
+          startLine
+          comments(first: 50) {
+            nodes {
+              id
+              body
+              author { login }
+              createdAt
+              updatedAt
+            }
+          }
+        }
+      }
+    }
+  }
+}
+' -f owner="${REPO%/*}" -f repo="${REPO#*/}" -F pr="$PR_NUM")
+
+# Fetch regular PR comments (not inline)
+COMMENTS=$(gh api "repos/$REPO/pulls/$PR_NUM/comments" 2>/dev/null || echo "[]")
+
+# Fetch issue comments (discussion)
+ISSUE_COMMENTS=$(gh api "repos/$REPO/issues/$PR_NUM/comments" 2>/dev/null || echo "[]")
+
+# Fetch reviews
+REVIEWS=$(gh api "repos/$REPO/pulls/$PR_NUM/reviews" 2>/dev/null || echo "[]")
+
+# Combine into single JSON output
+jq -n \
+  --argjson threads "$THREADS" \
+  --argjson comments "$COMMENTS" \
+  --argjson issueComments "$ISSUE_COMMENTS" \
+  --argjson reviews "$REVIEWS" \
+  '{
+    pr_number: '"$PR_NUM"',
+    repo: "'"$REPO"'",
+    review_threads: $threads.data.repository.pullRequest.reviewThreads.nodes,
+    inline_comments: $comments,
+    discussion_comments: $issueComments,
+    reviews: $reviews,
+    summary: {
+      total_threads: ($threads.data.repository.pullRequest.reviewThreads.nodes | length),
+      unresolved_threads: [$threads.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)] | length,
+      resolved_threads: [$threads.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == true)] | length,
+      outdated_threads: [$threads.data.repository.pullRequest.reviewThreads.nodes[] | select(.isOutdated == true)] | length
+    }
+  }'

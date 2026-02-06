@@ -1,0 +1,59 @@
+#!/bin/bash
+# Get the GitHub issue number for the current branch based on naming convention
+#
+# Branch naming conventions:
+#   - feature/PREFIX-NNN-description or fix/PREFIX-NNN-description
+#   - task/NNN-description (direct GitHub issue number)
+#
+# Issue naming conventions:
+#   - PREFIX-NNN: Title (for feature/fix branches)
+#   - #NNN (for task branches - direct issue number)
+#
+# Examples:
+#   feature/auth-003-team-management → finds issue with "AUTH-003" in title
+#   fix/core-001-types → finds issue with "CORE-001" in title
+#   task/123-add-auth-feature → finds issue #123 directly
+#
+# Usage: bin/get-issue-for-branch [branch-name]
+# If no branch provided, uses current branch
+
+set -e
+
+BRANCH="${1:-$(git branch --show-current)}"
+
+# Extract the PREFIX-NNN pattern from branch name (case-insensitive)
+# Matches patterns like: auth-003, CORE-001, steps-004, etc.
+ISSUE_CODE=$(echo "$BRANCH" | grep -oiE '[a-z]+-[0-9]+' | head -1 | tr '[:lower:]' '[:upper:]')
+
+# Also support task/NNN-description format (extracts NNN as issue number directly)
+if [ -z "$ISSUE_CODE" ]; then
+  # Try task/NNN pattern
+  DIRECT_ISSUE=$(echo "$BRANCH" | grep -oE 'task/[0-9]+' | grep -oE '[0-9]+' | head -1)
+  if [ -n "$DIRECT_ISSUE" ]; then
+    # Verify issue exists
+    if gh issue view "$DIRECT_ISSUE" --json number -q '.number' &>/dev/null; then
+      echo "$DIRECT_ISSUE"
+      exit 0
+    else
+      echo "Detected task/$DIRECT_ISSUE branch but issue #$DIRECT_ISSUE is not accessible or does not exist" >&2
+      exit 1
+    fi
+  fi
+
+  # No pattern detected at all
+  echo "No issue code found in branch name: $BRANCH" >&2
+  echo "Expected pattern: feature/PREFIX-NNN-description or task/NNN-description" >&2
+  exit 1
+fi
+
+# Search for issues matching this code (server-side filtering covers whole repo)
+ISSUE_NUM=$(gh issue list --state all --search "$ISSUE_CODE" --json number,title \
+  | jq -r --arg code "$ISSUE_CODE" '.[] | select(.title | ascii_upcase | contains($code)) | .number' \
+  | head -1)
+
+if [ -z "$ISSUE_NUM" ]; then
+  echo "No issue found matching: $ISSUE_CODE" >&2
+  exit 1
+fi
+
+echo "$ISSUE_NUM"

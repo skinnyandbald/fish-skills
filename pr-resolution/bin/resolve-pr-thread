@@ -1,0 +1,48 @@
+#!/bin/bash
+# Resolve a GitHub PR review thread by thread ID
+#
+# Usage: bin/resolve-pr-thread THREAD_NODE_ID
+#
+# Example:
+#   bin/resolve-pr-thread PRRT_kwDOQ5hYsc5p5d0U
+
+set -e
+
+THREAD_ID="$1"
+
+if [ -z "$THREAD_ID" ]; then
+  echo "Usage: bin/resolve-pr-thread THREAD_NODE_ID" >&2
+  echo "" >&2
+  echo "Example:" >&2
+  echo "  bin/resolve-pr-thread PRRT_kwDOQ5hYsc5p5d0U" >&2
+  exit 1
+fi
+
+# Validate thread ID format (should start with PRRT_)
+if [[ ! "$THREAD_ID" =~ ^PRRT_ ]]; then
+  echo "Warning: Thread ID doesn't match expected format (PRRT_...)" >&2
+  echo "Proceeding anyway..." >&2
+fi
+
+echo "Resolving thread: $THREAD_ID"
+
+RESULT=$(gh api graphql -f query='
+  mutation($threadId: ID!) {
+    resolveReviewThread(input: {threadId: $threadId}) {
+      thread {
+        id
+        isResolved
+      }
+    }
+  }
+' -f threadId="$THREAD_ID" 2>&1)
+
+# Check for success using jq for robust JSON parsing
+if echo "$RESULT" | jq -e '.data.resolveReviewThread.thread.isResolved == true' >/dev/null 2>&1; then
+  echo "✅ Thread resolved successfully"
+  exit 0
+else
+  echo "❌ Failed to resolve thread" >&2
+  echo "$RESULT" >&2
+  exit 1
+fi
