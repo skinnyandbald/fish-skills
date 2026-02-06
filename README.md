@@ -119,6 +119,62 @@ Each skill runs in Claude Code's context with access to your codebase, git histo
 | **last30days** | `/last30days [topic]` | Research trending topics from Reddit, X, and the web |
 | **process-meeting-notes** | `/process-meeting-notes` | Process Fireflies transcripts into action items and GitHub issues |
 
+## Slash Commands
+
+Standalone prompt templates that work across any project. Unlike skills (which have their own directories), commands are single `.md` files in `.claude/commands/`.
+
+### Installation
+
+Symlink the commands directory into your global Claude Code config:
+
+```sh
+ln -s ~/code/fish-skills/.claude/commands/* ~/.claude/commands/
+```
+
+Or cherry-pick individual commands:
+
+```sh
+cp ~/code/fish-skills/.claude/commands/review-plan.md ~/.claude/commands/
+```
+
+### review-plan
+
+Multi-model peer review of an implementation plan. Sends the plan to three models in parallel (Gemini for codebase context, Opus for deep reasoning, ChatGPT for production perspective) and consolidates their feedback.
+
+```
+/review-plan docs/plans/my-feature.md
+/review-plan                              # prompts for plan path
+```
+
+Output: Consensus points, conflicts, critical issues, top 5 improvements, and a risk matrix.
+
+### analyze-feedback
+
+Analyze and prioritize peer review feedback from multiple reviewers. Categorizes feedback as Critical/High/Medium/Low, resolves conflicts between reviewers, and creates an ordered action plan.
+
+```
+/analyze-feedback docs/plans/my-feature.md /tmp/gemini.md /tmp/opus.md /tmp/chatgpt.md
+/analyze-feedback docs/plans/my-feature.md    # paste feedback inline
+/analyze-feedback                              # prompts for all inputs
+```
+
+Output: Priority-classified action items with effort estimates and a reviewer agreement matrix.
+
+### Typical Workflow
+
+```
+# 1. Write a plan
+/plan "Add transcript import feature"
+
+# 2. Get three-model peer review
+/review-plan docs/plans/transcript-import.md
+
+# 3. Save each model's feedback, then analyze
+/analyze-feedback docs/plans/transcript-import.md feedback-gemini.md feedback-opus.md feedback-chatgpt.md
+
+# 4. Apply the prioritized improvements to your plan
+```
+
 ## Skill Details
 
 ### pr-resolution
@@ -286,6 +342,9 @@ After installing, start a new Claude Code session. Both plugins auto-register th
 
 ```
 fish-skills/
+├── .claude/commands/       # Slash commands (single-file prompt templates)
+│   ├── review-plan.md      # Multi-model plan peer review
+│   └── analyze-feedback.md # Feedback analysis & prioritization
 ├── pr-resolution/          # PR comment resolution (v3, parallel agents)
 │   ├── SKILL.md            # Skill definition + workflow
 │   ├── bin/                # 5 executable scripts (get-pr-comments, etc.)
