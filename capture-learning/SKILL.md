@@ -53,9 +53,9 @@ This narrative approach helps us:
 
 ## Output
 
-Files are saved to: `~/.claude/context/learnings/`
+Files are saved to: `<project-root>/.claude/learnings/YYYY-MM-DD-problem-description.md`
 
-Named with format: `YYYY-MM-DD-problem-description.md`
+If not inside a git repository, falls back to `~/.claude/learnings/`.
 
 Each file contains:
 - Full narrative story
@@ -63,12 +63,21 @@ Each file contains:
 - Technical details and commands used
 - Actionable takeaways for future reference
 
+### Making learnings active
+
+Claude Code doesn't automatically read the learnings directory. Add this to your project's `CLAUDE.md` so Claude checks them each session:
+
+```markdown
+## Learnings
+Before starting work, check `.claude/learnings/` for relevant past problem-solving narratives.
+```
+
 ## Implementation
 
 The TypeScript implementation is in `scripts/capture-learning.ts`.
 
 The command:
 - Prompts for all 6 narrative elements if not provided
-- Creates a structured markdown file in `~/.claude/context/learnings/`
+- Detects the git root and saves to `<project>/.claude/learnings/`
 - Names files with date and problem description
 - Generates a comprehensive learning narrative

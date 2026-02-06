@@ -3,8 +3,20 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
+import { execSync } from 'child_process';
 
-const LEARNINGS_DIR = path.join(process.env.HOME!, '.claude', 'context', 'learnings');
+// Save learnings at the project level (.claude/learnings/ in the git root).
+// Falls back to ~/.claude/learnings/ if not inside a git repo.
+function getLearningsDir(): string {
+    try {
+        const gitRoot = execSync('git rev-parse --show-toplevel', { encoding: 'utf-8' }).trim();
+        return path.join(gitRoot, '.claude', 'learnings');
+    } catch {
+        return path.join(process.env.HOME!, '.claude', 'learnings');
+    }
+}
+
+const LEARNINGS_DIR = getLearningsDir();
 
 // Ensure learnings directory exists
 if (!fs.existsSync(LEARNINGS_DIR)) {
