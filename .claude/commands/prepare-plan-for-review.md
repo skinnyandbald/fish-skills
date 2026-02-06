@@ -1,5 +1,5 @@
 ---
-name: prepare-plan
+name: prepare-plan-for-review
 description: Generate a copyable multi-model peer review prompt with plan file path filled in
 argument-hint: "[path/to/plan.md]"
 ---
