@@ -143,7 +143,7 @@ Generates a **copyable prompt** for multi-model peer review of an implementation
 
 ```
 /prepare-plan-for-review docs/plans/my-feature.md
-/prepare-plan-for-review                              # prompts for plan path
+/prepare-plan-for-review  # prompts for plan path
 ```
 
 Output: A ready-to-copy TDD analysis prompt with the plan file path baked in.
@@ -153,10 +153,10 @@ Output: A ready-to-copy TDD analysis prompt with the plan file path baked in.
 Interactively collect and analyze peer review feedback from multiple reviewers. Asks for each reviewer's feedback one at a time, then categorizes as Critical/High/Medium/Low, resolves conflicts, and creates an ordered action plan.
 
 ```
-/analyze-plan-feedback docs/plans/my-feature.md      # 3 reviewers (default)
-/analyze-plan-feedback docs/plans/my-feature.md 2    # 2 reviewers
-/analyze-plan-feedback 2                              # auto-detect plan, 2 reviewers
-/analyze-plan-feedback                                # auto-detect plan, 3 reviewers
+/analyze-plan-feedback docs/plans/my-feature.md    # 3 reviewers (default)
+/analyze-plan-feedback docs/plans/my-feature.md 2  # 2 reviewers
+/analyze-plan-feedback 2                            # auto-detect plan, 2 reviewers
+/analyze-plan-feedback                              # auto-detect plan, 3 reviewers
 ```
 
 When no plan path is given, it auto-detects from conversation context, recent git changes, or the most recently modified file in `docs/plans/`.
