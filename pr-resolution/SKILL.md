@@ -20,11 +20,11 @@ argument-hint: "[optional: PR number, GitHub URL, or 'current']"
 ## Workflow Overview
 
 ```text
-Phase 0: Pre-Flight     → GoodToGo status check
+Phase 0: Pre-Flight     → GoodToGo status check (if installed, otherwise skip)
 Phase 1: Discovery      → Gather comments, parse bot formats, enumerate
 Phase 2: Classification → Categorize by priority, group by file
 Phase 3: Resolution     → Launch parallel agents by file group
-Phase 4: Verification   → Local checks + GoodToGo gate (MANDATORY)
+Phase 4: Verification   → Local checks + GoodToGo gate (if installed)
 Phase 5: Completion     → Commit, push, resolve threads
 ```
 
@@ -32,10 +32,18 @@ Phase 5: Completion     → Commit, push, resolve threads
 
 ## Phase 0: Pre-Flight
 
-Run the GoodToGo pre-flight check from `references/goodtogo.md`.
+**If `gtg` is installed**, run the GoodToGo pre-flight check (see `references/goodtogo.md`):
 
-Route based on status:
-- `READY` → Quick verify and commit
+```bash
+if command -v gtg &> /dev/null; then
+  # gtg auto-detects repo from git remote
+  GTG_RESULT=$(gtg $PR_NUM --format json 2>/dev/null)
+  GTG_STATUS=$(echo "$GTG_RESULT" | jq -r '.status')
+fi
+```
+
+Route based on status (or skip straight to Phase 1 if `gtg` is not installed):
+- `READY` → Quick verify and commit (fast path — skip Phases 1-3)
 - `CI_FAILING` → Fix CI first
 - `ACTION_REQUIRED` → Continue with full workflow
 - `UNRESOLVED_THREADS` → Continue with full workflow
@@ -106,7 +114,7 @@ Wait for all agents to complete.
 ## Phase 4: Verification Gate (MANDATORY)
 
 1. **Run local checks** from `references/verification.md`
-2. **Run GoodToGo final verification** from `references/goodtogo.md`
+2. **If `gtg` is installed**, run final verification from `references/goodtogo.md` (deterministic READY/BLOCK signal)
 3. **Verify all resolutions** - every comment needs explicit resolution
 
 **DO NOT commit until all checks pass.**
