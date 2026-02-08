@@ -16,6 +16,7 @@ argument-hint: "[optional: PR number, GitHub URL, or 'current']"
 | Parse CodeRabbit | `~/.claude/skills/pr-resolution/bin/parse-coderabbit-review PR_NUM` |
 | Check CI | `gh pr checks` |
 | Resolve thread | `~/.claude/skills/pr-resolution/bin/resolve-pr-thread NODE_ID` |
+| Resolve all threads | `~/.claude/skills/pr-resolution/bin/resolve-all-threads PR_NUM` |
 
 ## Workflow Overview
 
@@ -121,13 +122,35 @@ Wait for all agents to complete.
 
 ---
 
-## Phase 5: Completion
+## Phase 5: Completion (MANDATORY — DO NOT SKIP)
 
 Follow steps from `references/completion.md`:
+
+### 5a. Commit and push
 1. Commit all fixes together
 2. Push to remote
-3. Post resolution summary to PR
-4. Resolve GitHub review threads
+
+### 5b. Post resolution summary
+3. Post resolution summary comment to PR
+
+### 5c. Resolve ALL GitHub threads (MANDATORY)
+
+**Run the resolve-all-threads script:**
+```bash
+~/.claude/skills/pr-resolution/bin/resolve-all-threads $PR_NUM
+```
+
+This script:
+- Queries all unresolved threads on the PR
+- Resolves each one via GraphQL mutation
+- Verifies zero unresolved threads remain
+
+**If the script reports failures or remaining threads: DO NOT mark workflow as complete. Fix manually with `bin/resolve-pr-thread THREAD_ID`.**
+
+### 5d. Final verification
+4. Confirm script output shows "All threads resolved"
+
+**Workflow is NOT complete until all threads are resolved.**
 
 ---
 

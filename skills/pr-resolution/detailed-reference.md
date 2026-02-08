@@ -155,12 +155,29 @@ See `references/goodtogo.md`.
 
 ---
 
-## Phase 5: Completion
+## Phase 5: Completion (MANDATORY — DO NOT SKIP)
 
-See `references/completion.md` for:
-1. Commit template
-2. Post resolution summary
-3. Resolve GitHub threads
+See `references/completion.md` for full details.
+
+### 5a. Commit and push
+1. Commit all fixes together
+2. Push to remote
+
+### 5b. Post resolution summary
+3. Post resolution summary comment to PR
+
+### 5c. Resolve ALL GitHub threads (MANDATORY)
+
+```bash
+~/.claude/skills/pr-resolution/bin/resolve-all-threads $PR_NUM
+```
+
+**If failures or remaining threads: DO NOT mark workflow as complete.**
+
+### 5d. Final verification
+4. Confirm script output shows "All threads resolved"
+
+**Workflow is NOT complete until all threads are resolved.**
 
 ---
 

@@ -1,0 +1,135 @@
+#!/bin/bash
+# Resolve ALL unresolved review threads on a PR and verify none remain
+#
+# Usage: bin/resolve-all-threads [PR_NUMBER]
+#
+# If PR_NUMBER is not provided, auto-detects from current branch.
+#
+# Exit codes:
+#   0 - All threads resolved (or none were unresolved)
+#   1 - Some threads failed to resolve or remain unresolved
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PR_NUM="${1:-}"
+
+# Auto-detect PR number if not provided
+if [ -z "$PR_NUM" ]; then
+  PR_NUM=$(gh pr view --json number -q '.number' 2>/dev/null || echo "")
+  if [ -z "$PR_NUM" ]; then
+    echo "Error: No PR number provided and couldn't detect from current branch" >&2
+    echo "Usage: bin/resolve-all-threads [PR_NUMBER]" >&2
+    exit 1
+  fi
+  echo "Auto-detected PR #$PR_NUM" >&2
+fi
+
+# Get repo info
+REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner')
+
+echo "=== Resolving all unresolved threads on PR #$PR_NUM ($REPO) ==="
+echo ""
+
+# Query all unresolved review threads
+THREADS_JSON=$(gh api graphql -f query='
+query($owner: String!, $repo: String!, $pr: Int!) {
+  repository(owner: $owner, name: $repo) {
+    pullRequest(number: $pr) {
+      reviewThreads(first: 100) {
+        nodes {
+          id
+          isResolved
+          path
+          line
+        }
+      }
+    }
+  }
+}
+' -f owner="${REPO%/*}" -f repo="${REPO#*/}" -F pr="$PR_NUM")
+
+# Extract unresolved thread IDs and paths
+UNRESOLVED=$(echo "$THREADS_JSON" | jq -r '
+  [.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)]
+')
+
+TOTAL_UNRESOLVED=$(echo "$UNRESOLVED" | jq 'length')
+
+if [ "$TOTAL_UNRESOLVED" -eq 0 ]; then
+  echo "All threads resolved — nothing to do."
+  exit 0
+fi
+
+echo "Found $TOTAL_UNRESOLVED unresolved thread(s). Resolving..."
+echo ""
+
+RESOLVED=0
+FAILED=0
+
+# Iterate and resolve each thread
+for ROW in $(echo "$UNRESOLVED" | jq -r '.[] | @base64'); do
+  THREAD_ID=$(echo "$ROW" | base64 --decode | jq -r '.id')
+  THREAD_PATH=$(echo "$ROW" | base64 --decode | jq -r '.path // "unknown"')
+  THREAD_LINE=$(echo "$ROW" | base64 --decode | jq -r '.line // "?"')
+
+  echo -n "  Resolving $THREAD_PATH:$THREAD_LINE ($THREAD_ID)... "
+
+  if "$SCRIPT_DIR/resolve-pr-thread" "$THREAD_ID" > /dev/null 2>&1; then
+    echo "done"
+    RESOLVED=$((RESOLVED + 1))
+  else
+    echo "FAILED"
+    FAILED=$((FAILED + 1))
+  fi
+done
+
+echo ""
+echo "--- Resolution pass complete ---"
+echo "  Resolved: $RESOLVED"
+echo "  Failed:   $FAILED"
+echo ""
+
+# Re-query to verify zero unresolved remain
+echo "Verifying... "
+
+VERIFY_JSON=$(gh api graphql -f query='
+query($owner: String!, $repo: String!, $pr: Int!) {
+  repository(owner: $owner, name: $repo) {
+    pullRequest(number: $pr) {
+      reviewThreads(first: 100) {
+        nodes {
+          id
+          isResolved
+          path
+          line
+        }
+      }
+    }
+  }
+}
+' -f owner="${REPO%/*}" -f repo="${REPO#*/}" -F pr="$PR_NUM")
+
+REMAINING=$(echo "$VERIFY_JSON" | jq '[.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)] | length')
+
+echo ""
+echo "=== Summary ==="
+echo "  Resolved:   $RESOLVED"
+echo "  Failed:     $FAILED"
+echo "  Remaining:  $REMAINING unresolved thread(s)"
+echo ""
+
+if [ "$REMAINING" -eq 0 ]; then
+  echo "All threads resolved"
+  exit 0
+else
+  echo "ERROR: $REMAINING thread(s) still unresolved. Fix manually with:" >&2
+  echo "" >&2
+  # List remaining thread IDs for manual resolution
+  echo "$VERIFY_JSON" | jq -r '
+    .data.repository.pullRequest.reviewThreads.nodes[]
+    | select(.isResolved == false)
+    | "  ~/.claude/skills/pr-resolution/bin/resolve-pr-thread \(.id)  # \(.path // "unknown"):\(.line // "?")"
+  ' >&2
+  exit 1
+fi
