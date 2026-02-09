@@ -108,16 +108,26 @@ create_worktree() {
   mkdir -p "$WORKTREE_DIR"
   ensure_gitignore
 
+  # Strip origin/ prefix if present to avoid double-prepending
+  local fetch_ref="$from_branch"
+  local checkout_ref="$from_branch"
+  if [[ "$from_branch" == origin/* ]]; then
+    fetch_ref="${from_branch#origin/}"
+    checkout_ref="$from_branch"
+  else
+    checkout_ref="origin/$from_branch"
+  fi
+
   # Update base branch
   echo -e "${BLUE}Updating $from_branch...${NC}"
-  if ! git fetch origin "$from_branch" 2>/dev/null; then
-    echo -e "${YELLOW}Warning: Failed to fetch $from_branch from origin${NC}"
+  if ! git fetch origin "$fetch_ref" 2>/dev/null; then
+    echo -e "${YELLOW}Warning: Failed to fetch $fetch_ref from origin${NC}"
     echo -e "${YELLOW}Continuing with local reference (may be stale)${NC}"
   fi
 
   # Create worktree
   echo -e "${BLUE}Creating worktree...${NC}"
-  git worktree add -b "$branch_name" "$worktree_path" "origin/$from_branch"
+  git worktree add -b "$branch_name" "$worktree_path" "$checkout_ref"
 
   # Symlink .env
   symlink_env "$worktree_path"
