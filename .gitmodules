@@ -1,3 +1,6 @@
 [submodule "last30days"]
 	path = skills/last30days
 	url = https://github.com/mvanhorn/last30days-skill.git
+[submodule "skills/shaping-skills"]
+	path = skills/shaping-skills
+	url = https://github.com/rjs/shaping-skills.git

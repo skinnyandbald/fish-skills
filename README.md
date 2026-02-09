@@ -41,8 +41,8 @@ Symlink each skill into your skills directory so they sit alongside any skills y
 
 ```sh
 mkdir -p ~/.claude/skills
-for d in ~/code/fish-skills/skills/*/; do
-  ln -s "$d" ~/.claude/skills/
+find ~/code/fish-skills/skills -iname skill.md -exec dirname {} \; | while read d; do
+  ln -sf "$d" ~/.claude/skills/
 done
 ```
 
