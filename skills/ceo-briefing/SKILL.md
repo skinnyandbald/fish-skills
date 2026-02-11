@@ -21,6 +21,33 @@ decision-making within 10-15 minutes of reading.
 - Do NOT begin research until scope is clear.
 
 ## Step 2: Gather intelligence
+
+### 2a: Check Attio CRM first
+- **Always search Attio** before external research when the
+  topic involves a person, company, or deal. Use the Attio MCP
+  tools (or Attio REST API via Bash if MCP is unavailable) to:
+  - `search_records` for people, companies, and deals matching
+    the topic (search by name, company, or keyword)
+  - `get_record_details` on any matching records for full context
+  - `list_notes` on relevant records (people, companies, deals)
+    to surface prior conversations, assessments, and history
+  - Check deal stages, associated people/companies, and referrer
+    to understand the full relationship context
+- Incorporate CRM intelligence into the briefing — prior
+  interactions, deal status, notes, and relationship history
+  are first-party data and should be prioritized over external
+  sources.
+- **Fallback:** If neither Attio MCP tools nor API access is
+  available, skip this step and note in the briefing that CRM
+  data was not checked.
+
+### 2b: Search the vault
+- Grep the SecondBrain vault for the topic, company name, and
+  key people involved. Check `01_Projects/consulting/`,
+  `02_Areas/notes/`, and `02_Areas/consulting/` for existing
+  notes, meeting transcripts, proposals, and analysis.
+
+### 2c: External research
 - **Mandatory**: Use WebSearch for topics with developments after
   your knowledge cutoff. Run multiple parallel searches to
   triangulate.
