@@ -68,7 +68,7 @@ symlink_env() {
 # Create worktree
 create_worktree() {
   local branch_name="$1"
-  local from_branch="${2:-main}"
+  local from_branch="${2:-develop}"
 
   if [[ -z "$branch_name" ]]; then
     echo -e "${RED}Error: Branch name required${NC}"
@@ -135,8 +135,11 @@ create_worktree() {
   echo ""
   echo -e "${GREEN}Worktree created!${NC}"
   echo ""
-  echo "To switch to this worktree:"
-  echo -e "${BLUE}cd $worktree_path${NC}"
+
+  # Output copy-paste command for launching Claude Code in the worktree
+  echo -e "${BLUE}━━━ Launch Claude Code in this worktree ━━━${NC}"
+  echo -e "${GREEN}cd $worktree_path && claude${NC}"
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 }
 
 # List worktrees
@@ -284,7 +287,7 @@ Git Worktree Manager
 Usage: worktree-manager.sh <command> [options]
 
 Commands:
-  create <branch-name> [from-branch]  Create worktree (from-branch defaults to main)
+  create <branch-name> [from-branch]  Create worktree (from-branch defaults to develop)
   list | ls                           List all worktrees
   switch | go [name]                  Switch to worktree
   cleanup | clean                     Remove inactive worktrees
@@ -295,7 +298,7 @@ Convention: Uses symlinks for .env (not copies)
 
 Examples:
   worktree-manager.sh create feature/pipeline-steps
-  worktree-manager.sh create hotfix/auth develop
+  worktree-manager.sh create hotfix/auth main
   worktree-manager.sh list
   worktree-manager.sh cleanup
 
@@ -308,7 +311,8 @@ main() {
 
   case "$cmd" in
     create)
-      create_worktree "$2" "$3"
+      shift # remove 'create'
+      create_worktree "$1" "$2"
       ;;
     list|ls)
       list_worktrees
