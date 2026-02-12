@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page {
+    size: letter;
+    margin: 60px;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: Helvetica, Arial, sans-serif;
+    color: #2D2B55;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 40px;
+  }
+
+  .header-left h1 {
+    font-size: 28px;
+    font-weight: bold;
+    color: #2D2B55;
+    margin-bottom: 8px;
+  }
+
+  .meta-table {
+    font-size: 13px;
+  }
+
+  .meta-table td {
+    padding: 1px 0;
+  }
+
+  .meta-table td:first-child {
+    font-weight: bold;
+    padding-right: 16px;
+  }
+
+  .logo img {
+    width: 80px;
+    height: 80px;
+    image-rendering: pixelated;
+  }
+
+  .addresses {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    gap: 60px;
+  }
+
+  .address-block {
+    flex: 1;
+  }
+
+  .address-block h3 {
+    font-size: 15px;
+    font-weight: bold;
+    color: #2D2B55;
+    margin-bottom: 8px;
+  }
+
+  .address-block p {
+    font-size: 13px;
+    color: #333;
+    line-height: 1.6;
+  }
+
+  /* Line items table */
+  .items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+  }
+
+  .items-table thead th {
+    font-size: 12px;
+    font-weight: bold;
+    color: #2D2B55;
+    text-transform: uppercase;
+    text-align: left;
+    padding: 10px 0;
+    border-top: 2px solid #C9A84C;
+    border-bottom: 2px solid #C9A84C;
+  }
+
+  .items-table thead th.qty {
+    text-align: center;
+    width: 100px;
+  }
+
+  .items-table thead th.rate {
+    text-align: right;
+    width: 100px;
+  }
+
+  .items-table thead th.amount {
+    text-align: right;
+    width: 140px;
+  }
+
+  .items-table tbody td {
+    padding: 14px 0;
+    font-size: 13px;
+    color: #333;
+    vertical-align: top;
+  }
+
+  .items-table tbody td.qty {
+    text-align: center;
+  }
+
+  .items-table tbody td.rate {
+    text-align: right;
+  }
+
+  .items-table tbody td.amount {
+    text-align: right;
+    color: #2D2B55;
+  }
+
+  .items-table tbody tr {
+    border-bottom: 1px solid #C9A84C;
+  }
+
+  /* Subtotal */
+  .subtotal-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 2px solid #C9A84C;
+  }
+
+  .subtotal-row .label {
+    font-size: 13px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #2D2B55;
+  }
+
+  .subtotal-row .value {
+    font-size: 13px;
+    color: #2D2B55;
+  }
+
+  /* Total */
+  .total-block {
+    text-align: right;
+    margin: 30px 0;
+  }
+
+  .total-block .total-label {
+    font-size: 14px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #2D2B55;
+    margin-bottom: 4px;
+  }
+
+  .total-block .total-amount {
+    font-size: 28px;
+    font-weight: bold;
+    color: #2D2B55;
+  }
+
+  /* Notes */
+  .notes {
+    margin-top: 30px;
+    font-size: 12px;
+    color: #555;
+    line-height: 1.8;
+  }
+
+  .notes p {
+    margin-bottom: 2px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>Invoice</h1>
+    <table class="meta-table">
+      <tr><td>Invoice ID:</td><td>{{ invoice_id_display }}</td></tr>
+      <tr><td>Invoice Date:</td><td>{{ invoice_date }}</td></tr>
+      <tr><td>Due date:</td><td>{{ due_date }}</td></tr>
+      <tr><td>Payment terms:</td><td>{{ payment_terms }}</td></tr>
+    </table>
+  </div>
+  <div class="logo">
+    <img src="{{ logo_path }}" alt="Logo">
+  </div>
+</div>
+
+<div class="addresses">
+  <div class="address-block">
+    <h3>Billed to:</h3>
+    <p>
+      {{ client_name }}<br>
+      {{ client_address_1 }}<br>
+      {{ client_address_2 }}
+    </p>
+  </div>
+  <div class="address-block">
+    <h3>Pay to:</h3>
+    <p>
+      Ben Fisher<br>
+      2210 Pacific Ave, apt 4<br>
+      Venice, CA 90291
+    </p>
+  </div>
+</div>
+
+<table class="items-table">
+  <thead>
+    <tr>
+      <th>Description</th>
+      {% if show_rate %}<th class="rate">Rate</th>{% endif %}
+      <th class="qty">Quantity</th>
+      <th class="amount">Amount</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.description }}</td>
+      {% if show_rate %}<td class="rate">{{ item.rate_display }}</td>{% endif %}
+      <td class="qty">{{ item.quantity }}</td>
+      <td class="amount">{{ item.amount_display }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="subtotal-row">
+  <span class="label">Subtotal</span>
+  <span class="value">{{ subtotal_display }} USD</span>
+</div>
+
+<div class="total-block">
+  <div class="total-label">Total</div>
+  <div class="total-amount">{{ total_display }} USD</div>
+</div>
+
+{% if notes %}
+<div class="notes">
+  {% for line in notes_lines %}
+  <p>{{ line }}</p>
+  {% endfor %}
+</div>
+{% endif %}
+
+</body>
+</html>
