@@ -7,8 +7,8 @@ This document provides step-by-step instructions for orchestrating parallel code
 Before starting orchestration:
 
 1. **Clean git state**: No uncommitted changes
-2. **Tests passing**: Run available test command from `package.json`
-3. **No listeners running**: User manages external services (webhooks, etc.)
+2. **Tests passing**: `npm run test:run` should pass
+3. **No listeners running**: User manages `stripe listen`, QStash, etc.
 
 ## Orchestration Workflow
 
@@ -17,28 +17,24 @@ Before starting orchestration:
 Parse user-provided options from the command invocation:
 
 ```typescript
-// Default options
 const options = {
-  dryRun: false,      // --dry-run flag
-  focus: undefined,   // --focus=AREA
-  maxSegments: 3,     // --segments=N
-  maxFiles: 20,       // --max-files=N
-  verbose: false,     // --verbose flag
+  dryRun: false,
+  focus: undefined,
+  maxSegments: 3,
+  maxFiles: 20,
+  verbose: false,
 };
 ```
 
 ### Step 2: Run Codebase Analysis
 
-If project has `scripts/analyze-codebase.ts`:
 ```bash
 npx tsx scripts/analyze-codebase.ts --verbose --max-files=${maxFiles} ${focus ? `--focus=${focus}` : ''}
 ```
 
-Otherwise, build segment map manually using glob/grep (see `analyze.md`).
-
 ### Step 3: Create Progress Tracking
 
-Initialize TodoWrite with all segments.
+Initialize task tracking with all segments.
 
 ### Step 4: Process Parallel Groups
 
@@ -46,20 +42,7 @@ For each parallel group:
 
 #### 4.1 Dispatch Workers
 
-Launch Task agents for all segments in the current group simultaneously:
-
-```typescript
-// IMPORTANT: All tasks in a group must be dispatched in a SINGLE message
-// with multiple Task tool calls to achieve true parallelism
-
-Task({
-  subagent_type: "code-simplifier:code-simplifier",
-  description: `Simplify ${segment.name}`,
-  prompt: buildWorkerPrompt(segment),
-  run_in_background: true,
-  model: "haiku"  // Use haiku for cost efficiency
-})
-```
+Launch Task agents for all segments in the current group simultaneously.
 
 #### 4.2 Worker Prompt Template
 
@@ -71,16 +54,15 @@ You are simplifying code in segment: ${segment.name}
 ### Files to Modify (EXCLUSIVE LIST)
 
 ONLY modify these files - no others:
-
 ${segment.paths.map(p => `- ${p}`).join('\n')}
 
 ### Simplification Patterns to Apply
 
-1. **Remove Debug Logs** - Delete `console.log()`, `console.debug()` calls. Keep `console.error()` and `console.warn()`.
-2. **Simplify Nested Ternaries** - Replace with helper functions or named booleans.
-3. **Extract Repeated Patterns** - If same code appears 3+ times, extract to helper.
-4. **Improve Naming** - Rename unclear variables to descriptive names.
-5. **Split Long Functions** - Functions > 50 lines should be split.
+1. **Remove Debug Logs** - Delete console.log/debug (keep console.error/warn)
+2. **Simplify Nested Ternaries** - Replace with helper function
+3. **Extract Repeated Patterns** - If same code appears 3+ times
+4. **Improve Naming** - Rename unclear variables
+5. **Split Long Functions** - Functions > 50 lines
 
 ### Constraints
 
@@ -90,90 +72,90 @@ ${segment.paths.map(p => `- ${p}`).join('\n')}
 - DO NOT touch files outside your exclusive list
 - Preserve all existing functionality
 
-### CRITICAL: Preserve All Documentation
+### CRITICAL: NEVER Remove Comments or Documentation
 
-NEVER remove: docstrings (JSDoc/TSDoc), file header comments, phase markers, TODO/FIXME, business logic comments.
+**READ THIS CAREFULLY - violations here negate the value of simplification.**
+
+You must NEVER remove any of the following:
+
+1. **Section separator comments**: `// ===== Types =====`, `// ===== Helpers =====`, etc.
+2. **JSDoc/TSDoc docstrings**: `/** ... */` comments above functions, classes, interfaces
+3. **File header comments**: Block comments at the top of files explaining purpose
+4. **"Why" comments**: Comments explaining reasoning, not just restating code
+5. **Business logic comments**: Comments explaining rules, edge cases, workarounds
+6. **TODO/FIXME/NOTE comments**: Track technical debt
+7. **Biome ignore directives**: `// biome-ignore ...` with their reasons
+8. **Re-export annotations**: `// Re-export types for convenience`, etc.
+9. **Phase/section markers**: `// Phase 14.16`, `// Step 1: ...`
+
+**The rule**: If removing a comment changes the clarity of *intent*, don't remove it.
+
+### CRITICAL: Manual Test Output
+
+- NEVER remove `console.log` from files named `manual.*.ts` or `*.manual.ts`
+- NEVER remove `console.log` from `*.integration.ts` files
+- Only remove console.log from production code paths
 
 ### Output
 
+After completing simplifications:
 1. List files modified
 2. List patterns applied
-3. Confirm docstrings preserved (REQUIRED)
+3. **Confirm no comments were removed** (REQUIRED)
 4. Note any files skipped and why
 ```
 
 #### 4.3 Wait for Group Completion
 
-Wait for all workers in the current group to complete before proceeding to next group.
+Wait for all workers in the current group to complete.
 
 #### 4.4 Verify Group Results
 
 After each group, run quick verification:
 
 ```bash
-npm run typecheck 2>/dev/null || npm run type-check 2>/dev/null || true
+npm run typecheck
 ```
-
-If verification fails, identify and revert the problematic segment.
 
 ### Step 5: Final Verification
 
-After all groups complete, run full verification suite — detect and run available checks from `package.json`.
-
-### Step 5.5: Docstring Preservation Check (CRITICAL)
-
-Before committing, verify that docstrings and file headers were NOT removed:
-
 ```bash
-# Check for removed docstrings by comparing with previous commit
-git diff --stat | head -20
+npm run typecheck
+npm run lint
+npm run test:run
+npm run build
 ```
 
-**Manual verification checklist:**
-- [ ] Randomly sample 3-5 modified files
-- [ ] Confirm `/** ... */` blocks above functions are preserved
-- [ ] Confirm file header block comments are preserved
+### Step 5.5: Comment Preservation Check (MANDATORY)
+
+```bash
+# Check for removed comments
+git diff HEAD -- '*.ts' '*.tsx' | grep -E '^\-\s*//' | grep -v '^\-\s*//\s*$'
+```
+
+If any comments were removed, restore them before committing.
 
 ### Step 6: Create Consolidated Commit
 
 ```bash
 git add -A
-git commit -m "refactor: parallel codebase simplification
-
-Applied simplifications across ${segments.length} segments:
-- Removed debug console.log statements
-- Extracted repeated patterns into helper functions
-- Simplified nested ternaries
-- Improved variable naming"
+git commit -m "refactor: parallel codebase simplification"
 ```
 
 ### Step 7: Generate Summary Report
 
-Output final summary with segments processed, files modified, verification results, and commit hash.
-
-## Dry Run Mode
-
-When `--dry-run` is specified:
-1. Run codebase analysis
-2. Display segment breakdown
-3. Show parallel group execution plan
-4. **DO NOT** launch worker agents
-5. **DO NOT** modify any files
+Output final summary with segments processed, files modified, patterns applied.
 
 ## Error Handling
 
 ### Worker Timeout
-Kill the worker, mark segment as failed, continue with other segments.
+Kill after 5 minutes, mark as failed, continue with other segments.
 
 ### Worker Failure
-Retry up to 3 times with smaller batch (split segment in half). If still failing, mark as failed.
+Retry up to 3 times with smaller batch (split segment in half).
 
 ### Verification Failure
 Identify changed files, revert specific segment if needed.
 
 ### Circular Dependencies
-Merge circular segments into one and process as single unit.
-
-## Concurrency Control
-
-Never exceed the user-specified `--segments` limit. Workers use `model: "haiku"` for cost efficiency and run in background.
+Merge those segments into one, process as single unit.
