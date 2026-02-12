@@ -157,7 +157,7 @@ YYYY-MM > [Previous significant event]
 - Key insights must be scannable via bold text and clear headings
 - Do not speculate beyond evidence; label opinions explicitly
 - When data conflicts, present both viewpoints with evidence strength
-- Max line length ~80-90 characters for readability
+- **No hard line breaks in prose.** Write each paragraph and bullet point as a single unwrapped line. Let Markdown renderers (Obsidian, GitHub, etc.) handle word wrapping. Hard wraps at 80 chars create ugly mid-sentence breaks in rendered output.
 - Avoid tables wider than 5 columns
 
 **Default context for analysis:**
