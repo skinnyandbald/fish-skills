@@ -13,20 +13,43 @@ Personal [Claude Code](https://docs.anthropic.com/en/docs/claude-code) skills fo
 
 ## Installation
 
-Clone the repo (includes submodules for `last30days`):
+### Quick Install (Recommended)
+
+Uses the [Vercel Skills CLI](https://github.com/vercel-labs/skills) — interactive picker, symlinks, multi-agent support (Claude Code, Cursor, Copilot, Gemini CLI, Codex, Amp, and more).
+
+```sh
+npx skills add skinnyandbald/fish-skills
+```
+
+This clones the repo, shows an interactive skill picker (space to toggle), and installs your selections via symlinks. Cherry-pick a single skill with:
+
+```sh
+npx skills add skinnyandbald/fish-skills@pr-resolution
+```
+
+**Submodule skills** (community contributions) aren't included in the main repo install — add them separately:
+
+```sh
+npx skills add aarondfrancis/counselors     # Fan-out to multiple AI agents
+npx skills add rjs/shaping-skills           # Basecamp-style shaping workflow
+npx skills add mvanhorn/last30days-skill    # Trending topic research
+```
+
+**Managing installed skills:**
+
+```sh
+npx skills list       # see what's installed
+npx skills check      # check for updates
+npx skills update     # update all skills
+```
+
+### Manual Install (Alternative)
+
+If you prefer managing symlinks yourself, or want everything including submodule skills in one clone:
 
 ```sh
 git clone --recursive https://github.com/skinnyandbald/fish-skills.git ~/code/fish-skills
 ```
-
-If you already cloned without `--recursive`, pull the submodules:
-
-```sh
-cd ~/code/fish-skills
-git submodule update --init
-```
-
-### Adding skills to Claude Code
 
 Claude Code looks for skills in two places:
 
@@ -35,9 +58,7 @@ Claude Code looks for skills in two places:
 | **User skills** | Available in every project on your machine | `~/.claude/skills/` |
 | **Project skills** | Available only in a specific project | `<project-root>/.claude/skills/` |
 
-**Option A: Install all skills globally (user-level)**
-
-Symlink each skill into your skills directory so they sit alongside any skills you add yourself:
+**Install all skills globally:**
 
 ```sh
 mkdir -p ~/.claude/skills
@@ -46,9 +67,7 @@ find ~/code/fish-skills/skills -iname skill.md -exec dirname {} \; | while read 
 done
 ```
 
-**Option B: Install individual skills globally**
-
-Cherry-pick specific skills:
+**Cherry-pick individual skills:**
 
 ```sh
 mkdir -p ~/.claude/skills
@@ -56,9 +75,7 @@ ln -s ~/code/fish-skills/skills/pr-resolution ~/.claude/skills/pr-resolution
 ln -s ~/code/fish-skills/skills/simplify ~/.claude/skills/simplify
 ```
 
-**Option C: Install into a specific project**
-
-Add skills to a single project's `.claude/skills/` directory:
+**Install into a specific project:**
 
 ```sh
 cd ~/my-project
@@ -66,7 +83,7 @@ mkdir -p .claude/skills
 ln -s ~/code/fish-skills/skills/pr-resolution .claude/skills/pr-resolution
 ```
 
-After symlinking, restart Claude Code (or start a new session). Skills are auto-discovered and show up as `/skill-name` commands.
+After installing (either method), restart Claude Code or start a new session. Skills are auto-discovered and show up as `/skill-name` commands.
 
 ### Required dependencies
 
