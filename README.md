@@ -136,6 +136,21 @@ Each skill runs in Claude Code's context with access to your codebase, git histo
 | **prepare-plan-for-review** | `/prepare-plan-for-review [path]` | Generate a copyable peer review prompt for Cursor's multi-model agent flow |
 | **analyze-plan-feedback** | `/analyze-plan-feedback [path] [N]` | Interactively collect and analyze peer review feedback from N reviewers |
 
+### EOS Operating System
+
+| Skill | Command | Description |
+|-------|---------|-------------|
+| **eos** | `/eos [request]` | Context-aware EOS router — suggests actions based on day of week, quarter position, and data staleness |
+
+The `/eos` skill is a conductor that routes to [Brad Feld's CEOS skills](https://github.com/bradfeld/ceos) (17 skills for running EOS with Claude Code). Install CEOS first, then use `/eos` as your single entry point:
+
+```sh
+npx skills add bradfeld/ceos         # install the 17 CEOS skills
+npx skills add skinnyandbald/fish-skills@eos  # install the /eos router
+```
+
+`/eos` reads your project's CLAUDE.md for customization (CEOS data root path, L10 day, solopreneur mode). Without arguments, it shows a context-aware dashboard with prioritized suggestions. With arguments (e.g., `/eos scorecard`, `/eos rocks`), it routes directly to the right CEOS skill.
+
 ### Research & Knowledge
 
 | Skill | Command | Description |
@@ -360,6 +375,8 @@ fish-skills/
 │   ├── capture-learning/            # Problem-solving narrative capture
 │   │   ├── SKILL.md
 │   │   └── scripts/
+│   ├── eos/                         # EOS operating system router (requires bradfeld/ceos)
+│   │   └── SKILL.md
 │   ├── git-worktree/                # Worktree management
 │   │   ├── SKILL.md
 │   │   └── scripts/
