@@ -7,3 +7,6 @@
 [submodule "skills/counselors/counselors"]
 	path = skills/counselors/counselors
 	url = https://github.com/aarondfrancis/counselors.git
+[submodule "skills/gtplanner"]
+	path = skills/gtplanner
+	url = https://github.com/OpenSQZ/GTPlanner.git
