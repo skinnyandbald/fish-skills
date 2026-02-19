@@ -22,7 +22,7 @@ npx skills add bradfeld/ceos
 Search upward from the current working directory for a `.ceos` marker file. This file marks the CEOS data root. If the project's CLAUDE.md specifies a CEOS root path, use that instead.
 
 If no `.ceos` marker is found, tell the user they need to set up their EOS data directory:
-1. Create a directory for EOS data (e.g., `eos/` or `02_Areas/eos/`)
+1. Create a directory for EOS data (e.g., `eos/`)
 2. Create a `.ceos` marker file in it with `version: 1`
 3. Create subdirectories: `data/rocks/`, `data/scorecard/weeks/`, `data/scorecard/`, `data/issues/open/`, `data/issues/solved/`, `data/todos/`, `data/meetings/l10/`, `data/clarity/`, `data/checkups/`, `data/processes/`, `data/people/`
 4. Copy templates from the CEOS skills repo into a `templates/` directory
