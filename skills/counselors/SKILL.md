@@ -27,17 +27,15 @@ Be selective — don't dump the entire codebase. Pick the most relevant code sec
 
 ## Phase 2: Agent Selection
 
-1. **Discover available agents** by running via Bash:
+**Default agents:** `claude-opus`, `gemini-3-pro-preview`, `amp-smart`
+
+1. **Use defaults unless the user overrides.** If `$ARGUMENTS` does not contain agent-selection instructions (e.g. "use all agents", "add codex", "only gemini"), skip directly to the confirmation step with the defaults.
+
+2. **If the user requests different agents** (in `$ARGUMENTS` or via follow-up), discover available agents by running via Bash:
    ```bash
    counselors ls
    ```
-   This lists all configured agents with their IDs and binaries.
-
-2. **MANDATORY: Print the full agent list, then ask the user which to use.**
-
-   **Always print the full `counselors ls` output as inline text** (not inside AskUserQuestion). Just show the raw output from the command so the user sees every agent with its ID and binary. Do NOT reformat or abbreviate it.
-
-   Then ask the user to pick:
+   Print the full output, then ask the user to pick using AskUserQuestion.
 
    **If 4 or fewer agents**: Use AskUserQuestion with `multiSelect: true`, one option per agent.
 
@@ -48,11 +46,9 @@ Be selective — don't dump the entire codebase. Pick the most relevant code sec
 
    Do NOT combine agents into preset groups (e.g. "claude + codex + gemini"). Each option must be a single agent or "All".
 
-3. Wait for the user's selection before proceeding.
+3. **MANDATORY: Confirm the selection before continuing.** Echo back the exact list you will dispatch to:
 
-4. **MANDATORY: Confirm the selection before continuing.** After the user picks agents, echo back the exact list you will dispatch to:
-
-   > Dispatching to: **claude-opus**, **codex-5.3-high**, **gemini-pro**
+   > Dispatching to: **claude-opus**, **gemini-3-pro-preview**, **amp-smart**
 
    Then ask the user to confirm (e.g. "Look good?") before proceeding to Phase 3. This prevents silent tool omissions. If the user corrects the list, update your selection accordingly.
 
