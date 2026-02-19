@@ -17,16 +17,69 @@ This skill requires [bradfeld/ceos](https://github.com/bradfeld/ceos) skills to 
 npx skills add bradfeld/ceos
 ```
 
-## Step 1: Locate CEOS Data
+## Step 1: Locate or Create CEOS Data
 
-Search upward from the current working directory for a `.ceos` marker file. This file marks the CEOS data root. If the project's CLAUDE.md specifies a CEOS root path, use that instead.
+### Finding the data root
 
-If no `.ceos` marker is found, tell the user they need to set up their EOS data directory:
-1. Create a directory for EOS data (e.g., `eos/`)
-2. Create a `.ceos` marker file in it with `version: 1`
-3. Create subdirectories: `data/rocks/`, `data/scorecard/weeks/`, `data/scorecard/`, `data/issues/open/`, `data/issues/solved/`, `data/todos/`, `data/meetings/l10/`, `data/clarity/`, `data/checkups/`, `data/processes/`, `data/people/`
-4. Copy templates from the CEOS skills repo into a `templates/` directory
-5. Add a path directive to their CLAUDE.md
+1. Check if the project's CLAUDE.md specifies a CEOS/EOS root path — if so, use that
+2. Otherwise, search upward from the current working directory for a `.ceos` marker file
+3. If found, that directory is the CEOS data root — proceed to Step 2
+
+### First-run setup (no `.ceos` found)
+
+If no `.ceos` marker exists, run interactive setup:
+
+1. **Ask the user** where they want their EOS data directory. Suggest `eos/` relative to the project root. Let them choose any path.
+
+2. **Create the full directory structure** at their chosen path:
+   ```
+   <chosen_path>/
+   ├── .ceos                          # marker file (version: 1)
+   ├── data/
+   │   ├── accountability.md          # from templates/accountability.md
+   │   ├── vision.md                  # from templates/vision.md
+   │   ├── rocks/<YYYY-QN>/           # current quarter folder
+   │   ├── scorecard/
+   │   │   ├── metrics.md             # from templates/scorecard-metrics.md
+   │   │   └── weeks/
+   │   ├── issues/
+   │   │   ├── open/
+   │   │   └── solved/
+   │   ├── todos/
+   │   ├── meetings/
+   │   │   ├── l10/
+   │   │   └── kickoff/
+   │   ├── processes/
+   │   ├── people/
+   │   ├── conversations/
+   │   ├── annual/
+   │   ├── quarterly/
+   │   ├── checkups/
+   │   ├── delegate/
+   │   └── clarity/
+   └── templates/                     # copied from CEOS skills repo
+   ```
+
+3. **Create the `.ceos` marker** with `version: 1`
+
+4. **Copy templates** from the CEOS skills repo (`.claude/skills/ceos/templates/`) into `<chosen_path>/templates/`. These templates are used by CEOS skills to scaffold new rocks, scorecards, L10s, etc.
+
+5. **Copy and customize seed files** — use the templates to create initial data files:
+   - `data/vision.md` from `templates/vision.md`
+   - `data/accountability.md` from `templates/accountability.md`
+   - `data/scorecard/metrics.md` from `templates/scorecard-metrics.md`
+
+   In these files, replace `{{company_name}}` with the user's company name, `{{date}}` with today's date, and `{{quarter}}` with the current quarter (YYYY-QN format).
+
+6. **Suggest CLAUDE.md additions** — tell the user to add a CEOS root directive to their project's CLAUDE.md so future sessions find it instantly:
+   ```
+   ### EOS / CEOS Operating System
+   CEOS/EOS data root is `<chosen_path>/`. When any CEOS skill instructs you to search for `.ceos`, use this path as the CEOS root.
+   ```
+
+7. **Offer to commit** the scaffolded directory
+
+After setup, proceed to Step 2 with the newly created data root.
 
 ## Step 2: Assess Context
 
