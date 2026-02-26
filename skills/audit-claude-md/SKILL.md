@@ -5,7 +5,7 @@ description: Audit any project's CLAUDE.md (or AGENTS.md) against best practices
 
 # CLAUDE.md Audit
 
-Analyze and score a project's CLAUDE.md against best practices derived from production AI-assisted development workflows.
+Analyze and score a project's CLAUDE.md against research-informed best practices (ETH Zurich ICML 2026 + production AI-assisted development workflows). Emphasizes what agents CANNOT discover on their own: behavioral constraints, non-standard tools, and project-specific footguns.
 
 Arguments: $ARGUMENTS
 
@@ -62,37 +62,37 @@ Output the report in this format:
 
 ---
 
-## Foundations — [X]/20
+## Foundations — [X]/12
 
 [Table per rubric format]
 
 **Top recommendation:** [...]
 
-## Standards — [X]/18
+## Standards — [X]/14
 
 [Table per rubric format]
 
 **Top recommendation:** [...]
 
-## Behavior Configuration — [X]/18
+## Behavior Configuration — [X]/22
 
 [Table per rubric format]
 
 **Top recommendation:** [...]
 
-## Architecture — [X]/14
+## Architecture — [X]/16
 
 [Table per rubric format]
 
 **Top recommendation:** [...]
 
-## Memory & Learning — [X]/7
+## Memory & Learning — [X]/10
 
 [Table per rubric format]
 
 **Top recommendation:** [...]
 
-## Advanced — [X]/13
+## Advanced — [X]/16
 
 [Table per rubric format]
 
