@@ -1,13 +1,13 @@
 ---
 name: eos-scorecard-autopull
-description: Enhanced scorecard entry with auto-pull from Attio CRM, Clay calendar, and filesystem. Presents suggestions for interactive confirmation before writing.
+description: Enhanced scorecard entry with auto-pull from Attio CRM, Google Calendar, Gmail, and filesystem. Presents suggestions for interactive confirmation before writing.
 file-access: [02_Areas/eos/data/scorecard/, 02_Areas/content-creation/2 published/]
-tools-used: [Read, Write, Glob, Grep, Bash, AskUserQuestion, mcp__attio-mcp__search_records, mcp__attio-mcp__search_records_advanced, mcp__attio-mcp__get_record_details, mcp__clay__searchContacts, mcp__clay__getEvents]
+tools-used: [Read, Write, Glob, Grep, Bash, AskUserQuestion, mcp__attio-mcp__search_records, mcp__attio-mcp__search_records_advanced, mcp__attio-mcp__get_record_details, mcp__claude_ai_Google_Calendar__gcal_list_events, mcp__claude_ai_Gmail__gmail_search_messages, mcp__claude_ai_Gmail__gmail_read_message]
 ---
 
 # eos-scorecard-autopull
 
-Enhanced weekly scorecard entry that auto-pulls data from Attio CRM, Clay, and the filesystem, then presents pre-populated suggestions for the user to confirm or edit interactively before writing the scorecard file.
+Enhanced weekly scorecard entry that auto-pulls data from Attio CRM, Google Calendar, Gmail, and the filesystem, then presents pre-populated suggestions for the user to confirm or edit interactively before writing the scorecard file.
 
 **This skill wraps `ceos-scorecard` -- it does NOT replace it.** After interactive confirmation, it writes the file using the same format as `ceos-scorecard` Mode: Log Weekly.
 
@@ -18,7 +18,8 @@ This skill is invoked by the `/eos` router when the user says "scorecard" and th
 ## Prerequisites
 
 - Attio MCP server connected (for CRM deal data)
-- Clay MCP server connected (for calendar/email metadata)
+- Google Calendar MCP connected (for calendar events and attendee data)
+- Gmail MCP connected (for email context on deals)
 - CEOS data root at `02_Areas/eos/` (per CLAUDE.md)
 
 ## Process
@@ -72,19 +73,46 @@ search_records_advanced(
 
 Then filter results by date in the current week. For each matching deal, use `get_record_details` to get the full record including value.
 
-#### 3b. Clay Calendar Query
+#### 3b. Google Calendar Query
 
-Query Clay for calendar events during the scorecard week:
+Query Google Calendar for events during the scorecard week:
 
 ```
-getEvents(start: "YYYY-MM-DD", end: "YYYY-MM-DD")
+gcal_list_events(
+  calendarId: "primary",
+  timeMin: "YYYY-MM-DDT00:00:00",
+  timeMax: "YYYY-MM-DDT23:59:59",
+  timeZone: "America/Los_Angeles",
+  condenseEventDetails: false
+)
 ```
+
+Use `condenseEventDetails: false` to get full attendee lists with response status (accepted/declined/tentative). This helps distinguish actual meetings from declined invites.
 
 Use calendar events to:
 - Cross-reference with Attio deals (meetings with deal contacts = discovery calls)
 - Identify unmapped meetings that might be discovery calls not yet in CRM
+- Check attendee response status to confirm meetings actually happened
 
-#### 3c. Filesystem Scans
+#### 3c. Gmail Context (optional enrichment)
+
+For deals found in Attio, optionally search Gmail for related correspondence to add context:
+
+```
+gmail_search_messages(
+  q: "from:contact@example.com OR to:contact@example.com after:YYYY/M/D before:YYYY/M/D",
+  maxResults: 5
+)
+```
+
+Then use `gmail_read_message(messageId)` to get email body content for context. This helps with:
+- Understanding deal status beyond what's in the CRM stage
+- Capturing proposal details or client feedback
+- Adding color to the scorecard notes
+
+**Keep this lightweight** -- only query Gmail for contacts associated with active deals, not every calendar attendee.
+
+#### 3d. Filesystem Scans
 
 1. **Content Pieces Published** -- Scan for files created this week:
    - `02_Areas/content-creation/2 published/` -- files with date prefix matching this week
@@ -144,9 +172,9 @@ After all metrics are confirmed, auto-generate the Notes section:
 For each metric, create a note line:
 - `**[Metric]: [Value] ([status])** -- [source/context]`
 
-Include a "Calendar Context" subsection listing key meetings from Clay, noting which are mapped to deals and which are unmapped.
+Include a "Calendar Context" subsection listing key meetings from Google Calendar, noting which are mapped to deals and which are unmapped.
 
-Include a "Data Sources" line: `*Auto-populated from: Attio CRM (deals/stages), Clay (calendar, email metadata), filesystem (content/episodes). Warm DMs requires manual entry.*`
+Include a "Data Sources" line: `*Auto-populated from: Attio CRM (deals/stages), Google Calendar (meetings/attendees), Gmail (deal correspondence), filesystem (content/episodes). Warm DMs requires manual entry.*`
 
 ### Step 6: Show Final Scorecard and Write
 
@@ -188,7 +216,7 @@ Key meetings this week:
 
 ## Data Sources
 
-*Auto-populated from: Attio CRM (deals/stages), Clay (calendar, email metadata), filesystem (content/episodes). Warm DMs requires manual entry.*
+*Auto-populated from: Attio CRM (deals/stages), Google Calendar (meetings/attendees), Gmail (deal correspondence), filesystem (content/episodes). Warm DMs requires manual entry.*
 ```
 
 ### Step 7: Flag Off-Track Items
@@ -203,7 +231,7 @@ Offer to commit the scorecard file.
 
 - **Never write the scorecard without user confirmation.** The whole point is interactive review.
 - **Show sources for every suggestion.** Don't just show a number -- show where it came from.
-- **Graceful degradation.** If Attio or Clay MCP is unavailable, skip those queries and note which metrics need manual entry. Don't fail the whole flow.
+- **Graceful degradation.** If Attio, Google Calendar, or Gmail MCP is unavailable, skip those queries and note which metrics need manual entry. Don't fail the whole flow.
 - **Don't modify upstream CEOS files.** Only write to `02_Areas/eos/data/scorecard/weeks/`.
 - **Respect metric definitions.** Use thresholds from `metrics.md` for status calculation.
 - **Keep it conversational.** This runs in an interactive Claude Code session. Talk to the user, don't just dump data.
