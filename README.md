@@ -72,7 +72,7 @@ done
 ```sh
 mkdir -p ~/.claude/skills
 ln -s ~/code/fish-skills/skills/pr-resolution ~/.claude/skills/pr-resolution
-ln -s ~/code/fish-skills/skills/simplify ~/.claude/skills/simplify
+ln -s ~/code/fish-skills/skills/simplify-parallel ~/.claude/skills/simplify-parallel
 ```
 
 **Install into a specific project:**
@@ -92,10 +92,10 @@ Most skills work out of the box, but some require additional setup:
 | Dependency | Required by | Install |
 |---|---|---|
 | [GitHub CLI](https://cli.github.com/) (`gh`) | pr-resolution, process-meeting-notes | `brew install gh && gh auth login` |
-| [code-simplifier plugin](#required-plugin-code-simplifier) | simplify, simplify-parallel | See [setup instructions](#required-plugin-code-simplifier) below |
+| Claude Code v2.1.63+ | simplify-parallel | Built-in `/simplify` provides the review model; `/simplify-parallel` extends it to full-codebase sweeps |
 | [Fireflies MCP](https://www.fireflies.ai/) | process-meeting-notes | Configure in Claude Code MCP settings |
 
-Skills not listed above (git-worktree, capture-learning, last30days, web-design-guidelines, vercel-react-best-practices, prepare-plan-for-review, analyze-plan-feedback) work with no additional setup.
+Skills not listed above (setup-ai, git-worktree, capture-learning, last30days, web-design-guidelines, vercel-react-best-practices, prepare-plan-for-review, analyze-plan-feedback, simplify-parallel) work with no additional setup beyond the dependencies above.
 
 ## Quick Start
 
@@ -103,7 +103,7 @@ Open any project in Claude Code and invoke a skill:
 
 ```
 /pr-resolution 42
-/simplify branch
+/simplify-parallel --focus=lib
 /git-worktree create feat/my-feature
 /last30days "best AI coding tools"
 ```
@@ -117,8 +117,7 @@ Each skill runs in Claude Code's context with access to your codebase, git histo
 | Skill | Command | Description |
 |-------|---------|-------------|
 | **pr-resolution** | `/pr-resolution [PR#]` | Resolve PR review comments using parallel agents with 5-phase workflow |
-| **simplify** | `/simplify [scope]` | Run code simplification on current branch/PR changes |
-| **simplify-parallel** | `/simplify-parallel` | Parallel codebase simplification with automatic segmentation |
+| **simplify-parallel** | `/simplify-parallel` | Parallel codebase simplification with automatic segmentation (complements built-in `/simplify`) |
 | **web-design-guidelines** | `/web-design-guidelines` | Review UI code against [Web Interface Guidelines](https://github.com/vercel-labs/web-interface-guidelines) |
 | **vercel-react-best-practices** | `/vercel-react-best-practices` | React/Next.js performance optimization (45 rules across 8 categories) |
 
@@ -126,6 +125,7 @@ Each skill runs in Claude Code's context with access to your codebase, git histo
 
 | Skill | Command | Description |
 |-------|---------|-------------|
+| **setup-ai** | `/setup-ai [--global\|--project\|--check]` | Configure Claude Code for power-user AI development (hooks, plugins, CLAUDE.md) |
 | **git-worktree** | `/git-worktree [cmd] [args]` | Manage Git worktrees for isolated parallel development |
 | **capture-learning** | `/capture-learning` | Capture problem-solving narratives as structured learnings |
 
@@ -219,18 +219,20 @@ Resolves GitHub PR review comments through a 5-phase parallel workflow:
 /pr-resolution 42        # resolve comments on PR #42
 ```
 
-### simplify & simplify-parallel
+### simplify-parallel
 
-Analyze code changes and suggest simplifications with explanations.
+Codebase-wide simplification using parallel agents with automatic file segmentation and dependency ordering.
+
+> **Note:** Claude Code v2.1.63+ ships a built-in `/simplify` that reviews recently changed files through 3 parallel agents (code reuse, quality, efficiency). `/simplify-parallel` complements it for full-codebase sweeps and large PRs where the built-in's diff-scoped approach may hit context limits.
 
 ```
-/simplify branch         # simplify current branch changes
-/simplify staged         # simplify staged files only
-/simplify file:src/app.ts
-/simplify all            # entire codebase
+/simplify-parallel                # analyze and simplify entire codebase
+/simplify-parallel --dry-run      # analyze only, show plan
+/simplify-parallel --focus=lib    # limit to specific area
+/simplify-parallel --segments=4   # set max parallel agents
 ```
 
-`/simplify-parallel` runs the same analysis across the entire codebase using parallel agents with automatic file segmentation and dependency ordering. Supports `--dry-run`, `--focus=AREA`, `--segments=N`.
+Each worker reviews its file segment through the same three lenses as the built-in `/simplify`: code reuse, code quality, and efficiency.
 
 ### git-worktree
 
@@ -393,9 +395,9 @@ fish-skills/
 │   │   ├── references/
 │   │   ├── templates/
 │   │   └── workflows/
-│   ├── simplify/                    # Code simplification (single pass)
+│   ├── setup-ai/                    # AI dev environment setup & audit
 │   │   └── SKILL.md
-│   ├── simplify-parallel/           # Parallel codebase simplification
+│   ├── simplify-parallel/           # Parallel codebase simplification (complements built-in /simplify)
 │   │   ├── SKILL.md
 │   │   ├── analyze.md
 │   │   └── orchestrator.md
@@ -440,37 +442,15 @@ allowed-tools: Bash, Read...  # tool access whitelist
 |-------------|---------|-------|
 | [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | All skills | Host environment |
 | [GitHub CLI](https://cli.github.com/) (`gh`) | pr-resolution, process-meeting-notes | Authenticated via `gh auth login` |
-| Git | git-worktree, pr-resolution, simplify | Standard installation |
+| Git | git-worktree, pr-resolution, simplify-parallel | Standard installation |
 | Python 3 | git-worktree, last30days | For scripts |
 | Bash | git-worktree | Shell scripts |
 
-### Required Plugin: code-simplifier
+### Built-in /simplify (Claude Code v2.1.63+)
 
-The **simplify** and **simplify-parallel** skills delegate to the `code-simplifier` agent provided by Anthropic's official plugin. You must install it for these skills to work.
+Claude Code ships a built-in `/simplify` command that reviews recently changed files through 3 parallel agents (code reuse, quality, efficiency). No installation needed — it's available automatically.
 
-**1. Add the official plugins marketplace** (if you haven't already):
-
-```
-/plugins:add-registry anthropics/claude-plugins-official
-```
-
-**2. Install the code-simplifier plugin:**
-
-```
-/plugins:install code-simplifier@claude-plugins-official
-```
-
-**3. Enable the plugin** in your Claude Code settings (`~/.claude/settings.json`):
-
-```json
-{
-  "enabledPlugins": {
-    "code-simplifier@claude-plugins-official": true
-  }
-}
-```
-
-This registers the `code-simplifier:code-simplifier` agent that both `/simplify` and `/simplify-parallel` use under the hood. Without it, these skills will fail when they attempt to launch the agent via the Task tool.
+`/simplify-parallel` from this repo complements it for codebase-wide sweeps where the built-in's diff-scoped approach may hit context limits. Each parallel worker uses the same three-lens review model.
 
 ## Contributing
 

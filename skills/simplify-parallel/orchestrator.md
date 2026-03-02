@@ -56,13 +56,25 @@ You are simplifying code in segment: ${segment.name}
 ONLY modify these files - no others:
 ${segment.paths.map(p => `- ${p}`).join('\n')}
 
-### Simplification Patterns to Apply
+### Review Through Three Lenses
 
-1. **Remove Debug Logs** - Delete console.log/debug (keep console.error/warn)
-2. **Simplify Nested Ternaries** - Replace with helper function
-3. **Extract Repeated Patterns** - If same code appears 3+ times
-4. **Improve Naming** - Rename unclear variables
-5. **Split Long Functions** - Functions > 50 lines
+Review each file through these three lenses (same model as Claude Code's built-in /simplify):
+
+**1. Code Reuse**
+- Duplicated logic that should be extracted into a shared function
+- Copy-paste code across files in your segment
+- Missed abstractions (same pattern repeated 3+ times)
+
+**2. Code Quality**
+- Unclear naming (variables, functions, types)
+- Unnecessary complexity (nested ternaries, deep nesting, long functions > 50 lines)
+- Structural issues (god functions, mixed concerns)
+- Debug console.log/debug in production code (keep console.error/warn)
+
+**3. Efficiency**
+- Unnecessary allocations or object creation in hot paths
+- Missing early returns that would avoid unnecessary work
+- Redundant computations that could be cached or hoisted
 
 ### Constraints
 
