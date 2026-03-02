@@ -101,7 +101,7 @@ Map it to the right skill and invoke it:
 | Request contains | Invoke skill |
 |-----------------|-------------|
 | "l10", "meeting", "level 10" | `ceos-l10` |
-| "scorecard", "numbers", "metrics", "log" | `ceos-scorecard` |
+| "scorecard", "numbers", "metrics", "log" | `eos-scorecard-autopull` (see `scorecard-autopull/SKILL.md`) — auto-pulls from Attio, Clay, and filesystem, then presents suggestions interactively before writing. Falls back to `ceos-scorecard` if MCP sources are unavailable. |
 | "rock", "rocks", "quarterly goals" | `ceos-rocks` |
 | "todo", "to-do", "task" | `ceos-todos` |
 | "issue", "ids", "problem" | `ceos-ids` |
@@ -122,7 +122,7 @@ Present a context-aware menu. Use this priority logic:
 ```
 It's [L10 day] — L10 day. Here's what I'd suggest:
 
-1. Log scorecard numbers (ceos-scorecard) — [DONE/NEEDED based on whether this week's file exists]
+1. Log scorecard numbers (eos-scorecard-autopull) — [DONE/NEEDED based on whether this week's file exists]
 2. Run L10 meeting (ceos-l10) — [DONE/NEEDED based on whether this week's L10 exists]
 3. Review to-dos (ceos-todos) — [N open, M overdue]
 
@@ -175,6 +175,8 @@ Pick one, or tell me what you need.
 ## Step 4: Hand Off
 
 When invoking a CEOS skill, use the Skill tool with the skill name (e.g., `ceos-l10`). The skill will take over from there.
+
+**Special case: Scorecard.** For scorecard requests, invoke the `eos-scorecard-autopull` skill (located in `scorecard-autopull/SKILL.md` relative to this file). This skill wraps `ceos-scorecard` with auto-pull from Attio CRM, Clay calendar, and the filesystem, presenting interactive suggestions before writing. If MCP sources are unavailable, it falls back to vanilla `ceos-scorecard`.
 
 ## Important Notes
 
