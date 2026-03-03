@@ -118,16 +118,21 @@ Map it to the right skill and invoke it:
 
 Present a context-aware menu. Use this priority logic:
 
-#### L10 day (check CLAUDE.md for the user's L10 day, default to Monday)
-```
-It's [L10 day] — L10 day. Here's what I'd suggest:
+#### Daily L10 (every day)
 
-1. Log scorecard numbers (eos-scorecard-autopull) — [DONE/NEEDED based on whether this week's file exists]
-2. Run L10 meeting (ceos-l10) — [DONE/NEEDED based on whether this week's L10 exists]
-3. Review to-dos (ceos-todos) — [N open, M overdue]
+Ben runs daily L10 meetings. Every day gets a full 7-section L10 file at `data/meetings/l10/YYYY-MM-DD.md`.
+
+```
+Daily L10 — [current date]
+
+1. Run today's L10 (ceos-l10) — [DONE/NEEDED based on whether today's L10 exists]
+2. Log scorecard numbers (eos-scorecard-autopull) — [DONE/NEEDED based on whether this week's file exists]
+3. Review to-dos from yesterday's L10 (ceos-todos) — [N open, M overdue]
 
 Which one? (or tell me something else)
 ```
+
+The to-do review in the L10 should check the PREVIOUS DAY's L10 for to-dos, not just the previous week's.
 
 #### End of quarter (last 2 weeks of quarter)
 Quarters: Q1=Jan-Mar, Q2=Apr-Jun, Q3=Jul-Sep, Q4=Oct-Dec.
@@ -165,7 +170,7 @@ Pick one, or tell me what you need.
 | Signal | Threshold | Suggested action |
 |--------|-----------|-----------------|
 | No scorecard entry this week | After mid-week | "Log this week's scorecard numbers" |
-| No L10 this week | After L10 day | "Run your L10" |
+| No L10 today | Any time | "Run today's L10" |
 | Overdue to-dos | Any | "Review overdue to-dos" |
 | Rocks not updated in 2+ weeks | Any | "Update rock statuses" |
 | No clarity break in 30+ days | Any | "Consider a clarity break" |
