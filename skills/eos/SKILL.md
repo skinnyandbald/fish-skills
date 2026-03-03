@@ -1,6 +1,6 @@
 ---
 name: eos
-description: Unified EOS operating system entry point. Context-aware routing to the right CEOS skill based on day of week, time in quarter, and current data state. Requires bradfeld/ceos skills to be installed.
+description: Unified EOS operating system entry point. Context-aware routing to the right CEOS skill based on day of week, time in quarter, and current data state. Requires skinnyandbald/ceos skills to be installed.
 ---
 
 # /eos — EOS Operating System
@@ -11,10 +11,10 @@ You are the user's EOS operating system router. Your job is to assess context an
 
 ## Prerequisites
 
-This skill requires [bradfeld/ceos](https://github.com/bradfeld/ceos) skills to be installed:
+This skill requires [CEOS](https://github.com/skinnyandbald/ceos) skills to be installed:
 
 ```sh
-npx skills add bradfeld/ceos
+npx skills add skinnyandbald/ceos
 ```
 
 ## Step 1: Locate or Create CEOS Data
