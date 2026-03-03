@@ -362,18 +362,14 @@ Automatically runs the built-in `/simplify` skill (3-agent parallel code review 
 #!/bin/bash
 # Auto-Simplify Stop Hook
 # When Claude stops after modifying code files, blocks the stop and tells
-# Claude to run /simplify. Uses session-scoped flag to prevent infinite loops.
+# Claude to run /simplify. Uses built-in stop_hook_active to prevent infinite loops.
 
 INPUT=$(cat)
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // "unknown"')
+STOP_ACTIVE=$(echo "$INPUT" | jq -r '.stop_hook_active // false')
 
-FLAG_DIR="/tmp/claude-simplify-flags"
-mkdir -p "$FLAG_DIR"
-FLAG_FILE="$FLAG_DIR/$SESSION_ID"
-
-# If flag exists, simplify already ran -- clean up and let Claude stop
-if [ -f "$FLAG_FILE" ]; then
-  rm -f "$FLAG_FILE"
+# If stop_hook_active is true, simplify already ran -- let Claude stop
+if [ "$STOP_ACTIVE" = "true" ]; then
   exit 0
 fi
 
@@ -388,12 +384,11 @@ if [ -z "$ALL" ]; then
   exit 0  # No code changes -- stop normally
 fi
 
-# Block stop, request simplify
-touch "$FLAG_FILE"
-echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] auto-simplify triggered for session $SESSION_ID: $ALL" >> /tmp/claude-simplify.log
-echo "Code changes detected. Run /simplify to review before completing:" >&2
-echo "$ALL" >&2
-exit 2
+# Block stop using JSON decision output (the correct Stop hook mechanism)
+cat <<EOF
+{"decision": "block", "reason": "Code files were modified. Run /simplify before stopping. Invoke the Skill tool with skill=\"simplify\" now. Changed files: $ALL"}
+EOF
+exit 0
 ```
 
 **Install:**
@@ -419,13 +414,15 @@ Add to `~/.claude/settings.json` under `hooks.Stop`:
 
 1. Claude finishes a coding task and tries to stop
 2. Hook checks `git diff` for uncommitted changes + unpushed commits with code file extensions
-3. If code changed and no flag file exists: creates flag, exits with code 2 (blocks stop), tells Claude to run `/simplify`
+3. If code changed: outputs JSON `{"decision": "block", "reason": "..."}` which blocks the stop and instructs Claude to run `/simplify`
 4. Claude runs `/simplify` (3 parallel agents review code reuse, quality, efficiency)
-5. Claude tries to stop again -- flag exists, so hook removes it and exits 0 (allows stop)
+5. Claude tries to stop again -- `stop_hook_active` is now `true`, so hook exits 0 (allows stop)
 
-**Customize file extensions:** Edit the `grep -E` pattern to match your stack. Default: `.py`, `.ts`, `.tsx`, `.js`, `.jsx`.
+**Key details:**
 
-**Logs:** Check `/tmp/claude-simplify.log` to see when it triggers.
+- Uses `stop_hook_active` (built-in to Stop hook input) for loop prevention -- no flag files needed
+- Uses JSON decision output (`exit 0` + stdout) instead of `exit 2` + stderr -- the `reason` field becomes Claude's instruction
+- Edit the `grep -E` pattern to match your stack's file extensions
 
 ## Recommended Plugins
 
