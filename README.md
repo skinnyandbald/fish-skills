@@ -142,10 +142,10 @@ Each skill runs in Claude Code's context with access to your codebase, git histo
 |-------|---------|-------------|
 | **eos** | `/eos [request]` | Context-aware EOS router — suggests actions based on day of week, quarter position, and data staleness |
 
-The `/eos` skill is a conductor that routes to [Brad Feld's CEOS skills](https://github.com/bradfeld/ceos) (17 skills for running EOS with Claude Code). Install CEOS first, then use `/eos` as your single entry point:
+The `/eos` skill is a conductor that routes to [CEOS](https://github.com/bradfeld/ceos) (17 skills for running EOS with Claude Code). Install CEOS first, then use `/eos` as your single entry point:
 
 ```sh
-npx skills add bradfeld/ceos         # install the 17 CEOS skills
+npx skills add skinnyandbald/ceos    # install the 17 CEOS skills
 npx skills add skinnyandbald/fish-skills@eos  # install the /eos router
 ```
 
@@ -394,7 +394,7 @@ fish-skills/
 │   ├── capture-learning/            # Problem-solving narrative capture
 │   │   ├── SKILL.md
 │   │   └── scripts/
-│   ├── eos/                         # EOS operating system router (requires bradfeld/ceos)
+│   ├── eos/                         # EOS operating system router (requires skinnyandbald/ceos)
 │   │   └── SKILL.md
 │   ├── git-worktree/                # Worktree management
 │   │   ├── SKILL.md
