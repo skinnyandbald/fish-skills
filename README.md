@@ -345,6 +345,88 @@ XAI_API_KEY=xai-...      # enables X/Twitter research
 
 Without these, `last30days` falls back to web-only research mode.
 
+## Recommended Hooks
+
+Claude Code [hooks](https://docs.anthropic.com/en/docs/claude-code/hooks) run shell commands in response to lifecycle events (Stop, PostToolUse, SessionStart, etc.). These are global automation recipes that pair well with fish-skills.
+
+### Auto-Simplify on Stop
+
+Automatically runs the built-in `/simplify` skill (3-agent parallel code review for reuse, quality, and efficiency) whenever Claude finishes a task that modified code files. Uses a Stop hook so all changes are batched into one review pass.
+
+**Why Stop, not PostToolUse:** PostToolUse fires after every single Write/Edit -- running 3 review agents per edit is expensive and noisy. Stop fires once when Claude is "done," covering all changes at once.
+
+**Create the hook script:**
+
+```bash
+# ~/.claude/hooks/auto-simplify-stop.sh
+#!/bin/bash
+# Auto-Simplify Stop Hook
+# When Claude stops after modifying code files, blocks the stop and tells
+# Claude to run /simplify. Uses session-scoped flag to prevent infinite loops.
+
+INPUT=$(cat)
+SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // "unknown"')
+
+FLAG_DIR="/tmp/claude-simplify-flags"
+mkdir -p "$FLAG_DIR"
+FLAG_FILE="$FLAG_DIR/$SESSION_ID"
+
+# If flag exists, simplify already ran -- clean up and let Claude stop
+if [ -f "$FLAG_FILE" ]; then
+  rm -f "$FLAG_FILE"
+  exit 0
+fi
+
+# Check for modified code files:
+# 1. Uncommitted changes (staged + unstaged)
+# 2. Unpushed commits (already committed but not pushed to remote)
+UNCOMMITTED=$(git diff --name-only 2>/dev/null; git diff --name-only --cached 2>/dev/null)
+UNPUSHED=$(git diff --name-only @{upstream}..HEAD 2>/dev/null)
+ALL=$(echo -e "$UNCOMMITTED\n$UNPUSHED" | grep -E '\.(py|ts|tsx|js|jsx)$' | sort -u | grep -v '^$')
+
+if [ -z "$ALL" ]; then
+  exit 0  # No code changes -- stop normally
+fi
+
+# Block stop, request simplify
+touch "$FLAG_FILE"
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] auto-simplify triggered for session $SESSION_ID: $ALL" >> /tmp/claude-simplify.log
+echo "Code changes detected. Run /simplify to review before completing:" >&2
+echo "$ALL" >&2
+exit 2
+```
+
+**Install:**
+
+```bash
+chmod +x ~/.claude/hooks/auto-simplify-stop.sh
+```
+
+Add to `~/.claude/settings.json` under `hooks.Stop`:
+
+```json
+{
+  "hooks": [
+    {
+      "command": "bash ~/.claude/hooks/auto-simplify-stop.sh",
+      "type": "command"
+    }
+  ]
+}
+```
+
+**How it works:**
+
+1. Claude finishes a coding task and tries to stop
+2. Hook checks `git diff` for uncommitted changes + unpushed commits with code file extensions
+3. If code changed and no flag file exists: creates flag, exits with code 2 (blocks stop), tells Claude to run `/simplify`
+4. Claude runs `/simplify` (3 parallel agents review code reuse, quality, efficiency)
+5. Claude tries to stop again -- flag exists, so hook removes it and exits 0 (allows stop)
+
+**Customize file extensions:** Edit the `grep -E` pattern to match your stack. Default: `.py`, `.ts`, `.tsx`, `.js`, `.jsx`.
+
+**Logs:** Check `/tmp/claude-simplify.log` to see when it triggers.
+
 ## Recommended Plugins
 
 These Claude Code plugins pair well with fish-skills. They're not required, but they make your workflow significantly better.
