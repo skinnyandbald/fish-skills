@@ -51,6 +51,7 @@ If no `.ceos` marker exists, run interactive setup:
    │   │   └── kickoff/
    │   ├── processes/
    │   ├── people/
+   │   │   └── alumni/
    │   ├── conversations/
    │   ├── annual/
    │   ├── quarterly/
@@ -79,7 +80,44 @@ If no `.ceos` marker exists, run interactive setup:
 
 7. **Offer to commit** the scaffolded directory
 
-After setup, proceed to Step 2 with the newly created data root.
+After setup, proceed to Step 1b with the newly created data root.
+
+## Step 1b: Validate Directory Structure (Self-Healing)
+
+Every time the `/eos` skill runs, silently check that all required directories exist under the CEOS data root. If any are missing, create them without prompting. This prevents partial-setup drift when data is built incrementally.
+
+**Required directories** (create if missing, no user prompt needed):
+
+```
+data/
+data/rocks/
+data/scorecard/
+data/scorecard/weeks/
+data/issues/open/
+data/issues/solved/
+data/todos/
+data/meetings/l10/
+data/meetings/kickoff/
+data/processes/
+data/people/
+data/people/alumni/
+data/conversations/
+data/annual/
+data/quarterly/
+data/checkups/
+data/delegate/
+data/clarity/
+```
+
+**Required files** (warn if missing, suggest the skill to create them):
+
+| File | If missing, suggest |
+|------|-------------------|
+| `data/vision.md` | "Run `ceos-vto` to set your vision." |
+| `data/accountability.md` | "Run `ceos-accountability` to define seats." |
+| `data/scorecard/metrics.md` | "Run `ceos-scorecard` to define metrics." |
+
+If any directories were created, mention it briefly: "Created N missing data directories." Then continue normally.
 
 ## Step 2: Assess Context
 
