@@ -345,84 +345,22 @@ XAI_API_KEY=xai-...      # enables X/Twitter research
 
 Without these, `last30days` falls back to web-only research mode.
 
-## Recommended Hooks
+## Code Quality Gate: /simplify
 
-Claude Code [hooks](https://docs.anthropic.com/en/docs/claude-code/hooks) run shell commands in response to lifecycle events (Stop, PostToolUse, SessionStart, etc.). These are global automation recipes that pair well with fish-skills.
+The built-in `/simplify` skill runs 3 parallel agents reviewing your code for reuse opportunities, quality issues, and efficiency problems. It's the highest-value review you can run -- but it's token-expensive (3 agents doing codebase-wide analysis), so use it intentionally rather than automatically.
 
-### Auto-Simplify on Stop
+**Recommended approach:** Add this to your global `~/.claude/CLAUDE.md`:
 
-Automatically runs the built-in `/simplify` skill (3-agent parallel code review for reuse, quality, and efficiency) whenever Claude finishes a task that modified code files. Uses a Stop hook so all changes are batched into one review pass.
-
-**Why Stop, not PostToolUse:** PostToolUse fires after every single Write/Edit -- running 3 review agents per edit is expensive and noisy. Stop fires once when Claude is "done," covering all changes at once.
-
-**Create the hook script:**
-
-```bash
-# ~/.claude/hooks/auto-simplify-stop.sh
-#!/bin/bash
-# Auto-Simplify Stop Hook
-# When Claude stops after modifying code files, blocks the stop and tells
-# Claude to run /simplify. Uses built-in stop_hook_active to prevent infinite loops.
-
-INPUT=$(cat)
-SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // "unknown"')
-STOP_ACTIVE=$(echo "$INPUT" | jq -r '.stop_hook_active // false')
-
-# If stop_hook_active is true, simplify already ran -- let Claude stop
-if [ "$STOP_ACTIVE" = "true" ]; then
-  exit 0
-fi
-
-# Check for modified code files:
-# 1. Uncommitted changes (staged + unstaged)
-# 2. Unpushed commits (already committed but not pushed to remote)
-UNCOMMITTED=$(git diff --name-only 2>/dev/null; git diff --name-only --cached 2>/dev/null)
-UNPUSHED=$(git diff --name-only @{upstream}..HEAD 2>/dev/null)
-ALL=$(echo -e "$UNCOMMITTED\n$UNPUSHED" | grep -E '\.(py|ts|tsx|js|jsx)$' | sort -u | grep -v '^$')
-
-if [ -z "$ALL" ]; then
-  exit 0  # No code changes -- stop normally
-fi
-
-# Block stop using JSON decision output (the correct Stop hook mechanism)
-cat <<EOF
-{"decision": "block", "reason": "Code files were modified. Run /simplify before stopping. Invoke the Skill tool with skill=\"simplify\" now. Changed files: $ALL"}
-EOF
-exit 0
+```
+## Code Quality Gate
+- Before creating a PR or pushing code, run /simplify to review changes for reuse, quality, and efficiency
 ```
 
-**Install:**
+This runs one deep review pass on finalized code -- right before other humans see it. No hooks, no loops, no wasted tokens reviewing work-in-progress.
 
-```bash
-chmod +x ~/.claude/hooks/auto-simplify-stop.sh
-```
+**Why not auto-trigger on every stop?** We tested a Stop hook that auto-ran `/simplify` after every code change. The tradeoffs weren't worth it: 3 agents spinning up per stop is expensive, it interrupts flow during iteration, and it reviews half-finished code. The PR boundary is the natural review point.
 
-Add to `~/.claude/settings.json` under `hooks.Stop`:
-
-```json
-{
-  "hooks": [
-    {
-      "command": "bash ~/.claude/hooks/auto-simplify-stop.sh",
-      "type": "command"
-    }
-  ]
-}
-```
-
-**How it works:**
-
-1. Claude finishes a coding task and tries to stop
-2. Hook checks `git diff` for uncommitted changes + unpushed commits with code file extensions
-3. If code changed: outputs JSON `{"decision": "block", "reason": "..."}` which blocks the stop and instructs Claude to run `/simplify`
-4. Claude runs `/simplify` (3 parallel agents review code reuse, quality, efficiency)
-5. Claude tries to stop again -- `stop_hook_active` is now `true`, so hook exits 0 (allows stop)
-
-**Key details:**
-
-- Uses `stop_hook_active` (built-in to Stop hook input) for loop prevention -- no flag files needed
-- Uses JSON decision output (`exit 0` + stdout) instead of `exit 2` + stderr -- the `reason` field becomes Claude's instruction
-- Edit the `grep -E` pattern to match your stack's file extensions
+**On-demand during a branch:** Run `/simplify` manually whenever you've completed a significant chunk of work and want a sanity check. No need to wait for PR time if you want earlier feedback.
 
 ## Recommended Plugins
 
