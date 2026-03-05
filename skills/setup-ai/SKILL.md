@@ -12,11 +12,11 @@ Arguments: $ARGUMENTS
 
 ## Modes
 
-- **No arguments / `--check`**: Audit current setup, report what's configured and what's missing
+- **No arguments / `--project`**: Configure project-level settings — scaffold CLAUDE.md, create directories, configure hooks (default behavior)
 - **`--global`**: Configure machine-level settings (`~/.claude/settings.json`)
-- **`--project`**: Configure project-level settings (`.claude/` in current project)
+- **`--analyze`**: Read-only audit — report what's configured and what's missing, touch nothing
 
-If no mode is specified, default to `--check` (read-only audit).
+If no mode is specified, default to `--project` (setup the current project).
 
 ## What Gets Configured
 
@@ -110,6 +110,16 @@ Run long commands (tests, typechecks, builds) with `run_in_background=true`.
 Check results with `TaskOutput` -- don't block on slow operations.
 </run_tests_in_background>
 
+<tdd_required>
+## Bug Fix Process (CRITICAL — TDD Required)
+
+- Step 1: Write a failing test that reproduces the bug FIRST.
+- Step 2: Verify the test fails — this confirms it actually catches the bug.
+- Step 3: Fix the implementation with the minimal change needed.
+- Step 4: Verify the test passes.
+- Do NOT fix first, then write a test. The test must fail before the fix.
+</tdd_required>
+
 ## Critical Warnings
 <!-- Project-specific footguns that agents would NOT discover on their own. -->
 
@@ -141,7 +151,17 @@ Check if CLAUDE.md mentions `run_in_background`. If not, suggest adding:
 
 ## Execution Flow
 
-### --check (default)
+### --project (default)
+
+```
+1. Check for existing CLAUDE.md
+2. If missing: detect stack, scaffold CLAUDE.md (includes TDD directives)
+3. Create missing directories (.claude/learnings/, docs/claude/)
+4. Check for background processes directive — suggest if missing
+5. Report what was created/suggested
+```
+
+### --analyze
 
 ```
 1. Read ~/.claude/settings.json
@@ -154,10 +174,12 @@ Check if CLAUDE.md mentions `run_in_background`. If not, suggest adding:
 3. If in a project, also check:
    ✅ CLAUDE.md exists (142 lines) — run /audit-claude-md to score it
    ⚠️  CLAUDE.md over 200 lines (287 lines) — may increase inference cost 14-22%
-   ❌ CLAUDE.md missing — run /setup-ai --project to scaffold
+   ❌ CLAUDE.md missing — run /setup-ai to scaffold
    ✅ .claude/learnings/ exists
    ❌ docs/claude/ missing
    ✅ Background processes directive found
+   ✅ TDD directive found (tdd_required section detected)
+   ❌ TDD directive missing — add <tdd_required> block to ## Behavior Directives
    ✅ Non-standard tools documented (3 found: uv, custom-cli, deploy.sh)
    ⚠️  Tech stack section may duplicate package.json — consider trimming
    ✅ Behavior directives present (XML-style sections detected)
@@ -172,16 +194,6 @@ Check if CLAUDE.md mentions `run_in_background`. If not, suggest adding:
    b. Ask for confirmation
    c. Apply the change
 3. Report final state
-```
-
-### --project
-
-```
-1. Check for existing CLAUDE.md
-2. If missing: detect stack, scaffold CLAUDE.md
-3. Create missing directories (.claude/learnings/, docs/claude/)
-4. Check for background processes directive
-5. Report what was created/suggested
 ```
 
 ## Safety Rules
