@@ -14,7 +14,7 @@ Arguments: $ARGUMENTS
 
 - **No arguments / `--project`**: Configure project-level settings — scaffold CLAUDE.md, create directories, configure hooks (default behavior)
 - **`--global`**: Configure machine-level settings (`~/.claude/settings.json`)
-- **`--analyze`**: Read-only audit — report what's configured and what's missing, touch nothing
+- **`--check`**: Read-only — verify your environment is fully configured. Reports what's present, what's missing, what needs attention. Does not write anything.
 
 If no mode is specified, default to `--project` (setup the current project).
 
@@ -161,7 +161,7 @@ Check if CLAUDE.md mentions `run_in_background`. If not, suggest adding:
 5. Report what was created/suggested
 ```
 
-### --analyze
+### --check
 
 ```
 1. Read ~/.claude/settings.json
