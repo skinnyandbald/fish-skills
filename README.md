@@ -128,6 +128,7 @@ Each skill runs in Claude Code's context with access to your codebase, git histo
 | **setup-ai** | `/setup-ai [--global\|--project\|--check]` | Configure Claude Code for power-user AI development (hooks, plugins, CLAUDE.md) |
 | **git-worktree** | `/git-worktree [cmd] [args]` | Manage Git worktrees for isolated parallel development |
 | **capture-learning** | `/capture-learning` | Capture problem-solving narratives as structured learnings |
+| **handoff** | `/handoff` | Generate or resume from structured session handoffs for seamless context transfer between Claude Code sessions |
 
 ### Planning & Review
 
@@ -300,6 +301,25 @@ discovering something that contradicts an initial assumption, invoke
 
 The `.claude/learnings/` directory is created automatically on first capture. Without the `CLAUDE.md` snippet, Claude won't check for existing learnings or know to capture new ones.
 
+### handoff
+
+Generate or resume from a structured handoff document when ending a session or switching contexts. Auto-detects git branch and working tree state, infers role/status/next steps from conversation context, and outputs a formatted document the next session can consume immediately.
+
+**Generate mode** (default): Captures current session state into a handoff document.
+
+```
+/handoff              # generate handoff from current session context
+```
+
+**Resume mode**: Reads an existing handoff, validates the environment (branch, dirty state, new commits), surfaces any mismatches, and confirms next steps before proceeding.
+
+```
+/handoff resume                          # find most recent handoff in 00_Inbox/
+/handoff resume 00_Inbox/handoff-2026-03-05.md  # resume from specific file
+```
+
+Output includes: role, current work summary, status, git state, numbered next steps, and any relevant notes (decisions made, gotchas, trade-offs). Sections with no content are omitted automatically.
+
 ### vercel-react-best-practices
 
 45 optimization rules across 8 priority categories:
@@ -395,6 +415,8 @@ fish-skills/
 │   │   ├── SKILL.md
 │   │   └── scripts/
 │   ├── eos/                         # EOS operating system router (requires skinnyandbald/ceos)
+│   │   └── SKILL.md
+│   ├── handoff/                     # Session context transfer
 │   │   └── SKILL.md
 │   ├── git-worktree/                # Worktree management
 │   │   ├── SKILL.md
