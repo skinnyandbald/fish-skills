@@ -7,6 +7,8 @@ description: "This skill should be used when ending a session, switching context
 
 Generate or resume from a structured handoff document that captures enough context for the next Claude Code session (or a human) to continue exactly where the previous session left off.
 
+The handoff file is always: **`docs/HANDOFF.md`** in the repo root.
+
 ## When to Use
 
 - End of a work session
@@ -16,19 +18,17 @@ Generate or resume from a structured handoff document that captures enough conte
 - Starting a new session from a previous handoff document
 - When the user says "resume", "pick up where we left off", "continue from handoff", or similar
 
-## Mode
-
-Determine which mode to run based on the invocation:
+## Mode Detection
 
 | Invocation | Mode |
 |---|---|
-| `/handoff` (no args, mid-session) | **Generate** |
+| `/handoff` mid-session | **Generate** |
 | `/handoff resume` | **Resume** |
-| `/handoff resume <path>` | **Resume** (use given path) |
-| `/handoff <path-to-handoff-file>` | **Resume** (use given path) |
+| Fresh session (no args) | **Resume** if `docs/HANDOFF.md` exists, else **Generate** |
 | Natural language: "resume", "pick up where we left off", "continue from handoff" | **Resume** |
 | Natural language: "handoff", "wrap up", "pass the baton" | **Generate** |
-| Fresh session with no prior conversation + a handoff path given | **Resume** |
+
+There are no path arguments. The file is always `docs/HANDOFF.md`.
 
 ---
 
@@ -48,9 +48,13 @@ Collect the following information before generating the handoff. Use tools to ga
 
 4. **Role** -- what role has this session been operating in? (e.g., "developer", "content writer", "EOS facilitator", "researcher"). Default to "developer" if unclear.
 5. **Current work** -- summarize what the session has been working on, in one or two sentences.
-6. **Status** -- one of: `in progress`, `blocked`, `paused`, `ready for review`, `complete`.
-7. **Next steps** -- concrete, actionable items for the next session. Pull from conversation context, open TODOs, or unfinished tasks.
-8. **Notes** -- anything else the next session should know: decisions made, trade-offs considered, gotchas encountered, links referenced.
+6. **Status** -- one of: `in_progress | blocked | paused | ready_for_review | complete`
+7. **Critical References** -- 2-3 most important spec/design/plan docs referenced this session (omit section if none)
+8. **Recent Changes** -- files modified this session with `file:line-range` references to key changes
+9. **Learnings** -- patterns discovered, gotchas, root causes; prefer `file:line-range` references over inline code blocks
+10. **Artifacts** -- exhaustive list of files/docs the next session should read to get up to speed
+11. **Next steps** -- concrete, actionable items for the next session
+12. **Notes** -- decisions made, trade-offs, links, anything else worth preserving
 
 #### Ask the user (only if not inferrable)
 
@@ -58,7 +62,9 @@ If the role, current work, or next steps are ambiguous, ask a single clarifying 
 
 ### Output Format
 
-Generate the handoff as a fenced markdown block. Print it directly to the conversation (do not save to a file unless the user asks).
+Generate the handoff as a fenced markdown block. **Print it directly to the conversation first** (do not write to file yet). After printing, ask the user to approve or amend it. Only write to `docs/HANDOFF.md` after user approval.
+
+Prefer `path/to/file.ext:line-range` references over inline code blocks throughout.
 
 ```
 ---
@@ -79,15 +85,39 @@ role: {role}
 **Git branch**: {branch}
 {if dirty: "Working tree has uncommitted changes"}
 
+## Critical References
+
+- {path/to/spec.md} -- {one-line description}
+- {URL or file} -- {one-line description}
+
+(Omit this section if no critical references exist)
+
+## Recent Changes
+
+- `{file:line-range}` -- {what changed and why}
+- `{file:line-range}` -- {what changed and why}
+
+## Learnings
+
+- {Pattern or gotcha discovered} -- see `{file:line-range}` for context
+- {Root cause of a bug or decision} -- rationale: {brief explanation}
+
+## Artifacts
+
+Files and documents the next session should read to get up to speed:
+
+- `{file path}` -- {why it matters}
+- `{file path}` -- {why it matters}
+
 ## Next Steps
 
-1. {step 1}
+1. {step 1 -- specific and actionable}
 2. {step 2}
 3. ...
 
 ## Notes
 
-{Notes -- decisions, gotchas, context the next session needs}
+{Decisions, trade-offs, gotchas, links -- anything that doesn't fit above}
 
 ---
 
@@ -102,11 +132,16 @@ Three phases: Find & Read, Validate Environment, Orient & Ask.
 
 ### Phase 1 — Find & Read
 
-1. If a path argument was provided, read that file
-2. If no path, scan `00_Inbox/handoff-*.md` and use the most recent by filename date
-3. If no file found, use `AskUserQuestion` to ask for the path -- do not guess
-4. Parse YAML frontmatter for structured fields (`handoff_date`, `git_branch`, `git_dirty`, `status`, `role`)
-5. Parse the markdown body for next steps and notes
+1. Read `docs/HANDOFF.md` -- this is always the file, no path scanning or arguments
+2. If file not found, inform the user and switch to Generate mode
+3. Parse YAML frontmatter: `handoff_date`, `git_branch`, `git_dirty`, `status`, `role`
+4. Parse all markdown sections: Current State, Critical References, Recent Changes, Learnings, Artifacts, Next Steps, Notes
+5. Read every **local text file** listed in `## Artifacts` before proceeding to Phase 3.
+   For each artifact, apply these rules:
+   - **Missing file**: record as missing in the mismatch list and continue
+   - **Binary or unreadable file**: record as unreadable and continue
+   - **Very large file** (>500KB): sample the first and last 200 lines, note the truncation
+   - **URL**: skip reading (treat as reference only); note it in the summary
 
 ### Phase 2 — Validate Environment
 
@@ -115,16 +150,28 @@ Run these checks in parallel:
 - `git branch --show-current` -- compare to `git_branch` from frontmatter
 - `git status --porcelain` -- compare dirty state to `git_dirty` from frontmatter
 - `git log --oneline -5` -- check for new commits since handoff date
+- Check if `CLAUDE.md` exists and read it (conventions may have changed)
 
 Build a mismatch list from the results.
 
 ### Phase 3 — Orient & Ask
 
-**No mismatches:** Print a brief summary ("Resuming as {Role} on branch `{branch}`"), list the next steps from the handoff, and ask "Ready to start on step 1?" via `AskUserQuestion`.
+Scenarios are evaluated in **priority order** — apply the first one that matches:
 
-**Mismatches found:** Surface each mismatch clearly, then use `AskUserQuestion` to ask how to proceed. For example: "Branch changed from `feat/x` to `main`. Should I switch back, or continue on `main`?"
+1. **Complete** -- status is `complete`:
+   > Inform the user: "The previous session marked this work as complete." Then ask via `AskUserQuestion` what they'd like to work on next.
 
-**Status was `complete`:** Inform the user that the previous session marked work as complete and ask what's next via `AskUserQuestion`.
+2. **Stale** -- `handoff_date` is more than 7 calendar days ago (compare UTC dates, `today − handoff_date > 7 days`):
+   > Flag it: "This handoff is from {date} ({N} days ago) -- it may be out of date." Then ask via `AskUserQuestion`: "Should I trust this handoff and proceed, or re-explore the codebase first?"
+
+3. **Diverged** -- current branch or dirty state doesn't match the handoff frontmatter:
+   > Surface each mismatch clearly, then use `AskUserQuestion` to ask how to proceed. Example: "Branch changed from `feat/x` to `main`. Should I switch back, or continue on `main`?"
+
+4. **Incomplete** -- status is `in_progress`, `blocked`, `paused`, or `ready_for_review`:
+   > Acknowledge the status, surface any blockers noted, focus on completing the first unfinished step. Ask user to confirm before starting.
+
+5. **Clean** -- none of the above apply:
+   > Present a brief summary ("Resuming as {Role} on branch `{branch}`"), list next steps from the handoff, and ask "Ready to start on step 1?" via `AskUserQuestion`.
 
 ---
 
@@ -133,14 +180,19 @@ Build a mismatch list from the results.
 ### Both modes
 
 - Keep the handoff concise. The goal is fast onboarding, not a full session transcript.
-- Omit sections that have no content (e.g., skip Notes if there are none, skip git info if not in a repo).
+- Omit sections with no content (e.g., skip Critical References if there are none).
 - Next steps must be specific and actionable -- "continue implementing X" not "keep going".
 - Do not include sensitive information (API keys, tokens, passwords).
-- If the user asks to save the handoff, write it to `00_Inbox/handoff-{date}.md` using the vault date format (YYYY-MM-DD).
+- Prefer `path/to/file:line-range` references over inline code blocks.
+
+### Generate-specific
+
+- Always print the draft to the conversation first and get user approval before writing to `docs/HANDOFF.md`.
+- Create `docs/` directory if it doesn't exist. Do this only after user approval, not during draft generation.
 
 ### Resume-specific
 
 - Never auto-execute next steps -- always confirm with the user first via `AskUserQuestion`.
-- If the handoff status is `complete`, inform the user and ask what's next.
-- If the handoff file is not found, ask for the path -- do not guess.
-- Treat the handoff's next steps as suggestions, not commands -- the user may want to reprioritize.
+- Read all local text Artifacts files before presenting the analysis; skip missing, binary, large, or URL entries (record them as noted in Phase 1).
+- Treat next steps as suggestions, not commands -- the user may want to reprioritize.
+- If `docs/HANDOFF.md` is not found, do not guess -- inform the user and offer to generate one.
