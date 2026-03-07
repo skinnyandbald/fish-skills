@@ -23,7 +23,13 @@ function patchCodeReviewer(): void {
 
   if (!fs.existsSync(pluginBase) || !fs.existsSync(STEP0_FILE)) return;
 
-  const versions = fs.readdirSync(pluginBase).filter(v => /^\d+\.\d+\.\d+$/.test(v)).sort();
+  const versions = fs.readdirSync(pluginBase)
+    .filter(v => /^\d+\.\d+\.\d+$/.test(v))
+    .sort((a, b) => {
+      const [aMaj, aMin, aPat] = a.split('.').map(Number);
+      const [bMaj, bMin, bPat] = b.split('.').map(Number);
+      return aMaj - bMaj || aMin - bMin || aPat - bPat;
+    });
   if (versions.length === 0) return;
 
   const latestVersion = versions[versions.length - 1];
@@ -56,23 +62,12 @@ function patchCodeReviewer(): void {
 
 async function main() {
   try {
-    // Read any input from stdin (session start hooks typically don't have input)
-    await new Promise<string>((resolve) => {
-      let data = '';
-      process.stdin.on('data', (chunk) => data += chunk);
-      process.stdin.on('end', () => resolve(data));
-      setTimeout(() => resolve(data), 100);
-    });
-
     console.log(`🚀 Claude session started at ${new Date().toISOString()}`);
-
-    // Ensure superpowers code-reviewer always has the knowledge-lookup Step 0
     patchCodeReviewer();
-
     process.exit(0);
   } catch (error) {
     console.error('Session start hook error:', error);
-    process.exit(0); // Exit gracefully — never block Claude
+    process.exit(0);
   }
 }
 
