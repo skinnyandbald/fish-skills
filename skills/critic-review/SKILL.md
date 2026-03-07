@@ -189,16 +189,35 @@ REFERENCE DOCUMENTATION:
 Derive a slug from the plan path (e.g. `docs/plans/auth-refactor.md` → `auth-refactor`). Write the assembled prompt to `./agents/counselors/[timestamp]-[slug]/prompt.md` (create the directory as needed).
 
 Determine model set:
-- **Default (no override):** `claude-opus,gemini-3-pro-preview,codex-5.4-high`
+- **Default (no override):** `claude-opus,gemini-3-pro-preview,codex-5.4-medium`
 - `--models=x,y`: use those tools
 - `--model=x`: use that single tool
+
+Tell the user before dispatching:
+> "Dispatching to [N] models: [list]. This typically takes 1-3 minutes..."
 
 Run:
 ```bash
 counselors run -f ./agents/counselors/[timestamp]-[slug]/prompt.md --tools [model-list] --json
 ```
 
-Timeout: 600 seconds. Parse the JSON manifest. Read each agent's output file. Note any failed agents.
+Use Bash `timeout: 480000` (8 minutes). The counselors CLI has its own per-tool timeout (up to 900s for some tools in config) — the Bash timeout acts as a hard ceiling so Claude never hangs indefinitely. If the CLI is killed by the Bash timeout, it handles SIGTERM gracefully and writes partial results.
+
+**Immediately after the command returns**, parse the JSON manifest and check results:
+
+1. **If the Bash call itself timed out** (no JSON output): Tell the user "Counselors timed out after 8 minutes. Try with fewer models or check `counselors doctor`." **Stop here.**
+
+2. **Parse the manifest** and count statuses:
+   - `success` — tool returned with exit code 0 and `wordCount > 0`
+   - `timeout` — tool exceeded its timeout
+   - `error` — tool returned non-zero exit code
+   - **silent failure** — `status: "success"` but `wordCount: 0` (treat as error)
+
+3. **If ALL tools failed** (no successful responses with content): Tell the user which tools failed and why (read the first 3 lines of each `stderrFile`). Suggest `counselors doctor` to diagnose. **Stop here.**
+
+4. **If SOME tools failed**: Note the failures in one line (e.g. "amp-smart failed (402), codex timed out — continuing with 1 of 3 responses") and proceed to Phase 6 with the successful responses only.
+
+5. **Read each successful agent's output** from the `outputFile` path in the manifest.
 
 ---
 
