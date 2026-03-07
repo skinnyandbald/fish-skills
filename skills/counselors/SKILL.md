@@ -108,8 +108,10 @@ Note the **prompt directory path** you created (e.g. `./agents/counselors/177286
 Run counselors via Bash with the prompt file, passing the user's selected agents:
 
 ```bash
-counselors run -f ./agents/counselors/[slug]/prompt.md --tools [comma-separated-selections] --json
+set -a; for f in ~/.env .env ~/.vibe-tools/.env; do [ -f "$f" ] && source "$f"; done; set +a; counselors run -f ./agents/counselors/[slug]/prompt.md --tools [comma-separated-selections] --json
 ```
+
+> **Why the env sourcing?** Claude Code's Bash tool may not inherit API keys (e.g. `OPENAI_API_KEY`) from the user's interactive shell. The `set -a` + source pattern loads keys from standard dotenv files portably (works in bash, zsh, sh). Files that don't exist are silently skipped.
 
 Example: `--tools claude,codex,gemini`
 
