@@ -27,7 +27,7 @@ Be selective — don't dump the entire codebase. Pick the most relevant code sec
 
 ## Phase 2: Agent Selection
 
-**Default agents:** `claude-opus`, `gemini-3-pro-preview`, `codex-5.4-high`
+**Default agents:** `claude-opus`, `gemini-3-pro-preview`, `codex-5.4-medium`
 
 1. **Use defaults unless the user overrides.** If `$ARGUMENTS` does not contain agent-selection instructions (e.g. "use all agents", "add codex", "only gemini"), skip directly to the confirmation step with the defaults.
 
@@ -100,6 +100,9 @@ You are providing an independent review. Be critical and thorough.
 
 ## Phase 4: Dispatch
 
+Tell the user before dispatching:
+> "Dispatching to [N] agents: [list]. This typically takes 1-3 minutes..."
+
 Run counselors via Bash with the prompt file, passing the user's selected agents:
 
 ```bash
@@ -108,7 +111,7 @@ counselors run -f ./agents/counselors/[slug]/prompt.md --tools [comma-separated-
 
 Example: `--tools claude,codex,gemini`
 
-Use `timeout: 600000` (10 minutes). Counselors dispatches to the selected agents in parallel and writes results to the output directory shown in the JSON output.
+Use Bash `timeout: 480000` (8 minutes). The counselors CLI has its own per-tool timeout — the Bash timeout is a hard ceiling so you never hang indefinitely.
 
 **Important**: Use `-f` (file mode) so the prompt is sent as-is without wrapping. Use `--json` to get structured output for parsing.
 
@@ -116,10 +119,21 @@ Use `timeout: 600000` (10 minutes). Counselors dispatches to the selected agents
 
 ## Phase 5: Read Results
 
-1. **Parse the JSON output** from stdout — it contains the run manifest with status, duration, word count, and output file paths for each agent
-2. **Read each agent's response** from the `outputFile` path in the manifest
-3. **Check `stderrFile` paths** for any agent that failed or returned empty output
-4. **Skip empty or error-only reports** — note which agents failed
+**Immediately after the command returns**, check for failures before reading output:
+
+1. **If the Bash call itself timed out** (no JSON output): Tell the user "Counselors timed out after 8 minutes. Try with fewer agents or check `counselors doctor`." **Stop here.**
+
+2. **Parse the JSON manifest** from stdout and classify each tool:
+   - `success` with `wordCount > 0` — genuine success
+   - `timeout` — tool exceeded its timeout
+   - `error` or non-zero `exitCode` — tool crashed
+   - `success` with `wordCount: 0` — **silent failure** (treat as error; read its `stderrFile` for the real error)
+
+3. **If ALL tools failed**: Report each failure with the first 3 lines of its `stderrFile`. Suggest running `counselors doctor`. **Stop here — do not proceed to synthesis.**
+
+4. **If SOME tools failed**: Note failures in one line (e.g. "amp-smart failed (402 — needs paid credits), codex timed out — continuing with 2 of 4 responses") and proceed with successful responses only.
+
+5. **Read each successful agent's response** from the `outputFile` path in the manifest. Skip failed agents entirely.
 
 ---
 
@@ -160,5 +174,8 @@ After presenting the synthesis, ask the user what they'd like to address. Offer 
 
 - **counselors not installed**: Tell the user to install it (`npm install -g counselors`)
 - **No tools configured**: Tell the user to run `counselors init` or `counselors add`
-- **Agent fails**: Note it in the synthesis and continue with other agents' results
-- **All agents fail**: Report errors from stderr files and suggest checking `counselors doctor`
+- **Bash timeout (no JSON output)**: The entire run exceeded the 8-minute ceiling. Tell the user and stop — do not wait or retry.
+- **Single agent fails**: Note it in the synthesis, continue with remaining successful agents.
+- **Silent failure** (`status: "success"` but `wordCount: 0`): Read the agent's `.stderr` file. Common causes: expired API key, 402 payment required, rate limit. Report the actual error to the user.
+- **All agents fail**: Report the specific error from each agent's stderr file. Suggest `counselors doctor`. Do NOT proceed to synthesis with zero successful responses.
+- **Never wait indefinitely**: If something seems stuck, the 8-minute Bash timeout will catch it. Do not add sleep/retry loops.
