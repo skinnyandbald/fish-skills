@@ -1,6 +1,6 @@
 ---
 name: ascii
-description: Creates ASCII diagrams for flows, architectures, sequence diagrams, state machines, and tree hierarchies. Offers to save the result to a file.
+description: "Creates ASCII diagrams for flows, architectures, sequence diagrams, state machines, and tree hierarchies. Offers to save the result to a file."
 ---
 
 # ASCII Diagram Generator

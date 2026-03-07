@@ -1,6 +1,6 @@
 ---
 name: setup-ai
-description: Configure Claude Code for power-user AI development. Sets up notification hooks, CLAUDE.md scaffolding, recommended plugins, and essential settings. Run once on a new machine or project to get the optimal AI-assisted dev setup.
+description: "Configure Claude Code for power-user AI development. Sets up notification hooks, CLAUDE.md scaffolding, recommended plugins, and essential settings. Run once on a new machine or project to get the optimal AI-assisted dev setup."
 argument-hint: "[--project|--global|--check]"
 ---
 

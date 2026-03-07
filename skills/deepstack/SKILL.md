@@ -1,6 +1,6 @@
 ---
 name: deepstack
-description: Detects your project's full technology stack, then generates a comprehensive research prompt tailored to a specific topic like security, performance, or testing.
+description: "Detects your project's full technology stack, then generates a comprehensive research prompt tailored to a specific topic like security, performance, or testing."
 ---
 
 # Deep Stack Research Prompt Generator

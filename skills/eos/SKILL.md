@@ -1,6 +1,6 @@
 ---
 name: eos
-description: Unified EOS operating system entry point. Context-aware routing to the right CEOS skill based on day of week, time in quarter, and current data state. Requires skinnyandbald/ceos skills to be installed.
+description: "Unified EOS operating system entry point. Context-aware routing to the right CEOS skill based on day of week, time in quarter, and current data state. Requires skinnyandbald/ceos skills to be installed."
 ---
 
 # /eos — EOS Operating System

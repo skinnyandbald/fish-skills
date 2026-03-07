@@ -1,6 +1,6 @@
 ---
 name: process-meeting-notes
-description: Process Fireflies meeting transcripts to extract action items, create GitHub issues, compare against existing work, and generate EOS Level 10 Meeting summaries. Use after team meetings or when the user mentions meetings, Fireflies, L10, or action item extraction.
+description: "Process Fireflies meeting transcripts to extract action items, create GitHub issues, compare against existing work, and generate EOS Level 10 Meeting summaries. Use after team meetings or when the user mentions meetings, Fireflies, L10, or action item extraction."
 ---
 
 <essential_principles>

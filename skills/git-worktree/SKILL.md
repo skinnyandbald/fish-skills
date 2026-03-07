@@ -1,6 +1,6 @@
 ---
 name: git-worktree
-description: Manages Git worktrees for isolated parallel development. Creates worktrees in .github/worktrees/ with symlinked .env files.
+description: "Manages Git worktrees for isolated parallel development. Creates worktrees in .github/worktrees/ with symlinked .env files."
 ---
 
 # Git Worktree Manager
