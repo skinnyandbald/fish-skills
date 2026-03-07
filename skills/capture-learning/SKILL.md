@@ -41,6 +41,7 @@ The command captures a complete story with these elements:
 4. **Troubleshooting Journey** - Steps we took to discover the truth
 5. **The Solution** - What finally worked
 6. **The Takeaway** - "So now we know..." or "So now we do it this way..."
+7. **Promote to Global?** - Optionally write to `~/.claude/learnings/global-patterns.md` for cross-project knowledge
 
 ## Why This Format?
 

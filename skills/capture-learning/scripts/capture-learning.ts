@@ -16,6 +16,17 @@ function getLearningsDir(): string {
     }
 }
 
+function getProjectName(): string {
+    try {
+        const gitRoot = execSync('git rev-parse --show-toplevel', { encoding: 'utf-8' }).trim();
+        return path.basename(gitRoot);
+    } catch {
+        return 'unknown-project';
+    }
+}
+
+const GLOBAL_PATTERNS_FILE = path.join(process.env.HOME!, '.claude', 'learnings', 'global-patterns.md');
+
 const LEARNINGS_DIR = getLearningsDir();
 
 // Ensure learnings directory exists
@@ -178,9 +189,39 @@ This learning applies to:
     
     // Write the file
     fs.writeFileSync(filepath, content);
-    
+
     console.log(`\n✅ Learning captured with full narrative!`);
     console.log(`📁 Saved to: ${filepath}`);
+
+    // Ask whether to promote to global cross-project patterns
+    const promoteAnswer = await prompt('\n🌐 Promote to global cross-project patterns? (y/N) ');
+    if (promoteAnswer.toLowerCase() === 'y') {
+        const category = await prompt('📂 Category (e.g. Supabase RLS, TypeScript, Auth, API): ');
+        const applies = await prompt('🏷️  Applies to (e.g. Next.js, Supabase, tRPC): ');
+        const projectName = getProjectName();
+        const sanitize = (str: string) => str.replace(/([\\\`*_{}[\]()#+\-.!])/g, '\\$1');
+
+        const globalEntry = `## [${sanitize(category)}] ${sanitize(problem)}
+**Learned from:** ${sanitize(projectName)} (${dateStr})
+**Applies to:** ${sanitize(applies)}
+
+${sanitize(takeaway)}
+
+**Reality:** ${sanitize(actualReality)}
+
+**Watch for:** Assuming ${sanitize(initialAssumption).substring(0, 120)}
+
+---
+`;
+        // Ensure global patterns file and directory exist
+        const globalDir = path.dirname(GLOBAL_PATTERNS_FILE);
+        if (!fs.existsSync(globalDir)) {
+            fs.mkdirSync(globalDir, { recursive: true });
+        }
+        fs.appendFileSync(GLOBAL_PATTERNS_FILE, globalEntry);
+        console.log(`\n🌐 Promoted to global patterns: ${GLOBAL_PATTERNS_FILE}`);
+    }
+
     console.log(`\n📖 The narrative format helps us:`);
     console.log(`   • Remember the journey, not just the destination`);
     console.log(`   • Understand why the solution works`);
