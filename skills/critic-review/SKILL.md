@@ -189,7 +189,7 @@ REFERENCE DOCUMENTATION:
 Derive a slug from the plan path (e.g. `docs/plans/auth-refactor.md` → `auth-refactor`). Write the assembled prompt to `./agents/counselors/[timestamp]-[slug]/prompt.md` (create the directory as needed).
 
 Determine model set:
-- **Default (no override):** `claude-opus,gemini-3-pro-preview,codex-5.4-medium`
+- **Default (no override):** `claude-opus,gemini-3-pro-preview,codex-5.4-high`
 - `--models=x,y`: use those tools
 - `--model=x`: use that single tool
 
@@ -226,7 +226,7 @@ If `run.json` exists in the output directory, the CLI completed normally. Parse 
 - `status: "success"` with `wordCount: 0` — **silent failure** (read its `.stderr` file)
 
 **Step 3: If NO `run.json` (CLI was killed or crashed), scan for individual files.**
-For each expected tool (e.g. `claude-opus`, `gemini-3-pro-preview`, `codex-5.4-medium`):
+For each expected tool (e.g. `claude-opus`, `gemini-3-pro-preview`, `codex-5.4-high`):
 ```bash
 ls -la ./agents/counselors/[output-dir]/{tool-id}.md ./agents/counselors/[output-dir]/{tool-id}.stderr 2>/dev/null
 ```
