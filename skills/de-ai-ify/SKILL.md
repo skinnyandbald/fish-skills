@@ -1,6 +1,6 @@
 ---
 name: de-ai-ify
-description: Remove AI-generated jargon and restore human voice to text
+description: "Remove AI-generated jargon and restore human voice to text"
 original-author: theflohart
 ---
 

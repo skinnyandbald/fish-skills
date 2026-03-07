@@ -1,6 +1,6 @@
 ---
 name: finalize
-description: Cleans up completed feature work. Removes false starts, dead-end code, debug statements, and experimental remnants from your coding session. Use after a feature is working to consolidate the implementation before committing.
+description: "Cleans up completed feature work. Removes false starts, dead-end code, debug statements, and experimental remnants from your coding session. Use after a feature is working to consolidate the implementation before committing."
 ---
 
 # Finalize Recent Work

@@ -1,6 +1,6 @@
 ---
 name: test
-description: Auto-detects your test framework, runs the full suite, diagnoses failures, and fixes them. Use after making code changes to verify tests pass, or when you encounter test failures you want diagnosed and fixed automatically.
+description: "Auto-detects your test framework, runs the full suite, diagnoses failures, and fixes them. Use after making code changes to verify tests pass, or when you encounter test failures you want diagnosed and fixed automatically."
 ---
 
 # Run Tests and Fix Failures

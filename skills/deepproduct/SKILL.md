@@ -1,6 +1,6 @@
 ---
 name: deepproduct
-description: Builds a profile of your product (users, features, design system) then generates a research prompt for any UX or product design question.
+description: "Builds a profile of your product (users, features, design system) then generates a research prompt for any UX or product design question."
 ---
 
 # Deep Product Research Prompt Generator

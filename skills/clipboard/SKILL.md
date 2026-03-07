@@ -1,6 +1,6 @@
 ---
 name: clipboard
-description: Copy generated text to the user's macOS clipboard using pbcopy. Use this skill PROACTIVELY whenever you've just generated content the user will paste somewhere else -- emails, messages, social posts, bios, copy, outreach sequences, or any standalone text block. Also use when the user says "copy", "clipboard", "copy that", "put that on my clipboard", or "I need to paste this". Don't wait for the user to ask -- if you wrote something they'll clearly paste elsewhere, offer to copy it.
+description: "Copy generated text to the user's macOS clipboard using pbcopy. Use this skill PROACTIVELY whenever you've just generated content the user will paste somewhere else -- emails, messages, social posts, bios, copy, outreach sequences, or any standalone text block. Also use when the user says \"copy\", \"clipboard\", \"copy that\", \"put that on my clipboard\", or \"I need to paste this\". Don't wait for the user to ask -- if you wrote something they'll clearly paste elsewhere, offer to copy it."
 ---
 
 # Clipboard

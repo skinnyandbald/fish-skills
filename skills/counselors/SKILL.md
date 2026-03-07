@@ -1,6 +1,6 @@
 ---
 name: counselors
-description: Fan out a prompt to multiple AI coding agents in parallel and synthesize their responses.
+description: "Fan out a prompt to multiple AI coding agents in parallel and synthesize their responses."
 ---
 
 # Counselors — Multi-Agent Review Skill

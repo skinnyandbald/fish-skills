@@ -1,6 +1,6 @@
 ---
 name: simplify-parallel
-description: Run code simplification across entire codebase using parallel agents with automatic segmentation and coordination
+description: "Run code simplification across entire codebase using parallel agents with automatic segmentation and coordination"
 ---
 
 # Parallel Codebase Simplification

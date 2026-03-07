@@ -1,6 +1,6 @@
 ---
 name: requirements-builder
-description: Progressively gather requirements through automated codebase discovery and yes/no questions, then generate a comprehensive requirements spec. Use when starting a new feature, planning a build, or when you need structured requirements before implementation.
+description: "Progressively gather requirements through automated codebase discovery and yes/no questions, then generate a comprehensive requirements spec. Use when starting a new feature, planning a build, or when you need structured requirements before implementation."
 ---
 
 # Requirements Builder
