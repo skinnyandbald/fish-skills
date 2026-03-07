@@ -102,7 +102,7 @@ For each key technology identified in Phase 2 (up to 5 libraries):
 
 **Limits:**
 - Cap total reference documentation at ~8,000 tokens. Trim the least relevant snippets if exceeded.
-- If a library isn't found in Context7: note `(Context7 unavailable — docs not verified for [library])` and continue.
+- If a library isn't found in Context7: try `WebFetch` on `[library-website]/llms.txt` as a secondary fallback. If that also fails, note `(docs not verified for [library])` and continue.
 - If no specific libraries are identifiable: note staleness checking is not applicable and continue.
 
 Build a `REFERENCE DOCUMENTATION` block with library name + version per entry.
@@ -139,6 +139,15 @@ TDD CYCLE: Red-Green-Refactor adherence — failing test written before implemen
 
 STACK BEST PRACTICES:
 [filled from stack profile best practices]
+
+ANALYSIS BALANCE:
+This is a TDD-focused review. Distribute analysis weight roughly as:
+- TEST COVERAGE + TDD CYCLE: ~35% — primary lens
+- CORRECTNESS + COMPLETENESS + ORDERING: ~35%
+- RISK + FEASIBILITY: ~20%
+- STACK BEST PRACTICES: ~10%
+
+If the plan has no test component (e.g. infrastructure, data migration), redistribute the TDD/test weight equally to RISK and CORRECTNESS. Otherwise, apply the TDD weights above even if the plan doesn't explicitly mention TDD — part of the review is surfacing where TDD discipline is absent.
 
 Response format:
 ### Score: X/10
@@ -206,8 +215,13 @@ Timeout: 600 seconds. Parse the JSON manifest. Read each agent's output file. No
    - **Medium:** code quality, naming, documentation
    - **Low:** nice-to-have, style preferences, future considerations
 3. **Conflict resolution** — where agents disagree: state each position, recommend with reasoning.
-4. **Action items** — numbered, specific, definition-of-done, grouped by plan section, effort 1-5.
+4. **Action items** — numbered, specific, definition-of-done, grouped by plan section. For each item:
+   - **Effort:** 1 (trivial) to 5 (significant rework)
+   - **Risk of skipping:** what breaks or degrades if this isn't addressed
+   - **Blocks:** which other action item numbers this must precede (if any)
 5. **Reviewer agreement matrix** — one row per issue, columns per reviewer/agent.
+
+The "Recommended Next Steps" ordering must account for dependency chains (Blocks fields), not just priority. An effort-1 item that blocks three others ranks above an effort-3 item with no dependents.
 
 Output:
 
@@ -217,13 +231,13 @@ Output:
 **Models consulted:** [list, or "External input" for --feedback mode]
 
 ### Critical (must address)
-- [ ] [item] — effort X/5
+- [ ] #N [item] — effort X/5 | risk: [what breaks if skipped] | blocks: #N, #N
 
 ### High Priority
-- [ ] [item] — effort X/5
+- [ ] #N [item] — effort X/5 | risk: [what breaks if skipped]
 
 ### Medium / Low
-- [ ] [item]
+- [ ] #N [item] — effort X/5
 
 ## Recommended Next Steps (in order)
 1. ...
