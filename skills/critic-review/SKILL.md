@@ -194,30 +194,48 @@ Determine model set:
 - `--model=x`: use that single tool
 
 Tell the user before dispatching:
-> "Dispatching to [N] models: [list]. This typically takes 1-3 minutes..."
+> "Dispatching to [N] models: [list]. This typically takes 2-5 minutes..."
+
+Note the **prompt directory path** you created (e.g. `./agents/counselors/1772865337-monarch-advisor/`). The counselors CLI will create a sibling directory with a second timestamp suffix for its output (e.g. `./agents/counselors/1772865337-monarch-advisor-1772865400000/`).
 
 Run:
 ```bash
 counselors run -f ./agents/counselors/[timestamp]-[slug]/prompt.md --tools [model-list] --json
 ```
 
-Use Bash `timeout: 480000` (8 minutes). The counselors CLI has its own per-tool timeout (up to 900s for some tools in config) — the Bash timeout acts as a hard ceiling so Claude never hangs indefinitely. If the CLI is killed by the Bash timeout, it handles SIGTERM gracefully and writes partial results.
+Use Bash `timeout: 480000` (8 minutes). The tools run in parallel (not sequentially). Per-tool timeouts in the counselors config control how long each individual tool gets.
 
-**Immediately after the command returns**, parse the JSON manifest and check results:
+### Result detection (filesystem-based — does NOT depend on stdout)
 
-1. **If the Bash call itself timed out** (no JSON output): Tell the user "Counselors timed out after 8 minutes. Try with fewer models or check `counselors doctor`." **Stop here.**
+**IMPORTANT:** Do NOT rely solely on JSON stdout. The CLI only writes `run.json` and prints JSON after ALL tools finish. If any tool hangs or the process is killed, stdout will be empty. Always fall back to scanning the filesystem.
 
-2. **Parse the manifest** and count statuses:
-   - `success` — tool returned with exit code 0 and `wordCount > 0`
-   - `timeout` — tool exceeded its timeout
-   - `error` — tool returned non-zero exit code
-   - **silent failure** — `status: "success"` but `wordCount: 0` (treat as error)
+**Step 1: Find the output directory.**
+The counselors CLI creates its own output subdirectory. Find it:
+```bash
+ls -dt ./agents/counselors/[timestamp]-[slug]-*/ 2>/dev/null | head -1
+```
+If no directory is found, the CLI failed before dispatching. Tell the user and suggest `counselors doctor`. **Stop.**
 
-3. **If ALL tools failed** (no successful responses with content): Tell the user which tools failed and why (read the first 3 lines of each `stderrFile`). Suggest `counselors doctor` to diagnose. **Stop here.**
+**Step 2: Check for `run.json` (happy path).**
+If `run.json` exists in the output directory, the CLI completed normally. Parse it:
+- `status: "success"` with `wordCount > 0` — genuine success
+- `status: "timeout"` — tool hit its timeout
+- `status: "error"` or non-zero `exitCode` — tool crashed
+- `status: "success"` with `wordCount: 0` — **silent failure** (read its `.stderr` file)
 
-4. **If SOME tools failed**: Note the failures in one line (e.g. "amp-smart failed (402), codex timed out — continuing with 1 of 3 responses") and proceed to Phase 6 with the successful responses only.
+**Step 3: If NO `run.json` (CLI was killed or crashed), scan for individual files.**
+For each expected tool (e.g. `claude-opus`, `gemini-3-pro-preview`, `codex-5.4-medium`):
+```bash
+ls -la ./agents/counselors/[output-dir]/{tool-id}.md ./agents/counselors/[output-dir]/{tool-id}.stderr 2>/dev/null
+```
+- `.md` file exists and size > 0 → tool completed successfully, read it
+- `.md` file missing or size = 0 → tool failed or never finished
+- `.stderr` file has content → read first 3 lines for the error
 
-5. **Read each successful agent's output** from the `outputFile` path in the manifest.
+**Step 4: Report results to user.**
+- **All tools produced output:** Proceed to Phase 6.
+- **Some tools produced output:** Tell the user which failed and why (one line), then ask: "Continue with [N] of [M] responses, or retry?" Proceed based on user choice.
+- **Zero tools produced output:** Report each error. Suggest `counselors doctor`. **Stop.**
 
 ---
 
