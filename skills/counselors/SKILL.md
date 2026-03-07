@@ -101,7 +101,9 @@ You are providing an independent review. Be critical and thorough.
 ## Phase 4: Dispatch
 
 Tell the user before dispatching:
-> "Dispatching to [N] agents: [list]. This typically takes 1-3 minutes..."
+> "Dispatching to [N] agents: [list]. This typically takes 2-5 minutes..."
+
+Note the **prompt directory path** you created (e.g. `./agents/counselors/1772865337-auth-flow-review/`). The counselors CLI creates a sibling output directory with a second timestamp suffix.
 
 Run counselors via Bash with the prompt file, passing the user's selected agents:
 
@@ -111,29 +113,36 @@ counselors run -f ./agents/counselors/[slug]/prompt.md --tools [comma-separated-
 
 Example: `--tools claude,codex,gemini`
 
-Use Bash `timeout: 480000` (8 minutes). The counselors CLI has its own per-tool timeout — the Bash timeout is a hard ceiling so you never hang indefinitely.
+Use Bash `timeout: 480000` (8 minutes). Tools run in parallel (not sequentially). Per-tool timeouts in the counselors config control how long each individual tool gets.
 
 **Important**: Use `-f` (file mode) so the prompt is sent as-is without wrapping. Use `--json` to get structured output for parsing.
 
 ---
 
-## Phase 5: Read Results
+## Phase 5: Read Results (filesystem-based — does NOT depend on stdout)
 
-**Immediately after the command returns**, check for failures before reading output:
+**IMPORTANT:** Do NOT rely solely on JSON stdout. The CLI only writes `run.json` and prints JSON after ALL tools finish. If any tool hangs or the process is killed, stdout will be empty. Always fall back to scanning the filesystem.
 
-1. **If the Bash call itself timed out** (no JSON output): Tell the user "Counselors timed out after 8 minutes. Try with fewer agents or check `counselors doctor`." **Stop here.**
+**Step 1: Find the output directory.**
+```bash
+ls -dt ./agents/counselors/[slug]-*/ 2>/dev/null | head -1
+```
+If no directory found, the CLI failed before dispatching. Tell the user and suggest `counselors doctor`. **Stop.**
 
-2. **Parse the JSON manifest** from stdout and classify each tool:
-   - `success` with `wordCount > 0` — genuine success
-   - `timeout` — tool exceeded its timeout
-   - `error` or non-zero `exitCode` — tool crashed
-   - `success` with `wordCount: 0` — **silent failure** (treat as error; read its `stderrFile` for the real error)
+**Step 2: Check for `run.json` (happy path).**
+If `run.json` exists, parse it:
+- `status: "success"` with `wordCount > 0` — genuine success
+- `status: "timeout"` — tool hit its timeout
+- `status: "error"` — tool crashed
+- `status: "success"` with `wordCount: 0` — **silent failure** (read `.stderr`)
 
-3. **If ALL tools failed**: Report each failure with the first 3 lines of its `stderrFile`. Suggest running `counselors doctor`. **Stop here — do not proceed to synthesis.**
+**Step 3: If NO `run.json`, scan for individual files.**
+For each expected tool, check if `{tool-id}.md` exists and has size > 0. Check `{tool-id}.stderr` for error details.
 
-4. **If SOME tools failed**: Note failures in one line (e.g. "amp-smart failed (402 — needs paid credits), codex timed out — continuing with 2 of 4 responses") and proceed with successful responses only.
-
-5. **Read each successful agent's response** from the `outputFile` path in the manifest. Skip failed agents entirely.
+**Step 4: Report to user.**
+- **All tools produced output:** Proceed to Phase 6.
+- **Some tools produced output:** Tell the user which failed and why, then ask: "Continue with [N] of [M] responses, or retry?"
+- **Zero tools produced output:** Report errors. Suggest `counselors doctor`. **Stop.**
 
 ---
 
@@ -174,8 +183,9 @@ After presenting the synthesis, ask the user what they'd like to address. Offer 
 
 - **counselors not installed**: Tell the user to install it (`npm install -g counselors`)
 - **No tools configured**: Tell the user to run `counselors init` or `counselors add`
-- **Bash timeout (no JSON output)**: The entire run exceeded the 8-minute ceiling. Tell the user and stop — do not wait or retry.
-- **Single agent fails**: Note it in the synthesis, continue with remaining successful agents.
-- **Silent failure** (`status: "success"` but `wordCount: 0`): Read the agent's `.stderr` file. Common causes: expired API key, 402 payment required, rate limit. Report the actual error to the user.
-- **All agents fail**: Report the specific error from each agent's stderr file. Suggest `counselors doctor`. Do NOT proceed to synthesis with zero successful responses.
-- **Never wait indefinitely**: If something seems stuck, the 8-minute Bash timeout will catch it. Do not add sleep/retry loops.
+- **No output directory created**: CLI failed before dispatching (bad config, missing binary). Check stderr from the Bash call.
+- **Output directory exists but no `run.json`**: CLI was killed before all tools finished. Scan for individual `.md` files — completed tools will have written their output. This is the most common partial-failure mode.
+- **Silent failure** (`status: "success"` but `wordCount: 0`, or `.md` file is 0 bytes): Read the `.stderr` file. Common causes: expired API key, 402 payment required, rate limit.
+- **Single agent fails**: Note it, ask user whether to continue with remaining responses or retry.
+- **All agents fail**: Report each error from `.stderr` files. Suggest `counselors doctor`. Do NOT proceed to synthesis.
+- **Never wait indefinitely**: The 8-minute Bash timeout is the hard ceiling. Do not add sleep/retry loops.
