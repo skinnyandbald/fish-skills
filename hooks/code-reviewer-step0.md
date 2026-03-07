@@ -6,7 +6,7 @@ Before reviewing any code, search for past solutions and patterns relevant to th
 
 1. **Compound Engineering solutions** (`docs/solutions/`):
    ```bash
-   ls docs/solutions/ 2>/dev/null && grep -r "" docs/solutions/ --include="*.md" -l
+   find docs/solutions/ -type f -name "*.md" 2>/dev/null
    ```
    Read any files whose topic overlaps with the modules/patterns being changed.
 
