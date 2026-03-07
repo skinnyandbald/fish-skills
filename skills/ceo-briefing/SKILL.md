@@ -1,6 +1,6 @@
 ---
 name: ceo-briefing
-description: Research any topic and produce a structured executive briefing optimized for rapid CEO decision-making.
+description: "Research any topic and produce a structured executive briefing optimized for rapid CEO decision-making."
 ---
 
 <objective>

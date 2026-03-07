@@ -1,6 +1,6 @@
 ---
 name: capture-learning
-description: Capture comprehensive problem-solving narratives from work sessions, documenting the journey of discovery
+description: "Capture comprehensive problem-solving narratives from work sessions, documenting the journey of discovery"
 ---
 
 # Capture Learning

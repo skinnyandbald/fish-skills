@@ -1,6 +1,6 @@
 ---
 name: interview-me
-description: Socratic thinking partner that refines half-baked ideas into clear product or technical specifications through iterative questioning. Use when you have a vague concept, feature idea, or problem statement and need structured clarification before building.
+description: "Socratic thinking partner that refines half-baked ideas into clear product or technical specifications through iterative questioning. Use when you have a vague concept, feature idea, or problem statement and need structured clarification before building."
 ---
 
 # Interview Me

@@ -1,6 +1,6 @@
 ---
 name: tests-new
-description: Reviews the feature you just built and adds missing test coverage. Focuses on behavior that matters — not coverage metrics. Use after completing a feature to identify untested code paths, edge cases, and risk areas.
+description: "Reviews the feature you just built and adds missing test coverage. Focuses on behavior that matters — not coverage metrics. Use after completing a feature to identify untested code paths, edge cases, and risk areas."
 ---
 
 # New Tests for Recent Work

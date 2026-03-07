@@ -1,6 +1,6 @@
 ---
 name: audit-claude-md
-description: Audit any project's CLAUDE.md (or AGENTS.md) against best practices and score its effectiveness. Use when reviewing a client's AI development setup, onboarding a new codebase, or improving your own CLAUDE.md. Triggers on requests like "audit my CLAUDE.md", "score my AI setup", "review my project context file", or "how good is my CLAUDE.md".
+description: "Audit any project's CLAUDE.md (or AGENTS.md) against best practices and score its effectiveness. Use when reviewing a client's AI development setup, onboarding a new codebase, or improving your own CLAUDE.md. Triggers on requests like \"audit my CLAUDE.md\", \"score my AI setup\", \"review my project context file\", or \"how good is my CLAUDE.md\"."
 ---
 
 # CLAUDE.md Audit

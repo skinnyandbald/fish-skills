@@ -1,6 +1,6 @@
 ---
 name: eos-scorecard-autopull
-description: Enhanced scorecard entry with auto-pull from daily L10 meetings, Attio CRM, Google Calendar, Gmail, and filesystem. Walks through each metric one at a time with pre-populated suggestions for interactive confirmation.
+description: "Enhanced scorecard entry with auto-pull from daily L10 meetings, Attio CRM, Google Calendar, Gmail, and filesystem. Walks through each metric one at a time with pre-populated suggestions for interactive confirmation."
 file-access: [02_Areas/eos/data/scorecard/, 02_Areas/eos/data/meetings/l10/, 02_Areas/content-creation/2 published/]
 tools-used: [Read, Write, Glob, Grep, Bash, AskUserQuestion, mcp__attio-mcp__search_records, mcp__attio-mcp__search_records_advanced, mcp__attio-mcp__get_record_details, mcp__claude_ai_Google_Calendar__gcal_list_events, mcp__claude_ai_Gmail__gmail_search_messages, mcp__claude_ai_Gmail__gmail_read_message]
 ---

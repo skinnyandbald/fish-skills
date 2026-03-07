@@ -1,6 +1,6 @@
 ---
 name: verify-worktree-plugins
-description: Verify worktree plugin patches are intact after plugin updates. Checks compound-engineering and superpowers skills for Claude Code launch instructions.
+description: "Verify worktree plugin patches are intact after plugin updates. Checks compound-engineering and superpowers skills for Claude Code launch instructions."
 ---
 
 # Verify Worktree Plugin Patches

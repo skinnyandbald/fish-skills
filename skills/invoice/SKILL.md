@@ -1,6 +1,6 @@
 ---
 name: invoice
-description: Generate professional PDF invoices from client billing data. Supports fixed-fee and hourly billing with auto-incrementing invoice IDs. Pass client name and line items as args, or invoke interactively.
+description: "Generate professional PDF invoices from client billing data. Supports fixed-fee and hourly billing with auto-incrementing invoice IDs. Pass client name and line items as args, or invoke interactively."
 ---
 
 <objective>
