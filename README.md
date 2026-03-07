@@ -286,6 +286,8 @@ Capture problem-solving narratives with a 6-element structure:
 
 Saves to `<project-root>/.claude/learnings/YYYY-MM-DD-problem-description.md`. Falls back to `~/.claude/learnings/` if not in a git repo. Trigger with phrases like "Great job, log this" or "Capture this learning".
 
+After saving, optionally promotes the learning to `~/.claude/learnings/global-patterns.md` — a cross-project knowledge store that the Superpowers code-reviewer checks on every review (see [Hooks](#hooks)).
+
 **Setup:** Add this to your project's `CLAUDE.md` so Claude reads past learnings and captures new ones:
 
 ```markdown
@@ -381,6 +383,59 @@ This runs one deep review pass on finalized code -- right before other humans se
 **Why not auto-trigger on every stop?** We tested a Stop hook that auto-ran `/simplify` after every code change. The tradeoffs weren't worth it: 3 agents spinning up per stop is expensive, it interrupts flow during iteration, and it reviews half-finished code. The PR boundary is the natural review point.
 
 **On-demand during a branch:** Run `/simplify` manually whenever you've completed a significant chunk of work and want a sanity check. No need to wait for PR time if you want earlier feedback.
+
+## Hooks
+
+The `hooks/` directory contains session-start automation that keeps your Claude Code setup durable across plugin updates.
+
+### session-start-hook.ts
+
+Runs on every session start. Currently patches the [Superpowers](https://github.com/obra/superpowers) code-reviewer template with a **knowledge-lookup Step 0** that checks `docs/solutions/` (Compound Engineering), `.claude/learnings/` (capture-learning), and `~/.claude/learnings/global-patterns.md` (cross-project patterns) before reviewing any code.
+
+**Why a hook instead of a direct file edit:** Superpowers stores its templates in versioned directories (`~/.claude/plugins/cache/superpowers-marketplace/superpowers/4.3.1/`). Each plugin update creates a new versioned directory with fresh files, silently dropping any direct edits. The session-start hook re-applies the patch on every session, so it survives updates automatically.
+
+**Installation:**
+
+```sh
+# Copy hook to your Claude Code hooks directory
+cp hooks/session-start-hook.ts ~/.claude/hooks/session-start-hook.ts
+
+# Copy the Step 0 delta (canonical content that gets injected)
+cp hooks/code-reviewer-step0.md ~/.claude/code-reviewer-step0.md
+
+# Create the global cross-project patterns file
+mkdir -p ~/.claude/learnings
+touch ~/.claude/learnings/global-patterns.md
+```
+
+Then register the hook in `~/.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/YOUR_USERNAME/.bun/bin/bun ~/.claude/hooks/session-start-hook.ts"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+If you already have a `session-start-hook.ts`, add just the `patchCodeReviewer()` function and its call from `main()` to your existing file.
+
+### code-reviewer-step0.md
+
+The canonical content injected into the Superpowers code-reviewer template. Edit this file to change what the knowledge-lookup step does — the next session will apply the updated content to whatever plugin version is active.
+
+### Cross-project patterns
+
+After solving a non-trivial bug, run `/capture-learning`. At the end it asks "Promote to global cross-project patterns?" — say yes and it appends a structured entry to `~/.claude/learnings/global-patterns.md`. The session-start hook ensures every future code review (in any project) sees these patterns.
 
 ## Recommended Plugins
 
