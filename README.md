@@ -169,7 +169,7 @@ Unified plan validation skill — runs before writing code to catch gaps, orderi
 2. Detects/caches the project stack to `.claude/stack-profile.md`
 3. Pulls current library docs via Context7 (staleness safeguard)
 4. Builds a structured rubric prompt
-5. Dispatches to counselors (default: `claude-opus`, `codex`, `gemini`, `amp-smart`)
+5. Dispatches to counselors (default: `claude-opus`, `gemini-3-pro-preview`, `amp-smart`, `codex-5.4-high`)
 6. Synthesizes findings into Critical/High/Medium/Low action items
 
 ```
