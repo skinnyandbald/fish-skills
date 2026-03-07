@@ -418,7 +418,7 @@ Then register the hook in `~/.claude/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/YOUR_USERNAME/.bun/bin/bun ~/.claude/hooks/session-start-hook.ts"
+            "command": "bun ~/.claude/hooks/session-start-hook.ts"
           }
         ]
       }
@@ -426,6 +426,8 @@ Then register the hook in `~/.claude/settings.json`:
   }
 }
 ```
+
+> If `bun` is not in your PATH, use the absolute path from `which bun` (e.g. `/Users/you/.bun/bin/bun`).
 
 If you already have a `session-start-hook.ts`, add just the `patchCodeReviewer()` function and its call from `main()` to your existing file.
 
