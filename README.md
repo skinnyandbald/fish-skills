@@ -95,7 +95,7 @@ Most skills work out of the box, but some require additional setup:
 | Claude Code v2.1.63+ | simplify-parallel | Built-in `/simplify` provides the review model; `/simplify-parallel` extends it to full-codebase sweeps |
 | [Fireflies MCP](https://www.fireflies.ai/) | process-meeting-notes | Configure in Claude Code MCP settings |
 
-Skills not listed above (setup-ai, git-worktree, capture-learning, last30days, web-design-guidelines, vercel-react-best-practices, prepare-plan-for-review, analyze-plan-feedback, simplify-parallel) work with no additional setup beyond the dependencies above.
+Skills not listed above (setup-ai, git-worktree, capture-learning, last30days, web-design-guidelines, vercel-react-best-practices, critic-review, simplify-parallel) work with no additional setup beyond the dependencies above.
 
 ## Quick Start
 
@@ -134,8 +134,7 @@ Each skill runs in Claude Code's context with access to your codebase, git histo
 
 | Skill | Command | Description |
 |-------|---------|-------------|
-| **prepare-plan-for-review** | `/prepare-plan-for-review [path]` | Generate a copyable peer review prompt for Cursor's multi-model agent flow |
-| **analyze-plan-feedback** | `/analyze-plan-feedback [path] [N]` | Interactively collect and analyze peer review feedback from N reviewers |
+| **critic-review** | `/critic-review [path] [--dry-run] [--feedback="..."] [--models=x,y]` | Unified plan review: stack detection, Context7 staleness scan, multi-model counselors dispatch, and prioritized triage |
 
 ### EOS Operating System
 
@@ -161,31 +160,33 @@ npx skills add skinnyandbald/fish-skills@eos  # install the /eos router
 
 ## Skill Details
 
-### prepare-plan-for-review
+### critic-review
 
-Generates a **copyable prompt** for multi-model peer review of an implementation plan. Resolves the plan file path to an absolute path, substitutes it into the prompt template, and outputs a fenced code block you can paste into Cursor's multi-model agent flow.
+Unified plan validation skill — runs before writing code to catch gaps, ordering issues, and staleness risks.
 
-```
-/prepare-plan-for-review docs/plans/my-feature.md
-/prepare-plan-for-review  # prompts for plan path
-```
-
-Output: A ready-to-copy TDD analysis prompt with the plan file path baked in.
-
-On first run, auto-detects the project's tech stack and caches it to `.claude/stack-profile.md`. Subsequent runs use the cache instantly. To refresh after a stack change, delete `.claude/stack-profile.md` and run the command again — it'll re-detect automatically.
-
-### analyze-plan-feedback
-
-Interactively collect and analyze peer review feedback from multiple reviewers. Asks for each reviewer's feedback one at a time, then categorizes as Critical/High/Medium/Low, resolves conflicts, and creates an ordered action plan.
+**Full pipeline (default):**
+1. Auto-detects the plan file (or accept a path argument)
+2. Detects/caches the project stack to `.claude/stack-profile.md`
+3. Pulls current library docs via Context7 (staleness safeguard)
+4. Builds a structured rubric prompt
+5. Dispatches to counselors (default: `claude-opus`, `codex`, `gemini`, `amp-smart`)
+6. Synthesizes findings into Critical/High/Medium/Low action items
 
 ```
-/analyze-plan-feedback docs/plans/my-feature.md    # 3 reviewers (default)
-/analyze-plan-feedback docs/plans/my-feature.md 2  # 2 reviewers
-/analyze-plan-feedback 2                            # auto-detect plan, 2 reviewers
-/analyze-plan-feedback                              # auto-detect plan, 3 reviewers
+/critic-review                                # auto-detect plan, full pipeline
+/critic-review docs/plans/my-feature.md       # explicit path
+/critic-review docs/plans/my-feature.md --dry-run          # copyable prompt only
+/critic-review --models=gemini,codex          # subset of models
+/critic-review --model=gemini                 # single model
+/critic-review --feedback="Reviewer said X"  # analyze external input, skip dispatch
+/critic-review --feedback-file=review.txt    # analyze feedback from file
 ```
 
-When no plan path is given, it auto-detects from conversation context, recent git changes, or the most recently modified file in `docs/plans/`.
+**`--dry-run`:** generates the full enriched prompt as a fenced code block — ready to paste into Cursor, Claude.ai, or any multi-model interface. No API calls made.
+
+**`--feedback` / `--feedback-file`:** skip stack detection, Context7, and counselors dispatch. Jump straight to the synthesis phase with the provided reviewer text as input.
+
+On first run, auto-detects the project's tech stack and caches it to `.claude/stack-profile.md`. Subsequent runs use the cache. To refresh after a stack change, delete `.claude/stack-profile.md`.
 
 Output: Priority-classified action items with effort estimates and a reviewer agreement matrix.
 
@@ -195,14 +196,14 @@ Output: Priority-classified action items with effort estimates and a reviewer ag
 # 1. Write a plan
 /plan "Add transcript import feature"
 
-# 2. Get a copyable peer review prompt
-/prepare-plan-for-review docs/plans/transcript-import.md
-# → paste into Gemini, ChatGPT, Claude web
+# 2. Run unified review (auto-dispatches to multiple models)
+/critic-review docs/plans/transcript-import.md
 
-# 3. Analyze the feedback interactively (auto-detects plan)
-/analyze-plan-feedback
+# — or, if you want to review manually in Cursor —
+/critic-review docs/plans/transcript-import.md --dry-run
+# → copy prompt → paste into Cursor → run
 
-# 4. Apply the prioritized improvements to your plan
+# 3. Apply the prioritized improvements to your plan
 ```
 
 ### pr-resolution
@@ -409,11 +410,11 @@ After installing, start a new Claude Code session. Both plugins auto-register th
 ```
 fish-skills/
 ├── skills/                          # All skills (directories with SKILL.md)
-│   ├── analyze-plan-feedback/       # Peer review feedback analysis
-│   │   └── SKILL.md
 │   ├── capture-learning/            # Problem-solving narrative capture
 │   │   ├── SKILL.md
 │   │   └── scripts/
+│   ├── critic-review/               # Unified plan review (stack, Context7, counselors dispatch)
+│   │   └── SKILL.md
 │   ├── eos/                         # EOS operating system router (requires skinnyandbald/ceos)
 │   │   └── SKILL.md
 │   ├── handoff/                     # Session context transfer
@@ -427,8 +428,6 @@ fish-skills/
 │   │   ├── SKILL.md
 │   │   ├── bin/
 │   │   └── references/
-│   ├── prepare-plan-for-review/     # Multi-model plan peer review prompt
-│   │   └── SKILL.md
 │   ├── process-meeting-notes/       # Fireflies → GitHub issues
 │   │   ├── SKILL.md
 │   │   ├── references/
