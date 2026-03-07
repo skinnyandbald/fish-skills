@@ -199,19 +199,17 @@ This learning applies to:
         const category = await prompt('📂 Category (e.g. Supabase RLS, TypeScript, Auth, API): ');
         const applies = await prompt('🏷️  Applies to (e.g. Next.js, Supabase, tRPC): ');
         const projectName = getProjectName();
-        const now2 = new Date();
-        const dateStr2 = `${now2.getFullYear()}-${String(now2.getMonth()+1).padStart(2,'0')}-${String(now2.getDate()).padStart(2,'0')}`;
+        const sanitize = (str: string) => str.replace(/([\\\`*_{}[\]()#+\-.!])/g, '\\$1');
 
-        const globalEntry = `
-## [${category}] ${problem}
-**Learned from:** ${projectName} (${dateStr2})
-**Applies to:** ${applies}
+        const globalEntry = `## [${sanitize(category)}] ${sanitize(problem)}
+**Learned from:** ${sanitize(projectName)} (${dateStr})
+**Applies to:** ${sanitize(applies)}
 
-${takeaway}
+${sanitize(takeaway)}
 
-**Reality:** ${actualReality}
+**Reality:** ${sanitize(actualReality)}
 
-**Watch for:** Assuming ${initialAssumption.substring(0, 120)}
+**Watch for:** Assuming ${sanitize(initialAssumption).substring(0, 120)}
 
 ---
 `;
