@@ -56,7 +56,7 @@ Output the report in this format:
 **Main file:** [path] ([line count] lines)
 **Linked files:** [count and paths]
 
-## Overall Score: [X]/96 — [Tier Name]
+## Overall Score: [X]/103 — [Tier Name]
 
 [1-2 sentence summary of the file's strengths and biggest gap]
 
@@ -74,13 +74,13 @@ Output the report in this format:
 
 **Top recommendation:** [...]
 
-## Behavior Configuration — [X]/25
+## Behavior Configuration — [X]/29
 
 [Table per rubric format]
 
 **Top recommendation:** [...]
 
-## Architecture — [X]/19
+## Architecture — [X]/22
 
 [Table per rubric format]
 
@@ -106,7 +106,7 @@ Output the report in this format:
 2. **[Second action]** — [why and what to do] (+[X] points)
 3. **[Third action]** — [why and what to do] (+[X] points)
 
-**Potential score after fixes:** [X]/96 — [New Tier Name]
+**Potential score after fixes:** [X]/103 — [New Tier Name]
 ```
 
 ## Phase 5: Offer Next Steps

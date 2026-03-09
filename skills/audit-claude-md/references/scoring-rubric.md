@@ -1,6 +1,6 @@
-# CLAUDE.md Scoring Rubric (v3)
+# CLAUDE.md Scoring Rubric (v4)
 
-Revised March 2026. Adds section coherence and agent compliance phrasing checks — inspired by integration analysis patterns that catch contradictions and phrasing that agents reliably follow. Based on "Evaluating AGENTS.md" (ETH Zurich, ICML 2026). Key insight: agents discover most project info from existing files (README, package.json, source code). Context files are highest-value for non-standard tools, behavioral constraints, and project-specific footguns.
+Revised March 2026. v4 adds quality gates workflow and code-enforced vs prompt-enforced separation — derived from production observation of effective CLAUDE.md files. v3 added section coherence and agent compliance phrasing. Based on "Evaluating AGENTS.md" (ETH Zurich, ICML 2026). Key insight: agents discover most project info from existing files (README, package.json, source code). Context files are highest-value for non-standard tools, behavioral constraints, and project-specific footguns.
 
 Reference implementation: See [elite-example.md](elite-example.md) for a fully annotated example.
 
@@ -24,7 +24,7 @@ Reference implementation: See [elite-example.md](elite-example.md) for a fully a
 | **Git workflow** | 3 | Branch strategy, commit message format. Agents infer much from .github/ and commit history. Score deviations from conventional patterns. |
 | **Path/import conventions** | 3 | Aliases, relative vs absolute, barrel exports stance |
 
-### Behavior Configuration (25 points)
+### Behavior Configuration (29 points)
 
 | Check | Points | What to Look For |
 |-------|--------|------------------|
@@ -32,9 +32,10 @@ Reference implementation: See [elite-example.md](elite-example.md) for a fully a
 | **Bug fix process** | 5 | TDD-based steps: write failing test -> verify fail -> fix -> verify pass |
 | **Background processes** | 5 | Instruction to run tests/builds in background, command table |
 | **Debugging guardrails** | 5 | Iteration limits, "stop and reconsider" rules, library-first approach. Prevents expensive debugging loops -- research shows context files increase inference cost 14-22% when agents follow unnecessary instructions. |
+| **Quality gates workflow** | 4 | Canonical step sequence from implementation through review/validation to commit. Defined ordering that prevents skipping steps (e.g., plan→implement→test→review→simplify→ship). Scores the overarching development lifecycle, NOT the TDD fix cycle (scored separately under Bug fix process). Higher value when steps reference specific tools or skills. Partial credit for informal "before committing, run X" without defined sequence. Zero credit for quality gates that list steps without connecting them to specific tools or commands. |
 | **Agent compliance phrasing** | 3 | Directives use patterns agents reliably follow: XML-style named sections (`<avoid_over_engineering>`), tables for structured choices, bold/caps for critical rules ("DO NOT", "CRITICAL"). Prose paragraphs are weaker than structured formats. Partial credit for some structure but inconsistent phrasing. |
 
-### Architecture (19 points)
+### Architecture (22 points)
 
 | Check | Points | What to Look For |
 |-------|--------|------------------|
@@ -42,6 +43,7 @@ Reference implementation: See [elite-example.md](elite-example.md) for a fully a
 | **Conciseness (under 200 lines)** | 6 | Main CLAUDE.md is lean; detail lives in linked files. Research shows redundant context increases inference cost 14-22% with no performance gain. Penalize files that restate info from README or package.json. |
 | **Critical warnings** | 5 | Project-specific footguns called out prominently (bold, caps, or dedicated section) |
 | **Section coherence** | 3 | No contradictions between directives. Sections reinforce rather than conflict (e.g., "always run tests" + session close checklist that includes testing). Ordering matches agent processing priority -- behavior rules before reference material. Partial credit if mostly coherent but with minor inconsistencies. |
+| **Code-enforced vs prompt-enforced separation** | 3 | Explicitly states which rules are enforced by hooks/CI/linting (and therefore don't need CLAUDE.md compliance) vs which require prompt-level directives. Scores boundary clarity only, NOT whether hooks themselves are comprehensive. Reduces redundancy per ETH Zurich finding that restated information adds 14-22% inference cost. Partial credit for mentioning hooks exist without clarifying which rules they cover. |
 
 ### Memory & Learning (10 points)
 
@@ -61,13 +63,15 @@ Reference implementation: See [elite-example.md](elite-example.md) for a fully a
 
 ## Scoring Tiers
 
+<!-- Thresholds scaled from v3 (96pt) by factor 103/96 ≈ 1.073, rounded to nearest integer. -->
+
 | Score | Tier | Assessment |
 |-------|------|------------|
-| 0-21 | Bare Minimum | AI is flying blind. Will generate generic code that doesn't match your project. |
-| 22-43 | Functional | Covers basics but AI will still produce inconsistent code and miss conventions. |
-| 44-64 | Strong | AI produces code matching project conventions. Most common issues prevented. |
-| 65-80 | Advanced | Full behavior configuration. AI works like a disciplined team member. |
-| 81-96 | Elite | Institutional memory, parallel workflows, continuous learning. The AI gets better over time. |
+| 0-23 | Bare Minimum | AI is flying blind. Will generate generic code that doesn't match your project. |
+| 24-46 | Functional | Covers basics but AI will still produce inconsistent code and miss conventions. |
+| 47-69 | Strong | AI produces code matching project conventions. Most common issues prevented. |
+| 70-86 | Advanced | Full behavior configuration. AI works like a disciplined team member. |
+| 87-103 | Elite | Institutional memory, parallel workflows, continuous learning. The AI gets better over time. |
 
 ## Report Format
 
@@ -95,6 +99,9 @@ For each category, report:
 - Non-standard tools explicitly called out with usage instructions
 - No contradictions between sections (coherent directives)
 - Consistent phrasing style across directives (all structured, not mix of prose and tables)
+- Numbered/ordered workflow steps with specific tool references (quality gates)
+- Explicit "enforced by hooks, not CLAUDE.md" callouts
+- Explicit enforcement mechanism labels (e.g., "enforced by CI", "enforced by pre-commit hook")
 
 ### Red Flags
 - Over 300 lines with no linked files (context window hog -- adds 14-22% inference cost)
@@ -106,6 +113,8 @@ For each category, report:
 - No commands section (AI can't run your project)
 - Copy-pasted from a template without customization (generic headings with no content)
 - LLM-generated content that reads like an `/init` dump (usually net negative per research)
+- CLAUDE.md restates rules already enforced by pre-commit hooks or CI (redundancy -- adds cost without benefit)
+- Quality gates defined but not connected to specific tools or commands (ceremony without substance)
 
 ### Partial Credit Signals
 - Has a section but it's vague ("follow best practices")
@@ -126,3 +135,5 @@ This rubric is informed by "Evaluating AGENTS.md: Are Repository-Level Context F
 **Implication:** Context files should document what agents CANNOT discover (behavioral constraints, non-standard tools, footguns) rather than what they CAN discover (tech stack, project structure, standard config).
 
 **Limitations:** Study was Python-only, measured only task resolution rate (not code quality/style/security), no statistical significance testing. Findings are directionally strong but should not be treated as definitive for all contexts.
+
+**Production-derived items (v4):** Quality gates workflow and code-enforced vs prompt-enforced separation are derived from observing patterns in effective production CLAUDE.md files, not from the ETH Zurich study. The study's findings about redundancy cost (14-22%) support the rationale for code-vs-prompt separation.
