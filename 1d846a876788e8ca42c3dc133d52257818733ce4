@@ -1,0 +1,23 @@
+skills/audit-claude-md/references/elite-example.md
+  ea373099668ef901 3,14,18,21-22,24-25,28,30,76,103-104,107,115,162
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "1d846a876788e8ca42c3dc133d52257818733ce4",
+  "prompts": {
+    "ea373099668ef901": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "033e33fc-b5af-48a4-9e4b-ddf4d351c3f3",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Ben Fisher <ben@skinnyandbald.com>",
+      "messages": [],
+      "total_additions": 15,
+      "total_deletions": 15,
+      "accepted_lines": 15,
+      "overriden_lines": 0
+    }
+  }
+}
