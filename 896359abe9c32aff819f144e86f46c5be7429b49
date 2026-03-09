@@ -1,0 +1,27 @@
+skills/audit-claude-md/references/scoring-rubric.md
+  ea373099668ef901 1,3,27,35,38,46,66-67,70-74,102-104,116-117,138-139
+skills/audit-claude-md/SKILL.md
+  ea373099668ef901 59,77,83,109
+skills/audit-claude-md/references/elite-example.md
+  ea373099668ef901 3,12,14,16-30,37,53,60,62,66-67,72,74-78,84,87,91-94,96-97,102-104,107,111,113,115,119,121,123-124,127-129,131-143,146-148,150-155,162,164,166,168,170,172,174
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "896359abe9c32aff819f144e86f46c5be7429b49",
+  "prompts": {
+    "ea373099668ef901": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "033e33fc-b5af-48a4-9e4b-ddf4d351c3f3",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Ben Fisher <ben@skinnyandbald.com>",
+      "messages": [],
+      "total_additions": 281,
+      "total_deletions": 125,
+      "accepted_lines": 247,
+      "overriden_lines": 0
+    }
+  }
+}
