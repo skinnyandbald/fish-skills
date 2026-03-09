@@ -1,6 +1,6 @@
 # Elite CLAUDE.md Example
 
-This is a reference example of a high-scoring CLAUDE.md. Anonymized from a production Next.js/tRPC/Supabase project. Use this as a comparison point when auditing or as a template for building a new CLAUDE.md.
+This is a reference example of a high-scoring CLAUDE.md from a production Next.js/tRPC/Supabase project (product name anonymized). Use this as a comparison point when auditing or as a template for building a new CLAUDE.md.
 
 ---
 
@@ -11,23 +11,23 @@ This is a reference example of a high-scoring CLAUDE.md. Anonymized from a produ
 
 [ProjectName] is a platform for [what it does] built for [who uses it]. Built with Next.js 16, React 19, tRPC, and Supabase.
 
-**Stack:** Next.js 16 (App Router), React 19, TypeScript 5.9 (strict), Tailwind CSS 4 + Radix UI, tRPC 11 + TanStack Query, Zod 4, Supabase (PostgreSQL), Biome, Vitest + agent-browser + Testing Library, Sentry, [BackgroundJobSystem]. Path alias: `~/` for `src/` imports, relative for same-directory.
+**Stack:** Next.js 16 (App Router), React 19, TypeScript 5.9 (strict), Tailwind CSS 4 + Radix UI, tRPC 11 + TanStack Query, Zod 4, Supabase (PostgreSQL), Biome, Vitest + agent-browser + Testing Library, Sentry, Inngest. Path alias: `~/` for `src/` imports, relative for same-directory.
 
 ## Task Management (CRITICAL)
 
-**Always use [task-cli]** (`task create`, `task update`, `task close`, `task sync`) for all task tracking. **Never** use TodoWrite, TaskCreate, or markdown files.
+**Always use Beads** (`bd create`, `bd update`, `bd close`, `bd sync`) for all task tracking. **Never** use TodoWrite, TaskCreate, or markdown files.
 
 ```bash
-task ready                              # Find unblocked tasks
-task update <id> --status=in_progress   # Claim task
+bd ready                                # Find unblocked tasks
+bd update <id> --status=in_progress     # Claim task
 # ... implement & test ...
-task close <id>                         # Complete task
-task sync                               # Sync with git (run at session end)
+bd close <id>                           # Complete task
+bd sync                                 # Sync with git (run at session end)
 ```
 
-Task data is committed to git. **Do NOT add task data directory to `.gitignore`** — breaks sync.
+Beads data (`.beads/issues.jsonl`, `.beads/metadata.json`) is committed to git. **Do NOT add `.beads` to root `.gitignore`** — breaks sync.
 
-**Session Close:** run Quality Gates → `git status` → `git add` → `task sync` → `git commit` → `git push`.
+**Session Close:** run Quality Gates → `git status` → `git add` → `bd sync` → `git commit` → `git push`.
 
 ## Behavior Directives
 
@@ -73,7 +73,7 @@ After 3+ failed debugging iterations on the same problem, stop: rethink, simplif
 
 TDD is mandatory. Write a failing test FIRST, verify it fails, fix minimally, verify it passes. **Never fix first then write a test.**
 - Unit: Vitest. E2E: agent-browser (NOT Playwright)
-- E2E files: `e2e/*.sh`, run with `npm run test:e2e:agent:<name>`. Semantic selectors via `npx agent-browser find`
+- E2E files: `e2e/agent-browser/*.sh`, run with `npm run test:e2e:agent:<name>`. Semantic selectors via `npx agent-browser find`
 - Coverage minimum: 80% for new code
 - Type safety and `noExplicitAny` are enforced by hooks (Biome + typecheck pre-commit) — do not rely on CLAUDE.md for these
 
@@ -100,11 +100,11 @@ TDD is mandatory. Write a failing test FIRST, verify it fails, fix minimally, ve
 
 ```bash
 npm run dev | build | lint | lint:fix | format | typecheck | test | test:run | test:e2e
-npx db-migrate generate     # Regenerate client after schema changes
-npx db-migrate deploy       # Apply migrations
+npx prisma generate      # Regenerate client after schema changes
+npx @dotenvx/dotenvx run -- npx prisma migrate deploy  # Apply migrations
 ```
 
-**DB Migrations (CRITICAL):** After ANY schema change, run BOTH `db-migrate generate` AND `db-migrate deploy`. The app will crash if out of sync. When updating `@biomejs/biome`, also update `.github/workflows/ci.yml`.
+**Prisma (CRITICAL):** After ANY `schema.prisma` change, run BOTH `prisma generate` AND `prisma migrate deploy`. The app will crash if out of sync. When updating `@biomejs/biome`, also update `.github/workflows/ci.yml`.
 
 ## Learnings
 
@@ -112,7 +112,7 @@ Check `.claude/learnings/` before starting work. After solving non-trivial debug
 
 ## Tools & MCPs
 
-Prefer CLI tools over MCPs: `gh` for GitHub, `npx db-migrate` for DB. User-level MCPs (episodic-memory, sequential-thinking) are fine.
+Prefer CLI tools over MCPs: `gh` for GitHub, `npx prisma` for DB. User-level MCPs (episodic-memory, sequential-thinking) are fine.
 
 ## Git Worktrees
 
@@ -159,7 +159,7 @@ These rules are enforced by pre-commit and Claude Code hooks — no CLAUDE.md co
 
 ## What Makes This Elite
 
-**Foundations (12/12):** Project overview 2/2 — concise description with audience. Tech stack deviations 2/2 — Biome as primary linter and [BackgroundJobSystem] are genuinely non-standard. Runnable commands 5/5 — full command set including DB migrations. Non-standard tooling 3/3 — [task-cli] with copy-paste commands, agent-browser for E2E, `db-migrate` with critical warning.
+**Foundations (12/12):** Project overview 2/2 — concise description with audience. Tech stack deviations 2/2 — Biome as primary linter and Inngest (background jobs) are genuinely non-standard. Runnable commands 5/5 — full command set including Prisma migrations with dotenvx wrapper. Non-standard tooling 3/3 — Beads (`bd`) with copy-paste commands, agent-browser for E2E, Prisma with critical warning.
 
 **Standards (14/14):** Convention deviations 3/3 — "Zod for input AND output", "NOT Playwright", "Sentry is mandatory." Testing approach 5/5 — TDD mandatory, Vitest + agent-browser, 80% coverage, E2E file locations. Git workflow 3/3 — conventional commits, pre-commit hooks, CI on PRs. Path/import conventions 3/3 — `~/` alias documented.
 
