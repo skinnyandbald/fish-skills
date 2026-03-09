@@ -1,0 +1,23 @@
+docs/plans/2026-03-09-audit-rubric-v4-elite-rewrite.md
+  ea373099668ef901 1-137
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "3f34d9327deda7a6ea303229c1c3ef0bbd59e019",
+  "prompts": {
+    "ea373099668ef901": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "033e33fc-b5af-48a4-9e4b-ddf4d351c3f3",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Ben Fisher <ben@skinnyandbald.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 137,
+      "overriden_lines": 0
+    }
+  }
+}
