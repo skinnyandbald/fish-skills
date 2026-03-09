@@ -1,6 +1,6 @@
 # Elite CLAUDE.md Example
 
-This is a reference example of a high-scoring CLAUDE.md (82/90). Derived from a production Next.js/tRPC/Supabase project. Use this as a comparison point when auditing or as a template for building a new CLAUDE.md.
+This is a reference example of a high-scoring CLAUDE.md (88/96). Derived from a production Next.js/tRPC/Supabase project. Use this as a comparison point when auditing or as a template for building a new CLAUDE.md.
 
 ---
 
@@ -153,14 +153,14 @@ cd .github/worktrees/<feature> && npm install && claude
 
 ## What Makes This Elite
 
-**Foundations (20/20):** Project overview, versioned tech stack, full commands, project structure via architecture guide.
+**Foundations (11/12):** Project overview 2/2, tech stack deviations 2/2 (Biome+ESLint dual linter and Turbopack are genuinely non-standard), full commands 5/5. (Lost 1 point: agent-browser mentioned but no usage instructions — non-standard tooling 2/3.)
 
-**Standards (18/18):** TypeScript strict mode, Biome+ESLint specified, TDD mandatory with 80% coverage, conventional commits, path aliases.
+**Standards (14/14):** Convention deviations documented ("no `any`", "Zod for input AND output"), TDD mandatory with 80% coverage, conventional commits with pre-commit hooks, `~/` path alias.
 
-**Behavior Configuration (16/18):** Named XML-style directives for over-engineering prevention, action bias, background processes with command table, TDD bug fix process, debugging guardrails. (Lost 2 points: could add more specific iteration limits.)
+**Behavior Configuration (24/25):** Named XML-style directives for over-engineering prevention, action bias, cleanup. Background processes with command table. TDD bug fix process with "DO NOT" emphasis. Agent compliance phrasing is exemplary — XML tags, tables, bold/caps throughout 3/3. (Lost 1 point: debugging guardrails 4/5 — has 3+ iteration rule but no explicit "stop and ask user" threshold.)
 
-**Architecture (14/14):** 9 linked guide files in `docs/claude/`, main file ~120 lines, critical warnings in bold/caps.
+**Architecture (19/19):** 8 linked guide files in `docs/claude/`, main file ~150 lines (under 200), critical warnings in bold/caps ("CRITICAL", "DO NOT", "IMPORTANT"). Full section coherence 3/3 — no contradictions, behavior directives appear before reference material.
 
-**Memory & Learning (7/7):** `.claude/learnings/` directory, explicit `/capture-learning` trigger after debugging.
+**Memory & Learning (10/10):** `.claude/learnings/` directory referenced, explicit `/capture-learning` trigger after debugging.
 
-**Advanced (7/13):** Frontend aesthetics rules, security guide linked, worktree workflow. (Lost points: no MCP configuration guidance, no explicit performance budgets.)
+**Advanced (10/16):** Frontend aesthetics rules 3/3, security guide linked 3/4 (full guide exists but no inline critical rules), worktree workflow with copy-paste block 4/4. (Lost 5 points: no MCP/tool configuration guidance 0/5.)
