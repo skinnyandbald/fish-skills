@@ -1,6 +1,6 @@
-# CLAUDE.md Scoring Rubric (v2)
+# CLAUDE.md Scoring Rubric (v3)
 
-Revised February 2026 based on "Evaluating AGENTS.md" (ETH Zurich, ICML 2026). Key insight: agents discover most project info from existing files (README, package.json, source code). Context files are highest-value for non-standard tools, behavioral constraints, and project-specific footguns.
+Revised March 2026. Adds section coherence and agent compliance phrasing checks — inspired by integration analysis patterns that catch contradictions and phrasing that agents reliably follow. Based on "Evaluating AGENTS.md" (ETH Zurich, ICML 2026). Key insight: agents discover most project info from existing files (README, package.json, source code). Context files are highest-value for non-standard tools, behavioral constraints, and project-specific footguns.
 
 Reference implementation: See [elite-example.md](elite-example.md) for a fully annotated example.
 
@@ -24,7 +24,7 @@ Reference implementation: See [elite-example.md](elite-example.md) for a fully a
 | **Git workflow** | 3 | Branch strategy, commit message format. Agents infer much from .github/ and commit history. Score deviations from conventional patterns. |
 | **Path/import conventions** | 3 | Aliases, relative vs absolute, barrel exports stance |
 
-### Behavior Configuration (22 points)
+### Behavior Configuration (25 points)
 
 | Check | Points | What to Look For |
 |-------|--------|------------------|
@@ -32,14 +32,16 @@ Reference implementation: See [elite-example.md](elite-example.md) for a fully a
 | **Bug fix process** | 5 | TDD-based steps: write failing test -> verify fail -> fix -> verify pass |
 | **Background processes** | 5 | Instruction to run tests/builds in background, command table |
 | **Debugging guardrails** | 5 | Iteration limits, "stop and reconsider" rules, library-first approach. Prevents expensive debugging loops -- research shows context files increase inference cost 14-22% when agents follow unnecessary instructions. |
+| **Agent compliance phrasing** | 3 | Directives use patterns agents reliably follow: XML-style named sections (`<avoid_over_engineering>`), tables for structured choices, bold/caps for critical rules ("DO NOT", "CRITICAL"). Prose paragraphs are weaker than structured formats. Partial credit for some structure but inconsistent phrasing. |
 
-### Architecture (16 points)
+### Architecture (19 points)
 
 | Check | Points | What to Look For |
 |-------|--------|------------------|
 | **Linked detailed guides** | 5 | `docs/claude/` or similar directory with topic-specific deep dives |
 | **Conciseness (under 200 lines)** | 6 | Main CLAUDE.md is lean; detail lives in linked files. Research shows redundant context increases inference cost 14-22% with no performance gain. Penalize files that restate info from README or package.json. |
 | **Critical warnings** | 5 | Project-specific footguns called out prominently (bold, caps, or dedicated section) |
+| **Section coherence** | 3 | No contradictions between directives. Sections reinforce rather than conflict (e.g., "always run tests" + session close checklist that includes testing). Ordering matches agent processing priority -- behavior rules before reference material. Partial credit if mostly coherent but with minor inconsistencies. |
 
 ### Memory & Learning (10 points)
 
@@ -61,11 +63,11 @@ Reference implementation: See [elite-example.md](elite-example.md) for a fully a
 
 | Score | Tier | Assessment |
 |-------|------|------------|
-| 0-20 | Bare Minimum | AI is flying blind. Will generate generic code that doesn't match your project. |
-| 21-40 | Functional | Covers basics but AI will still produce inconsistent code and miss conventions. |
-| 41-60 | Strong | AI produces code matching project conventions. Most common issues prevented. |
-| 61-75 | Advanced | Full behavior configuration. AI works like a disciplined team member. |
-| 76-90 | Elite | Institutional memory, parallel workflows, continuous learning. The AI gets better over time. |
+| 0-21 | Bare Minimum | AI is flying blind. Will generate generic code that doesn't match your project. |
+| 22-43 | Functional | Covers basics but AI will still produce inconsistent code and miss conventions. |
+| 44-64 | Strong | AI produces code matching project conventions. Most common issues prevented. |
+| 65-80 | Advanced | Full behavior configuration. AI works like a disciplined team member. |
+| 81-96 | Elite | Institutional memory, parallel workflows, continuous learning. The AI gets better over time. |
 
 ## Report Format
 
@@ -91,6 +93,8 @@ For each category, report:
 - "DO NOT" or "CRITICAL" markers for important rules
 - Documents DEVIATIONS from framework defaults (not standard config)
 - Non-standard tools explicitly called out with usage instructions
+- No contradictions between sections (coherent directives)
+- Consistent phrasing style across directives (all structured, not mix of prose and tables)
 
 ### Red Flags
 - Over 300 lines with no linked files (context window hog -- adds 14-22% inference cost)
@@ -98,6 +102,7 @@ For each category, report:
 - No testing section at all
 - Generic descriptions ("we use React") without explaining what's non-standard
 - No behavior directives (AI has no working-style guidance)
+- Contradictory sections (e.g., "always commit" in one place, "never auto-commit" in another)
 - No commands section (AI can't run your project)
 - Copy-pasted from a template without customization (generic headings with no content)
 - LLM-generated content that reads like an `/init` dump (usually net negative per research)
