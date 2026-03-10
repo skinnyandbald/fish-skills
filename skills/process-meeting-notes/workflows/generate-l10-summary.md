@@ -47,23 +47,23 @@ Use the L10 template and fill each section:
 - Rock Review (if quarterly goals mentioned)
 - Headlines (if news/announcements shared)
 
-## Step 4: Generate Accountability Table
+## Step 4: Generate Action Items Checklist
 
-The most critical part - create clear accountability:
+The most critical part - create clear accountability using **checkbox format**:
 
 ```markdown
-## New To-Dos (Commitments Made)
+## Action Items
 
-| To-Do | Owner | Due Date | GitHub Issue |
-|-------|-------|----------|--------------|
-| [Action] | [Single Person] | [Date] | [#123](url) |
+- [ ] Specific action item description -- **Owner Name** (2026-03-15)
+- [ ] Another action item -- **Other Person** (before next call)
 ```
 
 **Rules:**
-- Every to-do has ONE owner (not "team")
-- Dates are specific (not "ASAP" or "soon")
-- Link to GitHub issues if they exist
-- Default deadline: "Before next meeting"
+- **Always use `- [ ]` checkbox format** — never tables or plain bullets
+- Every item has ONE owner (not "team"), bolded after `--`
+- Dates are specific (not "ASAP" or "soon"), in parentheses
+- Link to GitHub issues inline if they exist
+- Default deadline: "before next call"
 
 ## Step 5: Add Outstanding Questions
 

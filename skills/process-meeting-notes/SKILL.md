@@ -46,6 +46,14 @@ All meeting summaries follow the Level 10 Meeting structure:
 - Clear accountability (WHO is responsible)
 - Specific deliverables (WHAT is agreed)
 - Time-bound commitments (WHEN is the deadline)
+
+### Principle 6: Action Items as Checklists
+
+Action items MUST always use markdown checkbox format — never tables or plain bullets:
+```markdown
+- [ ] Action description -- **Owner Name** (due date)
+```
+This enables Obsidian task tracking and interactive checkboxes.
 </essential_principles>
 
 <intake>
