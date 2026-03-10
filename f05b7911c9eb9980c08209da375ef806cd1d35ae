@@ -1,0 +1,29 @@
+skills/process-meeting-notes/templates/l10-meeting-summary.md
+  08b1eac17f81c70d 77-78,80-81,111-113,115-117
+skills/process-meeting-notes/SKILL.md
+  08b1eac17f81c70d 49-56
+skills/process-meeting-notes/workflows/process-recent-meeting.md
+  08b1eac17f81c70d 178
+skills/process-meeting-notes/workflows/generate-l10-summary.md
+  08b1eac17f81c70d 50,52,55,57-58,62-66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "f05b7911c9eb9980c08209da375ef806cd1d35ae",
+  "prompts": {
+    "08b1eac17f81c70d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "aee9ec7a-8308-4cdc-aa82-b12b9c56a74c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Ben Fisher <ben@skinnyandbald.com>",
+      "messages": [],
+      "total_additions": 30,
+      "total_deletions": 22,
+      "accepted_lines": 30,
+      "overriden_lines": 0
+    }
+  }
+}
