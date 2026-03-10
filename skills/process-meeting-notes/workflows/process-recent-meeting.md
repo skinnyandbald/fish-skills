@@ -175,7 +175,7 @@ Structure the summary with:
 2. **Scorecard Review** (if metrics discussed)
 3. **Rock Review** (quarterly goals status)
 4. **Headlines** (key announcements/news)
-5. **To-Dos Captured** (linked to GitHub issues created)
+5. **Action Items** — always as `- [ ]` checklists with `-- **Owner** (date)` format
 6. **Issues Discussed** (IDS items)
 7. **Conclusion** (agreements, accountabilities, deadlines)
 

@@ -74,13 +74,11 @@ Copy this template structure and fill in the sections. The format follows EOS (E
 
 ---
 
-## New To-Dos (Commitments Made)
-<!-- The core accountability section - WHO / WHAT / WHEN -->
+## Action Items
+<!-- The core accountability section - WHO / WHAT / WHEN. Always use checkbox format. -->
 
-| To-Do | Owner | Due Date | GitHub Issue |
-|-------|-------|----------|--------------|
-| [Specific action item] | [Person responsible] | [Date or "Next Meeting"] | [#123](link) |
-| [Specific action item] | [Person responsible] | [Date or "Next Meeting"] | [#124](link) |
+- [ ] [Specific action item] -- **[Person responsible]** ([Date or "before next call"])
+- [ ] [Specific action item] -- **[Person responsible]** ([Date or "before next call"])
 
 ---
 
@@ -110,11 +108,13 @@ Copy this template structure and fill in the sections. The format follows EOS (E
 </template>
 
 <field_guidance>
-**To-Dos Section (Most Important):**
-- Every to-do MUST have a single owner (never "team" or multiple people)
+**Action Items Section (Most Important):**
+- **Always use checkbox format:** `- [ ] Action description -- **Owner Name** (due date)`
+- Every item MUST have a single owner (never "team" or multiple people)
 - Due dates should be specific (not "soon" or "ASAP")
-- Link to GitHub issues when created
-- If no deadline was mentioned, default to "Before Next Meeting"
+- If no deadline was mentioned, default to "before next call"
+- NEVER use tables for action items — always use `- [ ]` checklist bullets
+- Link to GitHub issues inline when created
 
 **IDS Section:**
 - Only include issues that were actually SOLVED in the meeting
