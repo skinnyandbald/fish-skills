@@ -1,0 +1,27 @@
+skills/generate-comprehensive-style-guide/SKILL.md
+  6e4125292f34c32e 1-174
+skills/review-style-guide/SKILL.md
+  6e4125292f34c32e 2
+skills/setup-ai/SKILL.md
+  6e4125292f34c32e 62-67,70-72,75,78-81,83-84,225,260-282,361
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.9",
+  "base_commit_sha": "a156bda391a723e0ffa21b9530551aa60014be1c",
+  "prompts": {
+    "6e4125292f34c32e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "82e0d097-af4c-47ad-a0d5-905d2eb96d71",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Ben Fisher <ben@skinnyandbald.com>",
+      "messages": [],
+      "total_additions": 325,
+      "total_deletions": 27,
+      "accepted_lines": 322,
+      "overriden_lines": 0
+    }
+  }
+}
