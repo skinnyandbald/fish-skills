@@ -6,4 +6,4 @@
 	url = https://github.com/rjs/shaping-skills.git
 [submodule "skills/counselors/counselors"]
 	path = skills/counselors/counselors
-	url = https://github.com/aarondfrancis/counselors.git
+	url = https://github.com/skinnyandbald/counselors.git
