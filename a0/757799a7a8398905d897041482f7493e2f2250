@@ -1,0 +1,37 @@
+skills/setup-ai/SKILL.md
+  6e4125292f34c32e 3,5,8,10,16-17,22,24,26,28,30-33,36,38,40,42,45-47,49,51-56,58,62-68,70-78,80-82,84,86,88,94,96-101,103,114-125,127,130-133,135-142,144-185,187-188,190-193,196-223,225,227-234,236-238,240,242,244,248,250,252-254,256-292,295-308,310,312,315-320,323-325,327,338-339,342-345,350-352,358,362-375
+  3b0ffc24d4a520ec 41,43-44,48,50,57,59,61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.9",
+  "base_commit_sha": "a0757799a7a8398905d897041482f7493e2f2250",
+  "prompts": {
+    "3b0ffc24d4a520ec": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "47294623-b607-4c51-bac1-8d258edddac5",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Ben Fisher <ben@skinnyandbald.com>",
+      "messages": [],
+      "total_additions": 52,
+      "total_deletions": 7,
+      "accepted_lines": 9,
+      "overriden_lines": 0
+    },
+    "6e4125292f34c32e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "82e0d097-af4c-47ad-a0d5-905d2eb96d71",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Ben Fisher <ben@skinnyandbald.com>",
+      "messages": [],
+      "total_additions": 281,
+      "total_deletions": 156,
+      "accepted_lines": 281,
+      "overriden_lines": 0
+    }
+  }
+}
