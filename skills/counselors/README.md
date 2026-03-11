@@ -1,11 +1,12 @@
 # Counselors Skill
 
-Fan out a prompt to multiple AI coding agents in parallel and synthesize their responses. Built on [aarondfrancis/counselors](https://github.com/aarondfrancis/counselors).
+Fan out a prompt to multiple AI coding agents in parallel and synthesize their responses. Built on [counselors](https://github.com/aarondfrancis/counselors), installed from [our fork](https://github.com/skinnyandbald/counselors) which adds OpenRouter support, Gemini 3.1, and Codex 5.4.
 
 ## Prerequisites
 
 ```bash
-npm install -g counselors
+# Install from the fork (includes OpenRouter support, Gemini 3.1, Codex 5.4)
+npm install -g github:skinnyandbald/counselors
 counselors init
 ```
 
