@@ -80,7 +80,7 @@ Add entries to the `"tools"` object — one per model you want to use. Each poin
   "readOnly": { "level": "enforced" },
   "stdin": true,
   "custom": true,
-  "extraFlags": ["--model", "google/gemini-3.1-pro"]
+  "extraFlags": ["--model", "google/gemini-3.1-pro-preview"]
 }
 ```
 
