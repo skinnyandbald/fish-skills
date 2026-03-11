@@ -59,27 +59,29 @@ echo "STYLE_GUIDE.md exists: $STYLE_EXISTS"
 ```
 
 **If AGENTS.md exists (`$AGENTS_EXISTS = true`):**
-1. Report: "Found existing AGENTS.md (N lines). This file will NOT be overwritten."
-2. Offer ONLY these options — ask the user which they want:
-   - **(a) Skip** — leave it untouched, continue with other setup steps.
-   - **(b) Show what would be generated** — display the scaffold so the user can manually merge.
-   - **(c) Regenerate** — only if user explicitly confirms. Back up existing file first: `cp AGENTS.md AGENTS.md.bak`
-3. **NEVER choose on behalf of the user.** Wait for their response.
-4. **NEVER use the Write tool on AGENTS.md when it already exists** without explicit user approval AND creating a .bak first.
+1. Report: "Found existing AGENTS.md (N lines). **Skipping** (will not overwrite)."
+2. **Default action: SKIP.** Continue with other setup steps without touching it.
+3. Only if the user explicitly asks to regenerate, offer these options:
+   - **(a) Show what would be generated** — display the scaffold so the user can manually merge.
+   - **(b) Regenerate** — only with explicit confirmation. Back up first: `cp AGENTS.md AGENTS.md.bak`
+4. **NEVER use the Write tool on AGENTS.md when it already exists** without explicit user request AND creating a .bak first.
 
 **If CLAUDE.md exists and is NOT a symlink (`$CLAUDE_EXISTS = true`, `$CLAUDE_IS_SYMLINK = false`):**
-1. Report: "Found existing CLAUDE.md (N lines, standalone file). This file will NOT be overwritten."
-2. Offer ONLY these options — ask the user which they want:
+1. Report: "Found existing CLAUDE.md (N lines, standalone file). **Skipping** (will not overwrite)."
+2. **Default action: SKIP.** Continue with other steps without touching it.
+3. Only if the user explicitly asks to modify, offer these options:
    - **(a) Append Quality Gates section** — add the Quality Gates block to the end if not already present. Does not modify existing content. Uses Edit (append), not Write.
-   - **(b) Skip CLAUDE.md entirely** — leave it untouched, continue with other steps.
-   - **(c) Migrate to AGENTS.md** — incorporate content into AGENTS.md and replace CLAUDE.md with a symlink. Only with explicit user confirmation and .bak backup.
-   - **(d) Show scaffold diff** — display what the scaffold WOULD contain, so the user can manually merge what they want.
-3. **NEVER choose on behalf of the user.** Wait for their response.
+   - **(b) Migrate to AGENTS.md** — incorporate content into AGENTS.md and replace CLAUDE.md with a symlink. Only with explicit user confirmation and .bak backup.
+   - **(c) Show scaffold diff** — display what the scaffold WOULD contain, so the user can manually merge.
 4. **NEVER use the Write tool on CLAUDE.md when it already exists** — only Edit (append) for option (a), or skip.
 
+**If CLAUDE.md exists and IS a symlink (`$CLAUDE_IS_SYMLINK = true`):**
+1. Report: "Found existing CLAUDE.md (symlink → AGENTS.md). Already configured correctly."
+2. Skip — no action needed.
+
 **If STYLE_GUIDE.md exists (`$STYLE_EXISTS = true`):**
-1. Report: "Found existing STYLE_GUIDE.md (N lines). Skipping."
-2. If user wants to regenerate, back up first: `cp STYLE_GUIDE.md STYLE_GUIDE.md.bak`
+1. Report: "Found existing STYLE_GUIDE.md (N lines). **Skipping.**"
+2. Default action: SKIP. Only regenerate if user explicitly asks, and back up first: `cp STYLE_GUIDE.md STYLE_GUIDE.md.bak`
 
 ### Step 2: Generate AGENTS.md (if needed)
 
@@ -220,7 +222,7 @@ Generate STYLE_GUIDE.md with evidence-backed conventions for:
 - Cite specific files as evidence: "Based on `src/services/UserService.ts`, `src/services/OrderService.ts`..."
 - If a STYLE_GUIDE.md already exists, read it first and improve/incorporate rather than overwriting.
 
-> For deeper standalone style analysis (17-section output, full evidence citations), use `/generate-style-guide`. For pre-commit/pre-PR style enforcement against the generated guide, use `/review-style`.
+> For deeper standalone style analysis (17-section output, full evidence citations), use `/generate-comprehensive-style-guide`. For pre-commit/pre-PR style enforcement against the generated guide, use `/review-style-guide`.
 
 ### Step 5: Initialize Beads (if needed)
 
@@ -255,13 +257,29 @@ If both AGENTS.md and STYLE_GUIDE.md were generated:
 
 ### Step 8: Summary
 
-Present to the user:
-1. What was generated (or skipped)
-2. File structure: "AGENTS.md is the primary file. CLAUDE.md is a symlink (macOS/Linux) or copy (Windows) of it."
-3. What looks solid vs. what was ambiguous
-4. Any inconsistencies that need a human decision
-5. "Review both files. AI gets ~80% right — the 20% you fix is the most valuable part."
-6. "Run `/audit-claude-md` to score your setup and see where to improve."
+Present a deterministic report card. Track each file's outcome through the run and display the final state:
+
+```
+## Setup Complete
+
+| File | Status |
+|------|--------|
+| AGENTS.md | ✅ Created (N lines) | ⏭️ Skipped (already existed, N lines) |
+| CLAUDE.md | ✅ Created (symlink → AGENTS.md) | ⏭️ Skipped (symlink intact) | ⏭️ Skipped (standalone file, N lines) |
+| STYLE_GUIDE.md | ✅ Created (N lines) | ⏭️ Skipped (already existed, N lines) |
+| .beads/ | ✅ Initialized | ⏭️ Skipped (already existed) |
+| .claude/learnings/ | ✅ Created | ⏭️ Already existed |
+| docs/claude/ | ✅ Created | ⏭️ Already existed |
+```
+
+Then add:
+1. File structure note: "AGENTS.md is the primary file. CLAUDE.md is a symlink (macOS/Linux) or copy (Windows) of it."
+2. Any ambiguities or inconsistencies that need a human decision (e.g., conflicting naming patterns, unclear conventions)
+3. "Review generated files. AI gets ~80% right — the 20% you fix is the most valuable part."
+4. Next steps:
+   - "Run `/audit-claude-md` to score your setup and see where to improve."
+   - "Run `/generate-comprehensive-style-guide` for a deeper 17-section style analysis."
+   - "Run `/review-style-guide` before PRs to enforce style conventions."
 
 ---
 
@@ -340,7 +358,7 @@ Read-only audit of your setup. Does not write anything.
    ⚠️  CLAUDE.md over 200 lines (287 lines) — may increase inference cost 14-22%
    ❌ CLAUDE.md missing — run /setup-ai to scaffold
    ✅ STYLE_GUIDE.md exists (87 lines)
-   ❌ STYLE_GUIDE.md missing — run /setup-ai or /generate-style-guide
+   ❌ STYLE_GUIDE.md missing — run /setup-ai or /generate-comprehensive-style-guide
    ✅ .beads/ initialized
    ❌ .beads/ missing — run /setup-ai or bd init
    ✅ .claude/learnings/ exists
