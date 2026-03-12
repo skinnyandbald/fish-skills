@@ -27,7 +27,7 @@ Be selective — don't dump the entire codebase. Pick the most relevant code sec
 
 ## Phase 2: Agent Selection
 
-**Default agents:** `claude-opus`, `gemini-3.1-pro`, `codex-5.4-high`
+**Default agents:** `claude-opus`, `or-gemini-3.1-pro`, `or-codex-5.4`
 
 1. **Use defaults unless the user overrides.** If `$ARGUMENTS` does not contain agent-selection instructions (e.g. "use all agents", "add codex", "only gemini"), skip directly to the confirmation step with the defaults.
 
