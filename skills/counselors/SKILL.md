@@ -27,7 +27,7 @@ Be selective — don't dump the entire codebase. Pick the most relevant code sec
 
 ## Phase 2: Agent Selection
 
-**Default agents:** `claude-opus`, `or-gemini-3.1-pro`, `or-codex-5.4`
+**Default agents:** `or-claude-opus`, `or-gemini-3.1-pro`, `or-codex-5.4`
 
 1. **Use defaults unless the user overrides.** If `$ARGUMENTS` does not contain agent-selection instructions (e.g. "use all agents", "add codex", "only gemini"), skip directly to the confirmation step with the defaults.
 
@@ -48,7 +48,7 @@ Be selective — don't dump the entire codebase. Pick the most relevant code sec
 
 3. **MANDATORY: Confirm the selection before continuing.** Echo back the exact list you will dispatch to:
 
-   > Dispatching to: **claude-opus**, **gemini-3.1-pro**, **amp-smart**
+   > Dispatching to: **or-claude-opus**, **or-gemini-3.1-pro**, **or-codex-5.4**
 
    Then ask the user to confirm (e.g. "Look good?") before proceeding to Phase 3. This prevents silent tool omissions. If the user corrects the list, update your selection accordingly.
 
