@@ -297,4 +297,4 @@ Output:
 
 After presenting findings:
 
-> "Want to (a) address a specific issue now, (b) re-run with different models (`--models=...`), or (c) apply changes to the plan file?"
+> "Want to (a) apply changes to the plan file, (b) re-run with different models (`--models=...`), or (c) move to implementation?"
