@@ -189,7 +189,7 @@ REFERENCE DOCUMENTATION:
 Derive a slug from the plan path (e.g. `docs/plans/auth-refactor.md` → `auth-refactor`). Write the assembled prompt to `./agents/counselors/[timestamp]-[slug]/prompt.md` (create the directory as needed).
 
 Determine model set:
-- **Default (no override):** `claude-opus,or-gemini-3.1-pro,or-codex-5.4`
+- **Default (no override):** `or-claude-opus,or-gemini-3.1-pro,or-codex-5.4`
 - `--models=x,y`: use those tools
 - `--model=x`: use that single tool
 
