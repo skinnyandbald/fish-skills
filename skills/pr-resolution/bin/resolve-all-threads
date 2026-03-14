@@ -26,7 +26,7 @@ if [ -z "$PR_NUM" ]; then
 fi
 
 # Get repo info
-REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner')
+REPO=$(git remote get-url origin 2>/dev/null | sed 's|.*github.com[:/]||;s|\.git$||')
 
 echo "=== Resolving all unresolved threads on PR #$PR_NUM ($REPO) ==="
 echo ""

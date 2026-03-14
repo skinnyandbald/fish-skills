@@ -285,17 +285,17 @@ echo "T10: Missing OWNER_REPO falls back to gh repo view"
 )
 
 # -------------------------------------------------------------------------
-# T10b: Missing OWNER_REPO + gh repo view fails -> error JSON
+# T10b: Missing OWNER_REPO + git remote fails -> error JSON
 # -------------------------------------------------------------------------
-echo "T10b: Missing OWNER_REPO + gh repo view fails"
+echo "T10b: Missing OWNER_REPO + git remote fails"
 (
-  gh() {
+  git() {
     case "$*" in
-      "repo view"*) return 1 ;;
-      *) echo '{}' ;;
+      "remote get-url"*) return 1 ;;
+      *) command git "$@" ;;
     esac
   }
-  export -f gh
+  export -f git
   OUT=$("$BIN_DIR/check-new-comments" 42 "2026-01-01T00:00:00Z" 2>/dev/null || true)
   assert_json_eq "T10b status=ERROR"     "$OUT" '.status'     "ERROR"
   assert_json_eq "T10b error_type=api_error" "$OUT" '.error_type' "api_error"
