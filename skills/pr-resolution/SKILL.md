@@ -126,14 +126,23 @@ Wait for all agents to complete.
 
 Follow steps from `references/completion.md`:
 
-### 5a. Commit and push
+### 5a. Commit
 1. Commit all fixes together
-2. Push to remote
 
-### 5b. Post resolution summary
-3. Post resolution summary comment to PR
+### 5b. Capture timestamp (for shepherd)
+2. Capture the current UTC timestamp immediately before push:
+```bash
+LAST_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+```
 
-### 5c. Resolve ALL GitHub threads (MANDATORY)
+### 5c. Push
+3. Push to remote
+   - **If push fails:** Skip Phase 6 (shepherd). The resolution is incomplete.
+
+### 5d. Post resolution summary
+4. Post resolution summary comment to PR
+
+### 5e. Resolve ALL GitHub threads (MANDATORY)
 
 **Run the resolve-all-threads script:**
 ```bash
@@ -147,10 +156,42 @@ This script:
 
 **If the script reports failures or remaining threads: DO NOT mark workflow as complete. Fix manually with `bin/resolve-pr-thread THREAD_ID`.**
 
-### 5d. Final verification
-4. Confirm script output shows "All threads resolved"
+### 5f. Final verification
+5. Confirm script output shows "All threads resolved"
 
 **Workflow is NOT complete until all threads are resolved.**
+
+---
+
+## Phase 6: Shepherd (Automatic)
+
+After Phase 5 verification passes, launch the shepherd as a background agent to monitor for new bot comments.
+
+**This phase runs automatically.** Do not skip it. Do not ask the user.
+
+1. Capture context:
+```bash
+OWNER_REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner')
+BRANCH=$(git branch --show-current)
+RUN_ID=$(date +%s)
+```
+
+2. Launch background agent:
+```
+Agent(
+  run_in_background: true,
+  prompt: "Read skills/pr-resolution/shepherd.md and follow it.
+
+    Context:
+    {\"PR_NUM\": $PR_NUM, \"LAST_TIMESTAMP\": \"$LAST_TIMESTAMP\", \"OWNER_REPO\": \"$OWNER_REPO\", \"BRANCH\": \"$BRANCH\", \"RUN_ID\": \"$RUN_ID\"}"
+)
+```
+
+3. Print: "Shepherd monitoring PR #$PR_NUM in background. You'll be notified when it completes."
+
+**If agent launch fails:** Print the error and exit cleanly. The initial resolution is already complete.
+
+**This phase is NOT re-entered during shepherd RE_RESOLVE iterations.**
 
 ---
 
