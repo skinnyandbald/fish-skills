@@ -4,6 +4,9 @@
 // CLI usage:
 //   npx tsx lib/shepherd-state.ts route '{"bot_comment_count":2,...}'
 //   npx tsx lib/shepherd-state.ts track-flags '{"files":[...],"current_flags":{...}}'
+//   npx tsx lib/shepherd-state.ts filter-threads '{"threads":[...],"last_timestamp":"..."}'
+//   npx tsx lib/shepherd-state.ts summary-action '{"comment_id":"12345"}'
+//   npx tsx lib/shepherd-state.ts should-timeout '{"elapsed":7201}'
 
 export interface RouteInput {
   bot_comment_count: number;
@@ -77,6 +80,47 @@ export function trackFlags(input: TrackFlagsInput): TrackFlagsOutput {
   return { flags, skip_list, escalate, escalation_file };
 }
 
+export interface ThreadInfo {
+  id: string;
+  path: string;
+  isResolved: boolean;
+  lastAuthor: string;
+  lastCreatedAt: string;
+}
+
+export function filterThreadsForResolution(
+  threads: ThreadInfo[],
+  lastTimestamp: string,
+): string[] {
+  return threads
+    .filter((t) => {
+      if (t.isResolved) return false;
+      if (t.lastCreatedAt <= lastTimestamp) return false;
+      if (!t.lastAuthor.endsWith("[bot]")) return false;
+      if (!t.id.startsWith("PRRT_")) return false;
+      return true;
+    })
+    .map((t) => t.id);
+}
+
+const TIMEOUT_SECONDS = 7200; // 2 hours
+
+export function shouldTimeout(elapsedSeconds: number): boolean {
+  return elapsedSeconds >= TIMEOUT_SECONDS;
+}
+
+export interface SummaryAction {
+  method: "PATCH" | "POST";
+  comment_id?: string;
+}
+
+export function determineSummaryAction(existingCommentId: string | null): SummaryAction {
+  if (existingCommentId && existingCommentId.length > 0) {
+    return { method: "PATCH", comment_id: existingCommentId };
+  }
+  return { method: "POST" };
+}
+
 // CLI entrypoint — detect when run directly via `npx tsx` or `node`
 const isCLI = import.meta.url === `file://${process.argv[1]}` ||
   process.argv[1]?.endsWith("shepherd-state.ts") ||
@@ -86,18 +130,24 @@ if (isCLI) {
   const jsonArg = process.argv[3];
 
   if (!subcommand || !jsonArg) {
-    console.error("Usage: shepherd-state.ts <route|track-flags> '<json>'");
+    console.error("Usage: shepherd-state.ts <route|track-flags|filter-threads|summary-action|should-timeout> '<json>'");
     process.exit(1);
   }
 
   try {
     const input = JSON.parse(jsonArg);
-    let result: RouteOutput | TrackFlagsOutput;
+    let result: RouteOutput | TrackFlagsOutput | string[] | SummaryAction | { timeout: boolean };
 
     if (subcommand === "route") {
       result = route(input as RouteInput);
     } else if (subcommand === "track-flags") {
       result = trackFlags(input as TrackFlagsInput);
+    } else if (subcommand === "filter-threads") {
+      result = filterThreadsForResolution(input.threads, input.last_timestamp);
+    } else if (subcommand === "summary-action") {
+      result = determineSummaryAction(input.comment_id);
+    } else if (subcommand === "should-timeout") {
+      result = { timeout: shouldTimeout(input.elapsed) };
     } else {
       console.error(`Unknown subcommand: ${subcommand}`);
       process.exit(1);
