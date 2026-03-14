@@ -37,6 +37,23 @@ Add the Fireflies MCP server to your Claude Code config. The skill uses these to
 - `mcp__fireflies__fireflies_get_summary`
 - `mcp__fireflies__fireflies_get_transcript`
 
+### Vault Integration (Optional)
+
+Save structured meeting notes and raw transcripts to a local vault (Obsidian, SecondBrain, etc.) by setting these environment variables in `~/.env`:
+
+```sh
+MEETING_NOTES_DIR=~/SecondBrain/02_Areas/notes
+MEETING_TRANSCRIPTS_DIR=~/SecondBrain/02_Areas/notes/transcripts
+```
+
+When configured, the skill automatically saves:
+- **Structured notes** to `$MEETING_NOTES_DIR/YYYY-MM-DD - Entity - Topic.md`
+- **Raw transcripts** to `$MEETING_TRANSCRIPTS_DIR/YYYY-MM-DD - Source - Topic.md` (Source = `Fireflies` or `Pasted`)
+
+Pasted transcripts are especially important to save — they aren't recoverable from any external source.
+
+If these variables aren't set, the skill still works normally (GitHub issues + L10 summaries) and will ask where to save if you request it.
+
 ### Customization
 
 The skill auto-detects your repo's labels, milestones, and projects. No hardcoded values to change.
