@@ -1,0 +1,36 @@
+skills/critic-review/SKILL.md
+  f52b719c1c0d2381 192
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.12",
+  "base_commit_sha": "6e7c192f3900193a1d073f90a7225cdf175dd3de",
+  "prompts": {
+    "643381f45819afc8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6a9dcb58-6aff-4ba0-92a6-997f4b9b5fa0",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Ben Fisher <ben@skinnyandbald.com>",
+      "messages": [],
+      "total_additions": 90,
+      "total_deletions": 7,
+      "accepted_lines": 90,
+      "overriden_lines": 0
+    },
+    "f52b719c1c0d2381": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "98bb015e-201e-4da0-82c0-22f64fd0f807",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Ben Fisher <ben@skinnyandbald.com>",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
