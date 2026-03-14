@@ -1,0 +1,27 @@
+skills/pr-resolution/lib/__tests__/shepherd.test.ts
+  be4ba0bb4954f07d 188
+skills/pr-resolution/bin/check-new-comments
+  be4ba0bb4954f07d 101
+skills/pr-resolution/lib/shepherd-state.ts
+  be4ba0bb4954f07d 97-99
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.12",
+  "base_commit_sha": "e2a2c4d7823fd5ba6e14ce08dcfe772ed7accc1a",
+  "prompts": {
+    "be4ba0bb4954f07d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "34e02b28-c0d6-4839-8395-1dd125491344",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Ben Fisher <ben@skinnyandbald.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 5,
+      "overriden_lines": 0
+    }
+  }
+}
