@@ -77,20 +77,38 @@ Any unresolved items become questions:
 | [Question] | [Researcher] | [Why it matters] |
 ```
 
-## Step 6: Present and Offer Save
+## Step 6: Save Transcript to Vault (if pasted)
+
+**If the user pasted a transcript directly** (not fetched from Fireflies):
+
+Check for `MEETING_TRANSCRIPTS_DIR` env var or project CLAUDE.md config.
+
+- **If configured:** Save the raw transcript to `$MEETING_TRANSCRIPTS_DIR/YYYY-MM-DD - Pasted - Topic.md` with frontmatter linking to the structured note via `processed_note`
+- **If not configured:** Ask: "Want to save the raw transcript? If so, where?"
+
+Pasted transcripts are not recoverable from any external source — saving them is important.
+
+**If fetched from Fireflies:** Optionally save (it's recoverable, but local copy is useful for search).
+
+## Step 7: Present and Offer Save
 
 Display the complete L10 summary and ask:
 
 ```
 L10 Summary generated! What would you like to do?
 
-1. **Save to file** - docs/meetings/YYYY-MM-DD-l10-summary.md
-2. **Copy to clipboard** - I'll format for easy pasting
-3. **Review and edit** - Make adjustments before saving
-4. **Done** - No further action needed
+1. **Save to vault** - $MEETING_NOTES_DIR/YYYY-MM-DD-Entity-Topic.md (if configured)
+2. **Save to repo** - docs/meetings/YYYY-MM-DD-meeting-summary.md
+3. **Copy to clipboard** - I'll format for easy pasting
+4. **Review and edit** - Make adjustments before saving
+5. **Done** - No further action needed
 ```
 
-If saving to file:
+If saving to vault (option 1):
+- Save structured note to `$MEETING_NOTES_DIR/YYYY-MM-DD - Entity - Topic.md`
+- Include full frontmatter (date, type, meeting_type, attendees, status, tags)
+
+If saving to repo (option 2):
 ```bash
 mkdir -p docs/meetings
 # Write summary to file
