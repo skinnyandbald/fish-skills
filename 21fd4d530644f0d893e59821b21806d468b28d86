@@ -1,0 +1,23 @@
+skills/pr-resolution/lib/shepherd-state.ts
+  be4ba0bb4954f07d 7-9,83-123,133,139,145-150
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.11",
+  "base_commit_sha": "21fd4d530644f0d893e59821b21806d468b28d86",
+  "prompts": {
+    "be4ba0bb4954f07d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "34e02b28-c0d6-4839-8395-1dd125491344",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Ben Fisher <ben@skinnyandbald.com>",
+      "messages": [],
+      "total_additions": 52,
+      "total_deletions": 2,
+      "accepted_lines": 52,
+      "overriden_lines": 0
+    }
+  }
+}
