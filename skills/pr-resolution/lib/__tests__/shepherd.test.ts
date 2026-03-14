@@ -185,7 +185,7 @@ describe("Thread ID mapping", () => {
 
 describe("Edge cases", () => {
   // T34: GraphQL partial errors — data still processed
-  it("handles partial GraphQL errors gracefully", () => {
+  it("filters valid bot-authored unresolved threads", () => {
     const threads = filterThreadsForResolution([
       { id: "PRRT_1", path: "src/x.ts", isResolved: false, lastAuthor: "coderabbitai[bot]", lastCreatedAt: "2026-06-01T00:00:00Z" },
     ], "2025-01-01T00:00:00Z");

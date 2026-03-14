@@ -98,7 +98,7 @@ RESULT=$(jq -n \
   --argjson issues "$ISSUE_COMMENTS" \
   "$SOURCE_FILTER"'
   # Collect all authors from inline comments + reviews
-  ([$inline[].user.login, $reviews[].user.login]) as $authors |
+  ([$inline[].user.login, $reviews[].user.login] | map(select(. != null))) as $authors |
 
   # Classify each
   [$authors[] | classify_user] as $classes |
