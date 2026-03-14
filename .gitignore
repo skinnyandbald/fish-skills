@@ -2,3 +2,5 @@
 node_modules/
 *.log
 .goodtogo
+docs/superpowers/
+.worktrees/
