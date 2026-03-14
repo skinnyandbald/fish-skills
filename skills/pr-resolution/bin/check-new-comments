@@ -26,7 +26,7 @@ fi
 
 # Derive OWNER/REPO
 if [ -z "$OWNER_REPO" ]; then
-  OWNER_REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner' 2>/dev/null) || {
+  OWNER_REPO=$(git remote get-url origin 2>/dev/null | sed 's|.*github.com[:/]||;s|\.git$||') || {
     echo '{"status":"ERROR","error_type":"api_error","message":"Could not determine repository. Provide OWNER_REPO arg."}'
     exit 1
   }
