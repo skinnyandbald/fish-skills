@@ -8,6 +8,35 @@ argument-hint: "[optional: PR number, GitHub URL, or 'current']"
 
 > **DEFAULT WORKFLOW** for resolving PR comments with parallel execution.
 
+## MANDATORY: Background Execution
+
+**The ENTIRE workflow (Phases 0-6) MUST run as a background agent.** This prevents the workflow from being sidetracked by user questions, CI failures, or context switches.
+
+**Foreground steps (do these FIRST, before launching the agent):**
+
+1. Detect PR number from args, current branch, or ask user
+2. Print: "Launching PR resolution for #$PR_NUM in background. You'll be notified when it completes."
+3. Launch background agent with the full workflow:
+
+```
+Agent(
+  run_in_background: true,
+  prompt: "You are resolving PR comments for PR #$PR_NUM.
+
+Read the pr-resolution skill at ~/.claude/skills/pr-resolution/SKILL.md and execute Phases 0-6.
+
+IMPORTANT:
+- For questions classified as [question] that need human input, skip them and note them in your final output
+- For CI failures, fix them as part of the workflow — do NOT stop or ask for help
+- Complete ALL phases including the shepherd launch in Phase 6
+- Your final output should summarize: comments resolved, comments skipped (with reasons), CI status"
+)
+```
+
+**That's it for the foreground.** Everything below is executed by the background agent.
+
+---
+
 ## Quick Reference
 
 | Action | Command |
