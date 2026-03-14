@@ -161,7 +161,33 @@ Add to GitHub Project if one exists:
 gh project item-add $PROJECT_NUM --owner $REPO_OWNER --url <issue_url>
 ```
 
-## Step 7: Generate EOS Level 10 Summary
+## Step 7: Save Transcript and Meeting Note to Vault
+
+**Check if vault integration is configured:**
+- Look for `MEETING_NOTES_DIR` and `MEETING_TRANSCRIPTS_DIR` env vars
+- Or check the project's CLAUDE.md for these paths
+- If neither is set, ask: "Want to save the meeting note and transcript? If so, where?"
+
+**If configured (or user provides a path):**
+
+**7a. Save raw transcript:**
+- If transcript was pasted directly by the user, always save it (it's not recoverable elsewhere)
+- If transcript was fetched from Fireflies, save it too (local copy for search/reference)
+- Save to `$MEETING_TRANSCRIPTS_DIR/YYYY-MM-DD - Source - Topic.md`
+- Source = "Fireflies" if fetched via MCP, "Pasted" if user provided it
+- Include frontmatter with `processed_note` linking to the structured note
+
+**7b. Save structured meeting note:**
+- Save the L10 summary (from Step 8) to `$MEETING_NOTES_DIR/YYYY-MM-DD - Entity - Topic.md`
+- Include frontmatter: date, type (meeting), meeting_type, attendees, status, tags
+- The note should be the polished, structured version — not the raw transcript
+
+**File naming rules:**
+- Use ` - ` (space-dash-space) as delimiter
+- Entity = group or company name (e.g., "Hampton", "Hugo", "CouponFollow")
+- Topic = short description (e.g., "Core Meeting", "Sprint Kickoff")
+
+## Step 8: Generate EOS Level 10 Summary
 
 After all issues processed, generate the L10 summary using the template.
 
@@ -197,5 +223,7 @@ This workflow is complete when:
 - [ ] GitHub issues created with proper labels and checklists
 - [ ] Issues added to project board (if project exists)
 - [ ] EOS Level 10 summary generated with WHO/WHAT/WHEN accountability
+- [ ] Raw transcript saved to vault (if configured or user requested)
+- [ ] Structured meeting note saved to vault (if configured or user requested)
 - [ ] Summary saved or shared as requested
 </success_criteria>
