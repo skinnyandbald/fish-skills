@@ -36,15 +36,15 @@ OWNER="${OWNER_REPO%/*}"
 REPO="${OWNER_REPO#*/}"
 
 # -- Step 1: Check PR status (early exit) ---------------------------------
-PR_STATUS=$(gh pr view "$PR_NUM" --json state,merged 2>/dev/null) || {
+PR_STATUS=$(gh pr view "$PR_NUM" --json state,mergedAt 2>/dev/null) || {
   echo '{"status":"ERROR","error_type":"api_error","message":"Failed to fetch PR status"}'
   exit 1
 }
 
-PR_MERGED=$(echo "$PR_STATUS" | jq -r '.merged')
+PR_MERGED_AT=$(echo "$PR_STATUS" | jq -r '.mergedAt')
 PR_STATE=$(echo "$PR_STATUS" | jq -r '.state')
 
-if [ "$PR_MERGED" = "true" ]; then
+if [ "$PR_MERGED_AT" != "null" ] && [ -n "$PR_MERGED_AT" ]; then
   echo '{"status":"MERGED"}'
   exit 0
 fi
