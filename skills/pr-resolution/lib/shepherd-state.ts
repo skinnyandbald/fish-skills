@@ -94,6 +94,9 @@ export function filterThreadsForResolution(
 ): string[] {
   return threads
     .filter((t) => {
+      if (typeof t.id !== "string") return false;
+      if (typeof t.lastAuthor !== "string") return false;
+      if (typeof t.lastCreatedAt !== "string") return false;
       if (t.isResolved) return false;
       if (t.lastCreatedAt <= lastTimestamp) return false;
       if (!t.lastAuthor.endsWith("[bot]")) return false;
