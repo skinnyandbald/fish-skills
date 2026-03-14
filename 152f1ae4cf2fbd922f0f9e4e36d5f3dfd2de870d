@@ -1,0 +1,23 @@
+.gitignore
+  be4ba0bb4954f07d 5-6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.11",
+  "base_commit_sha": "152f1ae4cf2fbd922f0f9e4e36d5f3dfd2de870d",
+  "prompts": {
+    "be4ba0bb4954f07d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "34e02b28-c0d6-4839-8395-1dd125491344",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Ben Fisher <ben@skinnyandbald.com>",
+      "messages": [],
+      "total_additions": 2576,
+      "total_deletions": 13,
+      "accepted_lines": 2576,
+      "overriden_lines": 0
+    }
+  }
+}
