@@ -1,0 +1,129 @@
+#!/bin/bash
+# Check for new comments on a PR since a given timestamp.
+# Deterministic polling — zero tokens, zero LLM.
+#
+# Usage: bin/check-new-comments PR_NUM LAST_TIMESTAMP [OWNER_REPO]
+#
+# Output: JSON with status, comment counts, and source breakdown
+#
+# Status values:
+#   MERGED       — PR has been merged
+#   CLOSED       — PR was closed without merging
+#   NEW_COMMENTS — New comments found since LAST_TIMESTAMP
+#   NO_CHANGES   — No new comments
+#   ERROR        — API call failed
+
+set -euo pipefail
+
+PR_NUM="${1:-}"
+LAST_TIMESTAMP="${2:-}"
+OWNER_REPO="${3:-}"
+
+if [ -z "$PR_NUM" ] || [ -z "$LAST_TIMESTAMP" ]; then
+  echo '{"status":"ERROR","error_type":"usage","message":"Usage: check-new-comments PR_NUM LAST_TIMESTAMP [OWNER_REPO]"}'
+  exit 1
+fi
+
+# Derive OWNER/REPO
+if [ -z "$OWNER_REPO" ]; then
+  OWNER_REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner' 2>/dev/null) || {
+    echo '{"status":"ERROR","error_type":"api_error","message":"Could not determine repository. Provide OWNER_REPO arg."}'
+    exit 1
+  }
+fi
+
+OWNER="${OWNER_REPO%/*}"
+REPO="${OWNER_REPO#*/}"
+
+# -- Step 1: Check PR status (early exit) ---------------------------------
+PR_STATUS=$(gh pr view "$PR_NUM" --json state,merged 2>/dev/null) || {
+  echo '{"status":"ERROR","error_type":"api_error","message":"Failed to fetch PR status"}'
+  exit 1
+}
+
+PR_MERGED=$(echo "$PR_STATUS" | jq -r '.merged')
+PR_STATE=$(echo "$PR_STATUS" | jq -r '.state')
+
+if [ "$PR_MERGED" = "true" ]; then
+  echo '{"status":"MERGED"}'
+  exit 0
+fi
+
+if [ "$PR_STATE" = "CLOSED" ]; then
+  echo '{"status":"CLOSED"}'
+  exit 0
+fi
+
+# -- Step 2: Fetch and filter comments ------------------------------------
+
+# Helper: classify username as bot source or human
+SOURCE_FILTER='
+def classify_user:
+  if endswith("[bot]") then
+    if . == "coderabbitai[bot]" then "coderabbit"
+    elif . == "gemini-code-assist[bot]" then "gemini"
+    elif . == "claude[bot]" then "claude"
+    else "other_bot"
+    end
+  else "human"
+  end;
+'
+
+# Inline review comments
+_raw=$(gh api "/repos/$OWNER/$REPO/pulls/$PR_NUM/comments" --paginate --slurp 2>/dev/null) || {
+  echo '{"status":"ERROR","error_type":"api_error","message":"Failed to fetch inline comments"}'
+  exit 1
+}
+INLINE_COMMENTS=$(echo "${_raw:-null}" | jq --arg ts "$LAST_TIMESTAMP" '. as $x | ($x // []) | (add // []) | map(select(.created_at > $ts))')
+
+# Reviews (exclude APPROVED and DISMISSED)
+_raw=$(gh api "/repos/$OWNER/$REPO/pulls/$PR_NUM/reviews" --paginate --slurp 2>/dev/null) || {
+  echo '{"status":"ERROR","error_type":"api_error","message":"Failed to fetch reviews"}'
+  exit 1
+}
+REVIEWS=$(echo "${_raw:-null}" | jq --arg ts "$LAST_TIMESTAMP" '. as $x | ($x // []) | (add // []) | map(select(.submitted_at > $ts and .state != "APPROVED" and .state != "DISMISSED"))')
+
+# Issue comments (top-level PR discussion — for awareness only)
+_raw=$(gh api "/repos/$OWNER/$REPO/issues/$PR_NUM/comments" --paginate --slurp 2>/dev/null) || {
+  echo '{"status":"ERROR","error_type":"api_error","message":"Failed to fetch issue comments"}'
+  exit 1
+}
+ISSUE_COMMENTS=$(echo "${_raw:-null}" | jq --arg ts "$LAST_TIMESTAMP" '. as $x | ($x // []) | (add // []) | map(select(.created_at > $ts))')
+
+# -- Step 3: Count and classify -------------------------------------------
+
+RESULT=$(jq -n \
+  --argjson inline "$INLINE_COMMENTS" \
+  --argjson reviews "$REVIEWS" \
+  --argjson issues "$ISSUE_COMMENTS" \
+  "$SOURCE_FILTER"'
+  # Collect all authors from inline comments + reviews
+  ([$inline[].user.login, $reviews[].user.login] | map(select(. != null))) as $authors |
+
+  # Classify each
+  [$authors[] | classify_user] as $classes |
+
+  # Count bots vs humans
+  ([$classes[] | select(. != "human")] | length) as $bot_count |
+  ([$classes[] | select(. == "human")] | length) as $human_count |
+
+  # Build source map
+  ([$authors[] | {key: (. | classify_user), value: 1}]
+    | group_by(.key)
+    | map({key: .[0].key, value: length})
+    | from_entries) as $sources |
+
+  # Issue comment count
+  ($issues | length) as $issue_count |
+
+  {
+    status: (if ($bot_count + $human_count) > 0 then "NEW_COMMENTS" else "NO_CHANGES" end),
+    new_comment_count: ($bot_count + $human_count),
+    bot_comment_count: $bot_count,
+    human_comment_count: $human_count,
+    issue_comment_count: $issue_count,
+    sources: $sources
+  }
+')
+
+echo "$RESULT"
