@@ -1,0 +1,25 @@
+skills/process-meeting-notes/README.md
+  643381f45819afc8 40-56
+README.md
+  643381f45819afc8 274,278
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.12",
+  "base_commit_sha": "2d8c4d66455b487a822282cbb4230c88b7f8fb0b",
+  "prompts": {
+    "643381f45819afc8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6a9dcb58-6aff-4ba0-92a6-997f4b9b5fa0",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Ben Fisher <ben@skinnyandbald.com>",
+      "messages": [],
+      "total_additions": 20,
+      "total_deletions": 0,
+      "accepted_lines": 20,
+      "overriden_lines": 0
+    }
+  }
+}
