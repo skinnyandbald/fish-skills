@@ -1,0 +1,23 @@
+skills/pr-resolution/bin/tests/check-new-comments.test.sh
+  be4ba0bb4954f07d 1-323
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.11",
+  "base_commit_sha": "faca5808f7fce3db05ea9f0aaf2889ca9ec62a77",
+  "prompts": {
+    "be4ba0bb4954f07d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "34e02b28-c0d6-4839-8395-1dd125491344",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Ben Fisher <ben@skinnyandbald.com>",
+      "messages": [],
+      "total_additions": 466,
+      "total_deletions": 14,
+      "accepted_lines": 452,
+      "overriden_lines": 0
+    }
+  }
+}
