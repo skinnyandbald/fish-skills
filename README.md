@@ -271,8 +271,11 @@ Process Fireflies meeting transcripts into structured outputs:
 - Create GitHub issues with labels, checklists, and project assignment
 - Detect duplicate issues before creating
 - Dynamic repo context detection (available labels, milestones, projects)
+- Save structured notes and raw transcripts to a local vault (optional)
 
 Requires Fireflies MCP integration in Claude Code.
+
+**Vault integration:** Set `MEETING_NOTES_DIR` and `MEETING_TRANSCRIPTS_DIR` in `~/.env` to auto-save meeting notes and transcripts to your knowledge base. See the [skill README](skills/process-meeting-notes/README.md) for details.
 
 ### capture-learning
 
