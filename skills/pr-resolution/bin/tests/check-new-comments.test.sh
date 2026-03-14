@@ -302,6 +302,124 @@ echo "T10b: Missing OWNER_REPO + gh repo view fails"
 )
 
 # -------------------------------------------------------------------------
+# T22: API error — gh returns non-zero for inline comments endpoint
+# -------------------------------------------------------------------------
+echo "T22: gh api exits non-zero"
+(
+  gh() {
+    case "$*" in
+      "pr view"*) echo '{"state":"OPEN","merged":false}' ;;
+      *pulls*comments*--paginate*--slurp*) return 1 ;;
+      *--paginate*--slurp*) echo '[[]]' ;;
+    esac
+  }
+  export -f gh
+
+  RESULT=$("$BIN_DIR/check-new-comments" 42 "2026-01-01T00:00:00Z" "org/repo" 2>/dev/null) || true
+  assert_json_eq "T22 status=ERROR"          "$RESULT" '.status'     "ERROR"
+  assert_json_eq "T22 error_type=api_error"  "$RESULT" '.error_type' "api_error"
+)
+
+# -------------------------------------------------------------------------
+# T30: Pagination — inline comments across 2 pages
+# page 1: 1 old comment; page 2: 1 new bot comment → new_comment_count: 1
+# -------------------------------------------------------------------------
+echo "T30: Inline comments across 2 pages"
+(
+  gh() {
+    case "$*" in
+      "pr view"*) echo '{"state":"OPEN","merged":false}' ;;
+      *pulls*comments*--paginate*--slurp*)
+        echo '[[{"created_at":"2025-01-01T00:00:00Z","user":{"login":"alice"}}],[{"created_at":"2026-06-01T00:00:00Z","user":{"login":"coderabbitai[bot]"}}]]'
+        ;;
+      *pulls*reviews*--paginate*--slurp*) echo '[[]]' ;;
+      *issues*comments*--paginate*--slurp*) echo '[[]]' ;;
+      *--paginate*--slurp*) echo '[[]]' ;;
+    esac
+  }
+  export -f gh
+  OUT=$("$BIN_DIR/check-new-comments" 42 "2026-01-01T00:00:00Z" "org/repo")
+  assert_json_eq "T30 status=NEW_COMMENTS"   "$OUT" '.status'            "NEW_COMMENTS"
+  assert_json_eq "T30 new_comment_count=1"   "$OUT" '.new_comment_count' "1"
+  assert_json_eq "T30 bot_comment_count=1"   "$OUT" '.bot_comment_count'  "1"
+  assert_json_eq "T30 human_comment_count=0" "$OUT" '.human_comment_count' "0"
+)
+
+# -------------------------------------------------------------------------
+# T31: Pagination — reviews across 2 pages
+# page 1: APPROVED (excluded); page 2: COMMENTED (included) → bot_comment_count: 1
+# -------------------------------------------------------------------------
+echo "T31: Reviews across 2 pages — APPROVED excluded, COMMENTED included"
+(
+  gh() {
+    case "$*" in
+      "pr view"*) echo '{"state":"OPEN","merged":false}' ;;
+      *pulls*comments*--paginate*--slurp*) echo '[[]]' ;;
+      *pulls*reviews*--paginate*--slurp*)
+        echo '[[{"submitted_at":"2026-06-01T00:00:00Z","state":"APPROVED","user":{"login":"coderabbitai[bot]"}}],[{"submitted_at":"2026-06-02T00:00:00Z","state":"COMMENTED","user":{"login":"coderabbitai[bot]"}}]]'
+        ;;
+      *issues*comments*--paginate*--slurp*) echo '[[]]' ;;
+      *--paginate*--slurp*) echo '[[]]' ;;
+    esac
+  }
+  export -f gh
+  OUT=$("$BIN_DIR/check-new-comments" 42 "2026-01-01T00:00:00Z" "org/repo")
+  assert_json_eq "T31 status=NEW_COMMENTS"  "$OUT" '.status'           "NEW_COMMENTS"
+  assert_json_eq "T31 bot_comment_count=1"  "$OUT" '.bot_comment_count'  "1"
+  assert_json_eq "T31 new_comment_count=1"  "$OUT" '.new_comment_count' "1"
+)
+
+# -------------------------------------------------------------------------
+# T32: Pagination — mixed old/new across pages
+# page 1: all old; page 2: 1 old + 1 new → only new from page 2 counted
+# -------------------------------------------------------------------------
+echo "T32: Mixed old/new across pages"
+(
+  gh() {
+    case "$*" in
+      "pr view"*) echo '{"state":"OPEN","merged":false}' ;;
+      *pulls*comments*--paginate*--slurp*)
+        echo '[[{"created_at":"2025-06-01T00:00:00Z","user":{"login":"alice"}},{"created_at":"2025-12-31T23:59:59Z","user":{"login":"bob"}}],[{"created_at":"2025-11-01T00:00:00Z","user":{"login":"carol"}},{"created_at":"2026-06-01T00:00:00Z","user":{"login":"alice"}}]]'
+        ;;
+      *pulls*reviews*--paginate*--slurp*) echo '[[]]' ;;
+      *issues*comments*--paginate*--slurp*) echo '[[]]' ;;
+      *--paginate*--slurp*) echo '[[]]' ;;
+    esac
+  }
+  export -f gh
+  # Cutoff 2026-01-01 — only the 2026-06-01 comment from page 2 is new
+  OUT=$("$BIN_DIR/check-new-comments" 42 "2026-01-01T00:00:00Z" "org/repo")
+  assert_json_eq "T32 status=NEW_COMMENTS"    "$OUT" '.status'              "NEW_COMMENTS"
+  assert_json_eq "T32 new_comment_count=1"    "$OUT" '.new_comment_count'   "1"
+  assert_json_eq "T32 human_comment_count=1"  "$OUT" '.human_comment_count' "1"
+  assert_json_eq "T32 bot_comment_count=0"    "$OUT" '.bot_comment_count'   "0"
+)
+
+# -------------------------------------------------------------------------
+# T33: Pagination — issue comments across 2 pages merged correctly
+# -------------------------------------------------------------------------
+echo "T33: Issue comments across 2 pages"
+(
+  gh() {
+    case "$*" in
+      "pr view"*) echo '{"state":"OPEN","merged":false}' ;;
+      *pulls*comments*--paginate*--slurp*) echo '[[]]' ;;
+      *pulls*reviews*--paginate*--slurp*) echo '[[]]' ;;
+      *issues*comments*--paginate*--slurp*)
+        echo '[[{"created_at":"2026-06-01T00:00:00Z","user":{"login":"alice"}}],[{"created_at":"2026-06-02T00:00:00Z","user":{"login":"bob"}}]]'
+        ;;
+      *--paginate*--slurp*) echo '[[]]' ;;
+    esac
+  }
+  export -f gh
+  OUT=$("$BIN_DIR/check-new-comments" 42 "2026-01-01T00:00:00Z" "org/repo")
+  assert_json_eq "T33 issue_comment_count=2" "$OUT" '.issue_comment_count' "2"
+  # Issue comments don't affect new_comment_count (inline + reviews only)
+  assert_json_eq "T33 new_comment_count=0"   "$OUT" '.new_comment_count'   "0"
+  assert_json_eq "T33 status=NO_CHANGES"     "$OUT" '.status'              "NO_CHANGES"
+)
+
+# -------------------------------------------------------------------------
 # Summary
 # -------------------------------------------------------------------------
 echo ""
