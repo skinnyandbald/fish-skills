@@ -27,6 +27,7 @@ Phase 2: Classification → Categorize by priority, group by file
 Phase 3: Resolution     → Launch parallel agents by file group
 Phase 4: Verification   → Local checks + GoodToGo gate (if installed)
 Phase 5: Completion     → Commit, push, resolve threads
+Phase 6: Shepherd       → Background agent monitors for new bot comments
 ```
 
 ---
