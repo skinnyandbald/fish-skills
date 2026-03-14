@@ -203,9 +203,7 @@ fi
 10. **Track file flags:**
     ```bash
     # Extract file paths from threads touched in this iteration (using .path from GraphQL, not body parsing)
-    FILES_JSON=$(echo "$THREAD_IDS" | jq -r '.[]' | while read tid; do
-      echo "$THREADS" | jq -r --arg id "$tid" '.[] | select(.id == $id) | .path'
-    done | jq -Rs 'split("\n") | map(select(. != "")) | unique')
+    FILES_JSON=$(jq -n --argjson threads "$THREADS" --argjson thread_ids "$THREAD_IDS" '$threads | map(select(.id as $id | $thread_ids | index($id))) | map(.path) | unique')
 
     FLAG_RESULT=$(cd "$SKILL_DIR" && npx tsx lib/shepherd-state.ts track-flags \
       "{\"files\":$FILES_JSON,\"current_flags\":$FILE_FLAGS}")
