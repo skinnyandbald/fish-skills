@@ -176,20 +176,26 @@ fi
 8. **Commit and push:**
    ```bash
    git add -A
-   git commit -m "fix: address PR review feedback (shepherd round $ITERATION_COUNT)"
 
-   LAST_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-   PUSH_ERR=$(mktemp)
-   trap 'rm -f "$PUSH_ERR"' EXIT
-   if ! git push 2>"$PUSH_ERR"; then
-     PUSH_ERROR=$(cat "$PUSH_ERR")
-     # → go to POST_SUMMARY with reason "push_failed" and PUSH_ERROR
+   # Skip commit if nothing staged (ack-only or question-only round)
+   if git diff --cached --quiet; then
+     # No changes to commit — skip to thread resolution
+   else
+     git commit -m "fix: address PR review feedback (shepherd round $ITERATION_COUNT)"
+     LAST_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+     PUSH_ERR=$(mktemp)
+     trap 'rm -f "$PUSH_ERR"' EXIT
+     if ! git push 2>"$PUSH_ERR"; then
+       PUSH_ERROR=$(cat "$PUSH_ERR")
+       # → go to POST_SUMMARY with reason "push_failed" and PUSH_ERROR
+     fi
    fi
    ```
 
 9. **Resolve bot threads** from this iteration only:
    ```bash
-   # For each thread ID from step 3:
+   # Resolve fixable threads and SKIP_LIST threads (NOT question threads)
+   # For each thread ID from step 3 (excluding questions added to BATCHED_QUESTIONS):
    "$SKILL_DIR/bin/resolve-pr-thread" "$THREAD_ID"
    ```
 
