@@ -47,7 +47,7 @@ echo "T1: No new comments"
 (
   gh() {
     case "$*" in
-      "pr view"*) echo '{"state":"OPEN","merged":false}' ;;
+      "pr view"*) echo '{"state":"OPEN","mergedAt":null}' ;;
       *--paginate*--slurp*) echo '[[]]' ;;
     esac
   }
@@ -64,7 +64,7 @@ echo "T1b: Empty string from paginated calls"
 (
   gh() {
     case "$*" in
-      "pr view"*) echo '{"state":"OPEN","merged":false}' ;;
+      "pr view"*) echo '{"state":"OPEN","mergedAt":null}' ;;
       *--paginate*--slurp*) echo '' ;;
     esac
   }
@@ -82,7 +82,7 @@ echo "T2: Bot comments only"
 (
   gh() {
     case "$*" in
-      "pr view"*) echo '{"state":"OPEN","merged":false}' ;;
+      "pr view"*) echo '{"state":"OPEN","mergedAt":null}' ;;
       *pulls*comments*--paginate*--slurp*)
         echo '[[{"created_at":"2026-06-01T00:00:00Z","user":{"login":"coderabbitai[bot]"}},{"created_at":"2026-06-02T00:00:00Z","user":{"login":"coderabbitai[bot]"}}]]'
         ;;
@@ -105,7 +105,7 @@ echo "T3: Human comment only"
 (
   gh() {
     case "$*" in
-      "pr view"*) echo '{"state":"OPEN","merged":false}' ;;
+      "pr view"*) echo '{"state":"OPEN","mergedAt":null}' ;;
       *pulls*comments*--paginate*--slurp*)
         echo '[[{"created_at":"2026-06-01T00:00:00Z","user":{"login":"alice"}}]]'
         ;;
@@ -128,7 +128,7 @@ echo "T4: Mixed bot + human"
 (
   gh() {
     case "$*" in
-      "pr view"*) echo '{"state":"OPEN","merged":false}' ;;
+      "pr view"*) echo '{"state":"OPEN","mergedAt":null}' ;;
       *pulls*comments*--paginate*--slurp*)
         echo '[[{"created_at":"2026-06-01T00:00:00Z","user":{"login":"coderabbitai[bot]"}},{"created_at":"2026-06-02T00:00:00Z","user":{"login":"alice"}}]]'
         ;;
@@ -151,7 +151,7 @@ echo "T5: Merged PR"
 (
   gh() {
     case "$*" in
-      "pr view"*) echo '{"state":"MERGED","merged":true}' ;;
+      "pr view"*) echo '{"state":"MERGED","mergedAt":"2026-03-14T00:00:00Z"}' ;;
     esac
   }
   export -f gh
@@ -166,7 +166,7 @@ echo "T6: Closed PR"
 (
   gh() {
     case "$*" in
-      "pr view"*) echo '{"state":"CLOSED","merged":false}' ;;
+      "pr view"*) echo '{"state":"CLOSED","mergedAt":null}' ;;
     esac
   }
   export -f gh
@@ -181,7 +181,7 @@ echo "T7: Timestamp filtering"
 (
   gh() {
     case "$*" in
-      "pr view"*) echo '{"state":"OPEN","merged":false}' ;;
+      "pr view"*) echo '{"state":"OPEN","mergedAt":null}' ;;
       *pulls*comments*--paginate*--slurp*)
         # One comment before cutoff, one after
         echo '[[{"created_at":"2025-12-31T23:59:59Z","user":{"login":"coderabbitai[bot]"}},{"created_at":"2026-06-01T00:00:00Z","user":{"login":"coderabbitai[bot]"}}]]'
@@ -206,7 +206,7 @@ echo "T8: Edited old comment not counted"
 (
   gh() {
     case "$*" in
-      "pr view"*) echo '{"state":"OPEN","merged":false}' ;;
+      "pr view"*) echo '{"state":"OPEN","mergedAt":null}' ;;
       *pulls*comments*--paginate*--slurp*)
         # created_at before cutoff, updated_at after — should be excluded
         echo '[[{"created_at":"2025-06-01T00:00:00Z","updated_at":"2026-06-01T00:00:00Z","user":{"login":"coderabbitai[bot]"}}]]'
@@ -229,7 +229,7 @@ echo "T9: APPROVED review excluded"
 (
   gh() {
     case "$*" in
-      "pr view"*) echo '{"state":"OPEN","merged":false}' ;;
+      "pr view"*) echo '{"state":"OPEN","mergedAt":null}' ;;
       *pulls*comments*--paginate*--slurp*) echo '[[]]' ;;
       *pulls*reviews*--paginate*--slurp*)
         echo '[[{"submitted_at":"2026-06-01T00:00:00Z","state":"APPROVED","user":{"login":"alice"}}]]'
@@ -251,7 +251,7 @@ echo "T9b: DISMISSED review excluded"
 (
   gh() {
     case "$*" in
-      "pr view"*) echo '{"state":"OPEN","merged":false}' ;;
+      "pr view"*) echo '{"state":"OPEN","mergedAt":null}' ;;
       *pulls*comments*--paginate*--slurp*) echo '[[]]' ;;
       *pulls*reviews*--paginate*--slurp*)
         echo '[[{"submitted_at":"2026-06-01T00:00:00Z","state":"DISMISSED","user":{"login":"alice"}}]]'
@@ -274,7 +274,7 @@ echo "T10: Missing OWNER_REPO falls back to gh repo view"
   gh() {
     case "$*" in
       "repo view"*) echo 'org/repo' ;;
-      "pr view"*) echo '{"state":"OPEN","merged":false}' ;;
+      "pr view"*) echo '{"state":"OPEN","mergedAt":null}' ;;
       *--paginate*--slurp*) echo '[[]]' ;;
     esac
   }
@@ -308,7 +308,7 @@ echo "T22: gh api exits non-zero"
 (
   gh() {
     case "$*" in
-      "pr view"*) echo '{"state":"OPEN","merged":false}' ;;
+      "pr view"*) echo '{"state":"OPEN","mergedAt":null}' ;;
       *pulls*comments*--paginate*--slurp*) return 1 ;;
       *--paginate*--slurp*) echo '[[]]' ;;
     esac
@@ -328,7 +328,7 @@ echo "T30: Inline comments across 2 pages"
 (
   gh() {
     case "$*" in
-      "pr view"*) echo '{"state":"OPEN","merged":false}' ;;
+      "pr view"*) echo '{"state":"OPEN","mergedAt":null}' ;;
       *pulls*comments*--paginate*--slurp*)
         echo '[[{"created_at":"2025-01-01T00:00:00Z","user":{"login":"alice"}}],[{"created_at":"2026-06-01T00:00:00Z","user":{"login":"coderabbitai[bot]"}}]]'
         ;;
@@ -353,7 +353,7 @@ echo "T31: Reviews across 2 pages — APPROVED excluded, COMMENTED included"
 (
   gh() {
     case "$*" in
-      "pr view"*) echo '{"state":"OPEN","merged":false}' ;;
+      "pr view"*) echo '{"state":"OPEN","mergedAt":null}' ;;
       *pulls*comments*--paginate*--slurp*) echo '[[]]' ;;
       *pulls*reviews*--paginate*--slurp*)
         echo '[[{"submitted_at":"2026-06-01T00:00:00Z","state":"APPROVED","user":{"login":"coderabbitai[bot]"}}],[{"submitted_at":"2026-06-02T00:00:00Z","state":"COMMENTED","user":{"login":"coderabbitai[bot]"}}]]'
@@ -377,7 +377,7 @@ echo "T32: Mixed old/new across pages"
 (
   gh() {
     case "$*" in
-      "pr view"*) echo '{"state":"OPEN","merged":false}' ;;
+      "pr view"*) echo '{"state":"OPEN","mergedAt":null}' ;;
       *pulls*comments*--paginate*--slurp*)
         echo '[[{"created_at":"2025-06-01T00:00:00Z","user":{"login":"alice"}},{"created_at":"2025-12-31T23:59:59Z","user":{"login":"bob"}}],[{"created_at":"2025-11-01T00:00:00Z","user":{"login":"carol"}},{"created_at":"2026-06-01T00:00:00Z","user":{"login":"alice"}}]]'
         ;;
@@ -402,7 +402,7 @@ echo "T33: Issue comments across 2 pages"
 (
   gh() {
     case "$*" in
-      "pr view"*) echo '{"state":"OPEN","merged":false}' ;;
+      "pr view"*) echo '{"state":"OPEN","mergedAt":null}' ;;
       *pulls*comments*--paginate*--slurp*) echo '[[]]' ;;
       *pulls*reviews*--paginate*--slurp*) echo '[[]]' ;;
       *issues*comments*--paginate*--slurp*)
