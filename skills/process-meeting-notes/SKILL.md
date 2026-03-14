@@ -56,6 +56,43 @@ Action items MUST always use markdown checkbox format — never tables or plain 
 This enables Obsidian task tracking and interactive checkboxes.
 </essential_principles>
 
+<configuration>
+## Optional: Vault Integration
+
+If you want meeting notes and transcripts saved to a personal knowledge base (Obsidian vault, SecondBrain, etc.), set these environment variables or define them in your project's CLAUDE.md:
+
+| Variable | Purpose | Example |
+|----------|---------|---------|
+| `MEETING_NOTES_DIR` | Where structured meeting notes are saved | `~/SecondBrain/02_Areas/notes` |
+| `MEETING_TRANSCRIPTS_DIR` | Where raw transcripts are archived | `~/SecondBrain/02_Areas/notes/transcripts` |
+
+**If not set:** The skill will only generate GitHub issues and L10 summaries without saving to a vault. It will ask the user where to save if they request it.
+
+**If set:** The skill automatically saves:
+1. **Structured meeting note** to `$MEETING_NOTES_DIR/YYYY-MM-DD - Entity - Topic.md`
+2. **Raw transcript** (when piped in directly or fetched from Fireflies) to `$MEETING_TRANSCRIPTS_DIR/YYYY-MM-DD - Source - Topic.md`
+
+### File Naming Convention
+
+Notes: `YYYY-MM-DD - Entity - Topic.md` (e.g., `2026-03-13 - Hampton - Core Meeting.md`)
+Transcripts: `YYYY-MM-DD - Source - Topic.md` (e.g., `2026-03-13 - Fireflies - Hampton Core Meeting.md`)
+
+### Transcript Frontmatter
+
+```yaml
+---
+date: YYYY-MM-DD
+type: transcript
+source: fireflies | pasted | plaud
+meeting_type: sales | internal | peer-advisory | other
+attendees: [...]
+processed_note: "YYYY-MM-DD - Entity - Topic.md"
+---
+```
+
+The `processed_note` field links the raw transcript to its structured meeting note.
+</configuration>
+
 <intake>
 What would you like to do?
 
