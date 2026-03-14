@@ -1,0 +1,23 @@
+skills/pr-resolution/shepherd.md
+  be4ba0bb4954f07d 1-293
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.11",
+  "base_commit_sha": "9a56cccfb581a2e7dafab3d6fdc06323e3f1bfb4",
+  "prompts": {
+    "be4ba0bb4954f07d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "34e02b28-c0d6-4839-8395-1dd125491344",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Ben Fisher <ben@skinnyandbald.com>",
+      "messages": [],
+      "total_additions": 293,
+      "total_deletions": 0,
+      "accepted_lines": 293,
+      "overriden_lines": 0
+    }
+  }
+}
