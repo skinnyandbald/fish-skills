@@ -1,6 +1,6 @@
 ---
 name: pr-resolution
-description: "[v3] Resolve all PR comments using parallel agents with full workflow and verification gate"
+description: "Resolve PR review comments. Use when asked to fix PR feedback, given a PR URL, or on '/pr-resolution'."
 argument-hint: "[optional: PR number, GitHub URL, or 'current']"
 ---
 
