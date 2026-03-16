@@ -52,7 +52,7 @@ npx skills update     # update all skills
 If you prefer managing symlinks yourself:
 
 ```sh
-git clone https://github.com/skinnyandbald/fish-skills.git ~/code/fish-skills
+git clone https://github.com/skinnyandbald/fish-skills.git ~/fish-skills
 ```
 
 Claude Code looks for skills in two places:
@@ -66,7 +66,7 @@ Claude Code looks for skills in two places:
 
 ```sh
 mkdir -p ~/.claude/skills
-find ~/code/fish-skills/skills -iname skill.md -exec dirname {} \; | while read d; do
+find ~/fish-skills/skills -iname skill.md -exec dirname {} \; | while read d; do
   ln -sf "$d" ~/.claude/skills/
 done
 ```
@@ -75,8 +75,8 @@ done
 
 ```sh
 mkdir -p ~/.claude/skills
-ln -s ~/code/fish-skills/skills/pr-resolution ~/.claude/skills/pr-resolution
-ln -s ~/code/fish-skills/skills/simplify-parallel ~/.claude/skills/simplify-parallel
+ln -s ~/fish-skills/skills/pr-resolution ~/.claude/skills/pr-resolution
+ln -s ~/fish-skills/skills/simplify-parallel ~/.claude/skills/simplify-parallel
 ```
 
 **Install into a specific project:**
@@ -84,7 +84,7 @@ ln -s ~/code/fish-skills/skills/simplify-parallel ~/.claude/skills/simplify-para
 ```sh
 cd ~/my-project
 mkdir -p .claude/skills
-ln -s ~/code/fish-skills/skills/pr-resolution .claude/skills/pr-resolution
+ln -s ~/fish-skills/skills/pr-resolution .claude/skills/pr-resolution
 ```
 
 After installing (either method), restart Claude Code or start a new session. Skills are auto-discovered and show up as `/skill-name` commands.
