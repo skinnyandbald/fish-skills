@@ -27,10 +27,14 @@ This clones the repo, shows an interactive skill picker (space to toggle), and i
 npx skills add skinnyandbald/fish-skills@pr-resolution
 ```
 
-**Submodule skills** (community contributions) aren't included in the main repo install — add them separately:
+**Additional skills** — these live in separate repos and need their own install:
 
 ```sh
-npx skills add aarondfrancis/counselors     # Fan-out to multiple AI agents
+# Counselors: fan-out to multiple AI agents (required by /critic-review)
+npm install -g @skinnyandbald/counselors    # installs the CLI binary
+npx skills add skinnyandbald/counselors     # installs the /counselors skill
+
+# Community skills
 npx skills add rjs/shaping-skills           # Basecamp-style shaping workflow
 npx skills add mvanhorn/last30days-skill    # Trending topic research
 ```
@@ -45,10 +49,10 @@ npx skills update     # update all skills
 
 ### Manual Install (Alternative)
 
-If you prefer managing symlinks yourself, or want everything including submodule skills in one clone:
+If you prefer managing symlinks yourself:
 
 ```sh
-git clone --recursive https://github.com/skinnyandbald/fish-skills.git ~/code/fish-skills
+git clone https://github.com/skinnyandbald/fish-skills.git ~/code/fish-skills
 ```
 
 Claude Code looks for skills in two places:
@@ -92,10 +96,11 @@ Most skills work out of the box, but some require additional setup:
 | Dependency | Required by | Install |
 |---|---|---|
 | [GitHub CLI](https://cli.github.com/) (`gh`) | pr-resolution, process-meeting-notes | `brew install gh && gh auth login` |
+| [@skinnyandbald/counselors](https://github.com/skinnyandbald/counselors) | critic-review, counselors | `npm install -g @skinnyandbald/counselors` |
 | Claude Code v2.1.63+ | simplify-parallel | Built-in `/simplify` provides the review model; `/simplify-parallel` extends it to full-codebase sweeps |
 | [Fireflies MCP](https://www.fireflies.ai/) | process-meeting-notes | Configure in Claude Code MCP settings |
 
-Skills not listed above (setup-ai, git-worktree, capture-learning, last30days, web-design-guidelines, vercel-react-best-practices, critic-review, simplify-parallel) work with no additional setup beyond the dependencies above.
+Most skills work with no additional setup. Skills with dependencies are listed above.
 
 ## Quick Start
 
@@ -120,21 +125,35 @@ Each skill runs in Claude Code's context with access to your codebase, git histo
 | **simplify-parallel** | `/simplify-parallel` | Parallel codebase simplification with automatic segmentation (complements built-in `/simplify`) |
 | **web-design-guidelines** | `/web-design-guidelines` | Review UI code against [Web Interface Guidelines](https://github.com/vercel-labs/web-interface-guidelines) |
 | **vercel-react-best-practices** | `/vercel-react-best-practices` | React/Next.js performance optimization (45 rules across 8 categories) |
+| **review-style-guide** | `/review-style-guide` | Review code changes against STYLE_GUIDE.md before committing |
+| **audit-claude-md** | `/audit-claude-md` | Audit a project's CLAUDE.md against best practices and score its effectiveness |
 
 ### Development Workflow
 
 | Skill | Command | Description |
 |-------|---------|-------------|
-| **setup-ai** | `/setup-ai [--global\|--project\|--check]` | Configure Claude Code for power-user AI development (hooks, plugins, CLAUDE.md) |
+| **setup-ai** | `/setup-ai [--global\|--project\|--check]` | One-command AI onboarding — generates AGENTS.md, STYLE_GUIDE.md, and configures hooks/plugins |
 | **git-worktree** | `/git-worktree [cmd] [args]` | Manage Git worktrees for isolated parallel development |
 | **capture-learning** | `/capture-learning` | Capture problem-solving narratives as structured learnings |
-| **handoff** | `/handoff` | Generate or resume from structured session handoffs for seamless context transfer between Claude Code sessions |
+| **handoff** | `/handoff` | Generate or resume from structured session handoffs for seamless context transfer |
+| **finalize** | `/finalize` | Clean up completed feature work — remove false starts, debug statements, and experimental remnants |
+| **test** | `/test` | Auto-detect test framework, run suite, diagnose failures, and fix them |
+| **tests-new** | `/tests-new` | Add missing test coverage for a feature you just built |
+| **generate-comprehensive-style-guide** | `/generate-comprehensive-style-guide` | Deep codebase analysis to generate a 17-section STYLE_GUIDE.md with evidence citations |
+| **verify-worktree-plugins** | `/verify-worktree-plugins` | Verify worktree plugin patches are intact after plugin updates |
 
-### Planning & Review
+### Planning & Research
 
 | Skill | Command | Description |
 |-------|---------|-------------|
 | **critic-review** | `/critic-review [path] [--dry-run] [--feedback="..."] [--models=x,y]` | Unified plan review: stack detection, Context7 staleness scan, multi-model counselors dispatch, and prioritized triage |
+| **interview-me** | `/interview-me` | Socratic thinking partner — refines half-baked ideas into clear specs through iterative questioning |
+| **requirements-builder** | `/requirements-builder` | Progressively gather requirements through codebase discovery and yes/no questions |
+| **deepproduct** | `/deepproduct` | Build a product profile, then generate a research prompt for any UX or product design question |
+| **deepstack** | `/deepstack` | Detect your project's full tech stack, then generate a research prompt for security, performance, or testing |
+| **ceo-briefing** | `/ceo-briefing [topic]` | Research any topic and produce a structured executive briefing |
+| **last30days** | `/last30days [topic]` | Research trending topics from Reddit, X, YouTube, and the web |
+| **process-meeting-notes** | `/process-meeting-notes` | Process Fireflies transcripts into action items and GitHub issues |
 
 ### EOS Operating System
 
@@ -151,12 +170,14 @@ npx skills add skinnyandbald/fish-skills@eos  # install the /eos router
 
 `/eos` reads your project's CLAUDE.md for customization (CEOS data root path, L10 day, solopreneur mode). Without arguments, it shows a context-aware dashboard with prioritized suggestions. With arguments (e.g., `/eos scorecard`, `/eos rocks`), it routes directly to the right CEOS skill.
 
-### Research & Knowledge
+### Utilities
 
 | Skill | Command | Description |
 |-------|---------|-------------|
-| **last30days** | `/last30days [topic]` | Research trending topics from Reddit, X, and the web |
-| **process-meeting-notes** | `/process-meeting-notes` | Process Fireflies transcripts into action items and GitHub issues |
+| **ascii** | `/ascii` | Create ASCII diagrams for flows, architectures, sequence diagrams, and state machines |
+| **clipboard** | `/clipboard` | Copy generated text to macOS clipboard — auto-triggers when content is paste-ready |
+| **de-ai-ify** | `/de-ai-ify` | Remove AI-generated jargon and restore human voice to text |
+| **invoice** | `/invoice [client] [items]` | Generate professional PDF invoices with auto-incrementing IDs |
 
 ## Skill Details
 
@@ -469,42 +490,37 @@ After installing, start a new Claude Code session. Both plugins auto-register th
 
 ```
 fish-skills/
-├── skills/                          # All skills (directories with SKILL.md)
+├── skills/
+│   ├── ascii/                       # ASCII diagram generation
+│   ├── audit-claude-md/             # CLAUDE.md best-practices audit
 │   ├── capture-learning/            # Problem-solving narrative capture
-│   │   ├── SKILL.md
-│   │   └── scripts/
-│   ├── critic-review/               # Unified plan review (stack, Context7, counselors dispatch)
-│   │   └── SKILL.md
-│   ├── eos/                         # EOS operating system router (requires skinnyandbald/ceos)
-│   │   └── SKILL.md
-│   ├── handoff/                     # Session context transfer
-│   │   └── SKILL.md
+│   ├── ceo-briefing/                # Executive briefing generator
+│   ├── clipboard/                   # macOS clipboard integration
+│   ├── critic-review/               # Multi-model plan review (counselors dispatch)
+│   ├── de-ai-ify/                   # Strip AI jargon from text
+│   ├── deepproduct/                 # UX/product research prompt builder
+│   ├── deepstack/                   # Tech stack research prompt builder
+│   ├── eos/                         # EOS router (requires skinnyandbald/ceos)
+│   ├── finalize/                    # Feature cleanup before commit
+│   ├── generate-comprehensive-style-guide/
 │   ├── git-worktree/                # Worktree management
-│   │   ├── SKILL.md
-│   │   └── scripts/
-│   ├── last30days/                  # Trending topic research (submodule)
-│   │   └── ...
-│   ├── pr-resolution/               # PR comment resolution (v3, parallel agents)
-│   │   ├── SKILL.md
-│   │   ├── bin/
-│   │   └── references/
+│   ├── handoff/                     # Session context transfer
+│   ├── interview-me/                # Socratic idea refinement
+│   ├── invoice/                     # PDF invoice generation
+│   ├── last30days/                  # Trending topic research (separate repo)
+│   ├── pr-resolution/               # PR comment resolution (parallel agents)
 │   ├── process-meeting-notes/       # Fireflies → GitHub issues
-│   │   ├── SKILL.md
-│   │   ├── references/
-│   │   ├── templates/
-│   │   └── workflows/
-│   ├── setup-ai/                    # AI dev environment setup & audit
-│   │   └── SKILL.md
-│   ├── simplify-parallel/           # Parallel codebase simplification (complements built-in /simplify)
-│   │   ├── SKILL.md
-│   │   ├── analyze.md
-│   │   └── orchestrator.md
+│   ├── requirements-builder/        # Progressive requirements gathering
+│   ├── review-style-guide/          # Style guide compliance check
+│   ├── setup-ai/                    # AI dev environment onboarding
+│   ├── shaping-skills/              # Basecamp-style shaping (separate repo)
+│   ├── simplify-parallel/           # Parallel codebase simplification
+│   ├── test/                        # Auto-detect + run + fix tests
+│   ├── tests-new/                   # Add missing test coverage
 │   ├── vercel-react-best-practices/ # React/Next.js optimization
-│   │   ├── SKILL.md
-│   │   ├── AGENTS.md
-│   │   └── rules/
+│   ├── verify-worktree-plugins/     # Plugin patch verification
 │   └── web-design-guidelines/       # Web UI compliance checker
-│       └── SKILL.md
+├── hooks/                           # Session-start automation
 └── README.md
 ```
 
@@ -540,6 +556,7 @@ allowed-tools: Bash, Read...  # tool access whitelist
 |-------------|---------|-------|
 | [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | All skills | Host environment |
 | [GitHub CLI](https://cli.github.com/) (`gh`) | pr-resolution, process-meeting-notes | Authenticated via `gh auth login` |
+| [Node.js](https://nodejs.org/) + npm | counselors, critic-review | For `npm install -g @skinnyandbald/counselors` |
 | Git | git-worktree, pr-resolution, simplify-parallel | Standard installation |
 | Python 3 | git-worktree, last30days | For scripts |
 | Bash | git-worktree | Shell scripts |
