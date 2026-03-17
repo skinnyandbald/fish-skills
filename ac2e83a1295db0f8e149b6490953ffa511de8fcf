@@ -1,0 +1,23 @@
+skills/pr-resolution/SKILL.md
+  1dd5c539e303f85c 196,200
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.12",
+  "base_commit_sha": "ac2e83a1295db0f8e149b6490953ffa511de8fcf",
+  "prompts": {
+    "1dd5c539e303f85c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "df00eefd-e259-42de-8efb-1a8e519b3e5d",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Ben Fisher <ben@skinnyandbald.com>",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}
