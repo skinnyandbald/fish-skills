@@ -193,11 +193,11 @@ This script:
 
 ---
 
-## Phase 6: Shepherd (Automatic)
+## Phase 6: Shepherd (MANDATORY — DO NOT SKIP)
 
 After Phase 5 verification passes, launch the shepherd as a background agent to monitor for new bot comments.
 
-**This phase runs automatically.** Do not skip it. Do not ask the user.
+**This phase is MANDATORY.** Bots (CodeRabbit, Gemini) WILL re-review after your push and leave new comments within 1-5 minutes. If you skip this phase, those comments go unresolved. Do not rationalize skipping ("unlikely", "docs-only", "no new comments expected") — launch the shepherd every time.
 
 1. Capture context:
 ```bash
