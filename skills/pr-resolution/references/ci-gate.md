@@ -164,6 +164,29 @@ echo "${CHECK_KEY}:$((CURRENT + 1))" >> "$STATE_FILE"
 
 **i. Return to Step 1** (appearance wait for new SHA).
 
+## Anti-Analysis-Paralysis Rule
+
+When fixing a CI failure, the agent MUST follow this discipline:
+
+1. **10 tool call budget per fix attempt.** After investigating the failure (reading logs, checking code), the agent MUST attempt a code fix within 10 tool calls. Analysis without a fix attempt does not count toward the 3-attempt bound.
+
+2. **Push after every fix attempt.** Do NOT keep iterating locally. Push the fix, let CI run, and evaluate the result. The CI gate loop handles re-polling automatically.
+
+3. **Try a different approach each time.** If attempt 1 fails, attempt 2 must use a fundamentally different strategy — not a refinement of the same approach.
+
+4. **Escalate when stuck, don't research infinitely.** If the agent cannot form a fix hypothesis within 10 tool calls, it should exit with `CI_ESCALATION` and report:
+   - What was investigated
+   - What the failure appears to be
+   - Why a fix could not be determined
+   - Suggested next steps for a human
+
+**Red flags that the agent is stuck:**
+- More than 15 tool calls without a `git commit`
+- Multiple web searches on the same topic
+- Re-reading the same files
+- Reasoning about the problem without making changes
+- "Let me try a different approach" without actually changing code
+
 ## Exit States
 
 | State | Meaning |
