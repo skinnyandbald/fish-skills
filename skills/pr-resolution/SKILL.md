@@ -10,7 +10,7 @@ argument-hint: "[optional: PR number, GitHub URL, or 'current']"
 
 ## MANDATORY: Background Execution
 
-**The ENTIRE workflow (Phases 0-6) MUST run as a background agent.** This prevents the workflow from being sidetracked by user questions, CI failures, or context switches.
+**The ENTIRE workflow (Phases 0-7) MUST run as a background agent.** This prevents the workflow from being sidetracked by user questions, CI failures, or context switches.
 
 **Foreground steps (do these FIRST, before launching the agent):**
 
@@ -23,12 +23,12 @@ Agent(
   run_in_background: true,
   prompt: "You are resolving PR comments for PR #$PR_NUM.
 
-Read the pr-resolution skill at ~/.claude/skills/pr-resolution/SKILL.md and execute Phases 0-6.
+Read the pr-resolution skill at ~/.claude/skills/pr-resolution/SKILL.md and execute Phases 0-7.
 
 IMPORTANT:
 - For questions classified as [question] that need human input, skip them and note them in your final output
 - For CI failures, fix them as part of the workflow — do NOT stop or ask for help
-- Complete ALL phases including the shepherd launch in Phase 6
+- Complete ALL phases including the CI gate (Phase 6) and shepherd launch (Phase 7)
 - Your final output should summarize: comments resolved, comments skipped (with reasons), CI status"
 )
 ```
@@ -56,7 +56,8 @@ Phase 2: Classification → Categorize by priority, group by file
 Phase 3: Resolution     → Launch parallel agents by file group
 Phase 4: Verification   → Local checks + GoodToGo gate (if installed)
 Phase 5: Completion     → Commit, push, resolve threads
-Phase 6: Shepherd       → Background agent monitors for new bot comments
+Phase 6: CI Gate        → Monitor CI, fix actionable failures, re-push
+Phase 7: Shepherd       → Background agent monitors for new bot comments + CI
 ```
 
 ---
@@ -148,7 +149,7 @@ Wait for all agents to complete.
 2. **If `gtg` is installed**, run final verification from `references/goodtogo.md` (deterministic READY/BLOCK signal)
 3. **Verify all resolutions** - every comment needs explicit resolution
 
-**DO NOT commit until all checks pass.**
+**DO NOT commit until all checks pass. Phase 5 MUST NOT run if Phase 4 verification exits non-zero.**
 
 ---
 
@@ -167,7 +168,7 @@ LAST_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 ### 5c. Push
 3. Push to remote
-   - **If push fails:** Skip Phase 6 (shepherd). The resolution is incomplete.
+   - **If push fails:** Skip Phase 6-7. The resolution is incomplete.
 
 ### 5d. Post resolution summary
 4. Post resolution summary comment to PR
@@ -193,9 +194,36 @@ This script:
 
 ---
 
-## Phase 6: Shepherd (MANDATORY — DO NOT SKIP)
+## Phase 6: CI Gate (MANDATORY)
 
-After Phase 5 verification passes, launch the shepherd as a background agent to monitor for new bot comments.
+After pushing in Phase 5, monitor CI until green or exit condition. Follow the bounded CI retry loop from `references/ci-gate.md`.
+
+1. **Appearance wait** — poll every 15s until at least one check exists for HEAD_SHA (2 min timeout)
+2. **Settle wait** — poll every 60s until all checks reach terminal status (15 min timeout)
+3. **Classify failures** using the decision matrix from `references/ci-gate.md`:
+   - ACTIONS_FIXABLE: GitHub Actions run (`app_slug == "github-actions"`) + failing job name matches fixable pattern + local npm command exists
+   - EXTERNAL: everything else (third-party apps, no local repro, transient infra failures)
+4. **For ACTIONS_FIXABLE failures:**
+   a. Fetch truncated failure logs (`tail -n 300`, grep for errors)
+   b. Diagnose — prioritize PR-modified files, expand scope if needed
+   c. Fix the code, verify with local command (`timeout 120 npm run <command>`)
+   d. Commit with `fix(ci): resolve <check-name> failure`
+   e. Push, wait 60s grace period, update HEAD_SHA and LAST_TIMESTAMP
+   f. Return to step 1
+5. **Max 3 fix attempts per check name** (persisted to `/tmp/ci-gate-state-$PR_NUM`, keyed by normalized name)
+6. **Total timeout: 30 minutes**
+
+**Exit routing:**
+- `CI_GREEN` or `CI_EXTERNAL_ONLY` → proceed to Phase 7
+- `CI_TIMEOUT` or `CI_ESCALATION` or `CI_NO_CHECKS` → report status, proceed to Phase 7
+
+**Pre-existing failure policy:** If a check fails on the branch, fix it. Do NOT classify failures as "pre-existing" to skip them.
+
+---
+
+## Phase 7: Shepherd (MANDATORY — DO NOT SKIP)
+
+After Phase 6 completes, launch the shepherd as a background agent to monitor for new bot comments and CI status.
 
 **This phase is MANDATORY.** Bots (CodeRabbit, Gemini) WILL re-review after your push and leave new comments within 1-5 minutes. If you skip this phase, those comments go unresolved. Do not rationalize skipping ("unlikely", "docs-only", "no new comments expected") — launch the shepherd every time.
 
@@ -222,6 +250,8 @@ Agent(
 **If agent launch fails:** Print the error and exit cleanly. The initial resolution is already complete.
 
 **This phase is NOT re-entered during shepherd RE_RESOLVE iterations.**
+
+**Note:** Phase 7 always starts after Phase 6 completes. They never run concurrently.
 
 ---
 
