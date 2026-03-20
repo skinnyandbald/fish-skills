@@ -44,8 +44,6 @@ Create a folder to store client billing YAML files. Each client gets one file:
 ```yaml
 # clients/acme.yaml
 name: "Acme Corporation"
-address_1: "123 Main St, Suite 400"
-address_2: "San Francisco, CA 94105"
 aliases: [acme, acme-corp]
 default_net: 30
 ```
