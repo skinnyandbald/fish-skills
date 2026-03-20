@@ -68,8 +68,6 @@ Create one YAML file per client in your clients directory:
 ```yaml
 # clients/acme.yaml
 name: "Acme Corporation"
-address_1: "123 Innovation Blvd, Suite 400"
-address_2: "San Francisco, CA 94105"
 aliases: [acme, acme-corp]
 default_net: 30
 ```
@@ -77,8 +75,6 @@ default_net: 30
 | Field | Required | Description |
 |-------|----------|-------------|
 | `name` | Yes | Full legal name for invoice |
-| `address_1` | Yes | Street address |
-| `address_2` | Yes | City, state, zip |
 | `aliases` | No | Alternative names for matching (case-insensitive) |
 | `default_net` | No | Default payment terms for this client (fallback: 15) |
 
