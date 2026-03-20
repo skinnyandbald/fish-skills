@@ -97,7 +97,31 @@ fi
    POLL_RESULT=$("$SKILL_DIR/bin/check-new-comments" "$PR_NUM" "$LAST_TIMESTAMP" "$OWNER_REPO")
    ```
 
-4. Route and follow action (same as INITIAL_POLL step 3-4).
+4. **Check CI status** (using commit check-runs API, same approach as Phase 6):
+   ```bash
+   HEAD_SHA=$(git rev-parse HEAD)
+   CHECK_RUNS=$(gh api "repos/$OWNER/$REPO/commits/$HEAD_SHA/check-runs" \
+     --jq '{
+       total: .total_count,
+       completed: [.check_runs[] | select(.status == "completed")] | length,
+       failing: [.check_runs[] | select(.conclusion != null and .conclusion != "success" and .conclusion != "neutral" and .conclusion != "skipped")]
+     }' 2>/dev/null || echo '{"total":0,"completed":0,"failing":[]}')
+   PENDING=$(($(echo "$CHECK_RUNS" | jq '.total') - $(echo "$CHECK_RUNS" | jq '.completed')))
+   FAILING=$(echo "$CHECK_RUNS" | jq '.failing | length')
+   ```
+   - If PENDING > 0 → continue watching (checks still running)
+   - If FAILING > 0:
+     a. Classify using `references/ci-gate.md` decision matrix (Actions app + job name match + local command)
+     b. Read attempt counts from shared state file (`/tmp/ci-gate-state-$PR_NUM`)
+     c. If ACTIONS_FIXABLE and total attempts < 5 (Phase 6's 3 + shepherd's 2):
+        - Fetch truncated logs (`gh run view <id> --log-failed 2>&1 | tail -n 300`)
+        - Fix, verify locally (`timeout 120 npm run <command>`), commit, push
+        - Wait 60s grace period
+        - Update HEAD_SHA, LAST_TIMESTAMP, state file
+     d. If attempts exhausted → note in POST_SUMMARY, continue watching for comments
+   - If all pass → no action needed
+
+5. Route and follow action (same as INITIAL_POLL step 3-4).
 
 ### RE_RESOLVE
 
