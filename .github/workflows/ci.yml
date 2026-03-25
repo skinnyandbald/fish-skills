@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate Skills
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check SKILL.md files exist for all skills
+        run: |
+          errors=0
+          for dir in skills/*/; do
+            if [ ! -f "$dir/SKILL.md" ]; then
+              echo "Missing SKILL.md in $dir"
+              errors=$((errors + 1))
+            fi
+          done
+          if [ $errors -gt 0 ]; then
+            echo "$errors skill(s) missing SKILL.md"
+            exit 1
+          fi
+          echo "All skills have SKILL.md"
+
+      - name: Validate YAML frontmatter in SKILL.md files
+        run: |
+          pip install pyyaml --quiet
+          python3 -c "
+          import yaml, glob, sys
+          errors = 0
+          for f in glob.glob('skills/*/SKILL.md'):
+              with open(f) as fh:
+                  content = fh.read()
+              if not content.startswith('---'):
+                  print(f'Missing frontmatter: {f}')
+                  errors += 1
+                  continue
+              try:
+                  fm = content.split('---')[1]
+                  yaml.safe_load(fm)
+              except Exception as e:
+                  print(f'Invalid frontmatter in {f}: {e}')
+                  errors += 1
+          if errors:
+              print(f'{errors} error(s) found')
+              sys.exit(1)
+          print('All SKILL.md frontmatter is valid')
+          "
