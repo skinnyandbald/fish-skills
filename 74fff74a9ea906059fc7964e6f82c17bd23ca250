@@ -1,0 +1,51 @@
+.gitignore
+  bdb033f1c671dc79 3
+.github/workflows/ci.yml
+  bdb033f1c671dc79 1-54
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.19",
+  "base_commit_sha": "74fff74a9ea906059fc7964e6f82c17bd23ca250",
+  "prompts": {
+    "6a7a916fc9382142": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "34ac0d19-a5b6-4ed3-84e9-a00135668534",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Ben Fisher <ben@skinnyandbald.com>",
+      "messages": [],
+      "total_additions": 145,
+      "total_deletions": 0,
+      "accepted_lines": 145,
+      "overriden_lines": 0
+    },
+    "9004c684e4b9087f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8505e939-eef9-411b-a056-541a30ced7bf",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Ben Fisher <ben@skinnyandbald.com>",
+      "messages": [],
+      "total_additions": 85,
+      "total_deletions": 8,
+      "accepted_lines": 85,
+      "overriden_lines": 0
+    },
+    "bdb033f1c671dc79": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ae91a052-87e0-42b9-b7a8-8820c702539e",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Ben Fisher <ben@skinnyandbald.com>",
+      "messages": [],
+      "total_additions": 55,
+      "total_deletions": 0,
+      "accepted_lines": 55,
+      "overriden_lines": 0
+    }
+  }
+}
