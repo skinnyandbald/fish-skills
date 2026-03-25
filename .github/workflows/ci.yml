@@ -42,7 +42,10 @@ jobs:
                   errors += 1
                   continue
               try:
-                  fm = content.split('---')[1]
+                  # Find end of frontmatter: second line-start --- delimiter
+                  first = content.index('---')
+                  second = content.index('\n---', first + 3)
+                  fm = content[first + 3:second]
                   yaml.safe_load(fm)
               except Exception as e:
                   print(f'Invalid frontmatter in {f}: {e}')
