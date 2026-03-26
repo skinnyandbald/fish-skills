@@ -10,30 +10,33 @@ argument-hint: "[optional: PR number, GitHub URL, or 'current']"
 
 ## MANDATORY: Background Execution
 
-**The ENTIRE workflow (Phases 0-7) MUST run as a background agent.** This prevents the workflow from being sidetracked by user questions, CI failures, or context switches.
+**Phases 0-6 run as a background agent. Phase 7 (shepherd) runs in the foreground after the agent completes.** This prevents the workflow from being sidetracked by user questions while ensuring the shepherd can be launched as a nested background agent (background agents cannot spawn other background agents).
 
-**Foreground steps (do these FIRST, before launching the agent):**
+**Foreground steps:**
 
 1. Detect PR number from args, current branch, or ask user
 2. Print: "Launching PR resolution for #$PR_NUM in background. You'll be notified when it completes."
-3. Launch background agent with the full workflow:
+3. Launch background agent for Phases 0-6:
 
 ```
 Agent(
   run_in_background: true,
   prompt: "You are resolving PR comments for PR #$PR_NUM.
 
-Read the pr-resolution skill at ~/.claude/skills/pr-resolution/SKILL.md and execute Phases 0-7.
+Read the pr-resolution skill at ~/.claude/skills/pr-resolution/SKILL.md and execute Phases 0-6.
 
 IMPORTANT:
 - For questions classified as [question] that need human input, skip them and note them in your final output
 - For CI failures, fix them as part of the workflow — do NOT stop or ask for help
-- Complete ALL phases including the CI gate (Phase 6) and shepherd launch (Phase 7)
-- Your final output should summarize: comments resolved, comments skipped (with reasons), CI status"
+- Do NOT attempt Phase 7 (shepherd) — it will be launched by the foreground context
+- Your final output MUST include a SHEPHERD_CONTEXT block with PR_NUM, LAST_TIMESTAMP, OWNER_REPO, BRANCH, and RUN_ID so the foreground can launch the shepherd
+- Your final output should also summarize: comments resolved, comments skipped (with reasons), CI status"
 )
 ```
 
-**That's it for the foreground.** Everything below is executed by the background agent.
+4. **When the background agent completes**, read its output. If it includes a `SHEPHERD_CONTEXT` block, extract the values and execute Phase 7 (shepherd launch) from the foreground.
+
+**Everything below through Phase 6 is executed by the background agent. Phase 7 is executed by the foreground.**
 
 ---
 
@@ -214,16 +217,27 @@ After pushing in Phase 5, monitor CI until green or exit condition. Follow the b
 6. **Total timeout: 30 minutes**
 
 **Exit routing:**
-- `CI_GREEN` or `CI_EXTERNAL_ONLY` → proceed to Phase 7
-- `CI_TIMEOUT` or `CI_ESCALATION` or `CI_NO_CHECKS` → report status, proceed to Phase 7
+- `CI_GREEN` or `CI_EXTERNAL_ONLY` → emit SHEPHERD_CONTEXT and finish
+- `CI_TIMEOUT` or `CI_ESCALATION` or `CI_NO_CHECKS` → report status, emit SHEPHERD_CONTEXT and finish
 
-**Pre-existing failure policy:** If a check fails on the branch, fix it. Do NOT classify failures as "pre-existing" to skip them.
+**MANDATORY: Before finishing, emit a SHEPHERD_CONTEXT block in your final output:**
+```
+SHEPHERD_CONTEXT:
+  PR_NUM: $PR_NUM
+  LAST_TIMESTAMP: $LAST_TIMESTAMP
+  OWNER_REPO: $(gh repo view --json nameWithOwner -q '.nameWithOwner')
+  BRANCH: $(git branch --show-current)
+  RUN_ID: $(date +%s)
+```
+The foreground context will use this to launch the shepherd (Phase 7).
+
+**Pre-existing failure policy:** Before classifying ANY failure as pre-existing, run `git diff origin/develop --name-only` and check if the failing code path touches PR-modified files. If it does, it is PR-INTRODUCED — fix it (add mocks, update assertions, etc.). Only classify as pre-existing after verifying the failure exists on the base branch. See `references/ci-gate.md` for the full attribution check.
 
 ---
 
-## Phase 7: Shepherd (MANDATORY — DO NOT SKIP)
+## Phase 7: Shepherd (MANDATORY — RUNS IN FOREGROUND)
 
-After Phase 6 completes, launch the shepherd as a background agent to monitor for new bot comments and CI status.
+**This phase runs in the foreground context**, not inside the background agent. The foreground reads the SHEPHERD_CONTEXT from the background agent's output and launches the shepherd here.
 
 **This phase is MANDATORY.** Bots (CodeRabbit, Gemini) WILL re-review after your push and leave new comments within 1-5 minutes. If you skip this phase, those comments go unresolved. Do not rationalize skipping ("unlikely", "docs-only", "no new comments expected") — launch the shepherd every time.
 
