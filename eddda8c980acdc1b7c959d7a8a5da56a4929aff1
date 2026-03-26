@@ -1,0 +1,36 @@
+skills/pr-resolution/SKILL.md
+  9004c684e4b9087f 220
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.19",
+  "base_commit_sha": "eddda8c980acdc1b7c959d7a8a5da56a4929aff1",
+  "prompts": {
+    "6a7a916fc9382142": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "34ac0d19-a5b6-4ed3-84e9-a00135668534",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Ben Fisher <ben@skinnyandbald.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 145,
+      "overriden_lines": 0
+    },
+    "9004c684e4b9087f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8505e939-eef9-411b-a056-541a30ced7bf",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Ben Fisher <ben@skinnyandbald.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 84,
+      "overriden_lines": 0
+    }
+  }
+}
