@@ -1,0 +1,27 @@
+skills/pr-resolution/references/classification.md
+  0888347ce949b6ea 31,40
+skills/pr-resolution/references/bot-formats.md
+  0888347ce949b6ea 12,90-117
+skills/pr-resolution/SKILL.md
+  0888347ce949b6ea 96-97,229
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "64f7a09640798bc68cd15dbedfe4b8ba57684f8d",
+  "prompts": {
+    "0888347ce949b6ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d947477e-7086-4a21-9276-fd755fef4f20",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Ben Fisher <ben@skinnyandbald.com>",
+      "messages": [],
+      "total_additions": 34,
+      "total_deletions": 2,
+      "accepted_lines": 34,
+      "overriden_lines": 0
+    }
+  }
+}
