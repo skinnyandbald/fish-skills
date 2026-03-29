@@ -63,6 +63,7 @@ def classify_user:
     if . == "coderabbitai[bot]" then "coderabbit"
     elif . == "gemini-code-assist[bot]" then "gemini"
     elif . == "claude[bot]" then "claude"
+    elif . == "codescene-delta-analysis[bot]" then "codescene"
     else "other_bot"
     end
   else "human"
