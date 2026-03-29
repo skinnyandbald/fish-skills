@@ -85,8 +85,8 @@ Take the raw material from the interview and write the copy. Rules:
    - Credentials are safety, not bragging -- make them prominent
    - Frame price around the cost of getting it wrong
    - Don't call time-bound things by their time ("60-minute call") -- call them by their outcome ("strategy work")
-3. **Flag transcript-sourced language** with [from interview] annotations
-4. **Structure by priority:** Headline > Subheadline > Intro > Pricing/risk reversal
+4. **Flag transcript-sourced language** with [from interview] annotations
+5. **Structure by priority:** Headline > Subheadline > Intro > Pricing/risk reversal
 
 ## Phase 4: Line-by-Line Analysis (Jason Adams' Method)
 

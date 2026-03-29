@@ -9,7 +9,7 @@ This module documents how different code review bots format their comments.
 | **CodeRabbit** | `<details>` sections, "Actionable comments: N" | "must fix" | "should" | `Nitpick` |
 | **Gemini** | `![priority]` badges | `![high]` | `![medium]` | `![low]` |
 | **Claude** | Numbered `### 1.` in discussion comment | `## Critical` | `## Important` | `## Suggestions` |
-| **CodeScene** | `[//]: # (cs-code-health)` markers, biomarker links | Complex Method, Large Method | Code Duplication, Bumpy Road | — (no nitpicks) |
+| **CodeScene** | `[//]: # (cs-code-health)` markers, biomarker links | Complex Method, Complex Conditional, Large Method | Code Duplication, Bumpy Road Ahead, Primitive Obsession | — (no nitpicks) |
 | **Human** | Free-form, file:line references | Explicit urgency | "should", "consider" | "nit", "minor" |
 
 ---

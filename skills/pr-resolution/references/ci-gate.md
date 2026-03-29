@@ -122,7 +122,7 @@ CodeScene posts two types of gates as PR review comments:
 1. Read the latest CodeScene review comment on the PR:
    ```bash
    gh api "repos/$OWNER/$REPO/pulls/$PR_NUM/reviews" \
-     --jq '[.[] | select(.body | contains("cs-code-health") or contains("cs-code-coverage"))] | last | .body'
+     --jq '[.[] | select((.body // "") | contains("cs-code-health") or contains("cs-code-coverage"))] | last | .body'
    ```
 
 2. **Coverage gate failure** (body contains "Code Coverage Gates Failed"):
@@ -134,7 +134,7 @@ CodeScene posts two types of gates as PR review comments:
    - Parse the hotspot table for files and biomarkers
    - For "Complex Method": extract helpers, split functions, reduce nesting
    - For "Bumpy Road Ahead": reduce nested conditionals, extract early returns
-   - If the score decline is tiny (< 0.1 point) and the change is minimal (one-line guard), use the Suppress link from the review comment instead of refactoring
+   - Resolve via code changes only (refactor/simplify/extract) so the CodeScene thread has a corresponding commit — suppression is not permitted
 
 4. Classify as **THIRD_PARTY_FIXABLE** and proceed to Step 5 (Fix)
 
@@ -244,7 +244,8 @@ Before classifying ANY test failure as pre-existing, run these steps:
 
 1. **Get files modified by the PR:**
    ```bash
-   PR_FILES=$(git diff origin/develop --name-only)
+   BASE_REF=$(gh pr view "$PR_NUM" --json baseRefName -q '.baseRefName')
+   PR_FILES=$(git diff "origin/$BASE_REF" --name-only)
    ```
 
 2. **For each failing test, check if the error references PR-modified code:**
@@ -266,11 +267,11 @@ Before classifying ANY test failure as pre-existing, run these steps:
 4. **To verify a failure is truly pre-existing** (only if step 3 says POSSIBLY PRE-EXISTING):
    ```bash
    # Option A: Check base branch CI status
-   gh api "repos/$OWNER/$REPO/commits/develop/check-runs" \
+   gh api "repos/$OWNER/$REPO/commits/$BASE_REF/check-runs" \
      --jq '[.check_runs[] | select(.conclusion == "failure") | .name]'
 
    # Option B: Run the failing test against base branch
-   git stash && git checkout origin/develop -- . && npx vitest run <failing-test-file> ; git checkout . && git stash pop
+   git stash && git checkout "origin/$BASE_REF" && npx vitest run <failing-test-file> ; git checkout - && git stash pop
    ```
 
 **Common PR-introduced failures that look pre-existing but are NOT:**
