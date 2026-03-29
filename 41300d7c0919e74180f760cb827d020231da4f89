@@ -1,0 +1,27 @@
+skills/pr-resolution/references/ci-gate.md
+  0888347ce949b6ea 125,137,247-248,270,274
+skills/pr-resolution/references/bot-formats.md
+  0888347ce949b6ea 12
+skills/copy-interview/SKILL.md
+  0888347ce949b6ea 88-89
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.22",
+  "base_commit_sha": "41300d7c0919e74180f760cb827d020231da4f89",
+  "prompts": {
+    "0888347ce949b6ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d947477e-7086-4a21-9276-fd755fef4f20",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Ben Fisher <ben@skinnyandbald.com>",
+      "messages": [],
+      "total_additions": 10,
+      "total_deletions": 9,
+      "accepted_lines": 9,
+      "overriden_lines": 0
+    }
+  }
+}
