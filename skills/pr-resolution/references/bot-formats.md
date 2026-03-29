@@ -9,6 +9,7 @@ This module documents how different code review bots format their comments.
 | **CodeRabbit** | `<details>` sections, "Actionable comments: N" | "must fix" | "should" | `Nitpick` |
 | **Gemini** | `![priority]` badges | `![high]` | `![medium]` | `![low]` |
 | **Claude** | Numbered `### 1.` in discussion comment | `## Critical` | `## Important` | `## Suggestions` |
+| **CodeScene** | `[//]: # (cs-code-health)` markers, biomarker links | Complex Method, Complex Conditional, Large Method | Code Duplication, Bumpy Road Ahead, Primitive Obsession | — (no nitpicks) |
 | **Human** | Free-form, file:line references | Explicit urgency | "should", "consider" | "nit", "minor" |
 
 ---
@@ -83,6 +84,34 @@ CLAUDE_COUNT=$(gh api repos/$OWNER/$REPO/issues/$PR_NUM/comments \
 - Section headers (## Critical Issues)
 - Checklist items (- [x] or - [])
 - "Priority Fixes Before Merge" summary (duplicates numbered items)
+
+---
+
+## CodeScene Delta Analysis Format
+
+| Biomarker | Category | Action |
+|-----------|----------|--------|
+| **Complex Method** | `blocking` | Extract helper functions to reduce cyclomatic complexity |
+| **Complex Conditional** | `blocking` | Simplify or extract named boolean helpers |
+| **Code Duplication** | `suggestion` | Extract shared code into a function |
+| **Bumpy Road Ahead** | `suggestion` | Reduce nesting depth, extract early returns |
+| **Primitive Obsession** | `suggestion` | Consider enums or branded types for string parameters |
+| **Large Method** | `blocking` | Split into smaller functions |
+
+**Parsing instructions:**
+1. CodeScene comments start with `[//]: # (cs-code-health)` hidden marker
+2. Each comment targets a specific file:line with a biomarker link
+3. The ❌ emoji prefix means "Getting worse" or "New issue" — both are actionable
+4. The biomarker name is in the markdown link text (e.g., `**Complex Method**`)
+5. Method/function name follows on the next line
+6. CodeScene comments are ALWAYS actionable — they represent measurable code health regressions
+
+**Classification rule:** All CodeScene comments are `blocking` or `suggestion` — never `non_actionable`. They must be resolved with code changes (extract functions, reduce complexity, remove duplication). Do NOT resolve CodeScene threads without a corresponding code commit.
+
+**Identifying CodeScene comments:**
+- Author: `codescene-delta-analysis[bot]`
+- Comments contain biomarker links to CodeScene documentation
+- Posted as PR review comments on specific file:line locations
 
 ---
 

@@ -28,6 +28,7 @@ This module defines how to categorize PR comments.
 | **CodeRabbit** | "must fix" | "should" | `Nitpick` |
 | **Gemini** | `high-priority.svg` in URL | `medium-priority.svg` in URL | `low-priority.svg` in URL |
 | **Claude** | Under `## Critical` | Under `## Important` | Under `## Suggestions` |
+| **CodeScene** | Complex Method, Complex Conditional, Large Method | Code Duplication, Bumpy Road, Primitive Obsession | — (no nitpicks) |
 
 ## Important Rules
 
@@ -36,3 +37,4 @@ This module defines how to categorize PR comments.
 3. **Code diff blocks** (```diff) → treat as `suggestion`, implement the change
 4. **Fix nitpicks automatically** - don't ask, just do it
 5. **Only ask human for questions or genuine uncertainty**
+6. **CodeScene comments are ALWAYS code changes** — never resolve without a commit. Extract functions, reduce nesting, remove duplication.

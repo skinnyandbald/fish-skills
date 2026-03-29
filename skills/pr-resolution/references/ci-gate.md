@@ -106,13 +106,45 @@ FAILED_JOBS=$(gh run view "$RUN_ID" --json jobs \
 jq -e '.scripts.lint' package.json >/dev/null 2>&1
 ```
 
-Everything not matching all three conditions is **EXTERNAL**.
+Everything not matching all three conditions is **EXTERNAL** — unless it's a recognized third-party check (see below).
+
+### Step 3b: Classify Third-Party Actionable Checks
+
+Some third-party checks (not GitHub Actions) are still actionable because they post structured feedback as PR review comments.
+
+**CodeScene** (`app_slug == "codescene"` or check name contains "CodeScene"):
+
+CodeScene posts two types of gates as PR review comments:
+1. **Code Coverage Gate** — requires new/changed code to meet a coverage threshold
+2. **Code Health Gate** — flags complexity increases (Complex Method, Bumpy Road Ahead)
+
+**When CodeScene fails:**
+1. Read the latest CodeScene review comment on the PR:
+   ```bash
+   gh api "repos/$OWNER/$REPO/pulls/$PR_NUM/reviews" \
+     --jq '[.[] | select((.body // "") | contains("cs-code-health") or contains("cs-code-coverage"))] | last | .body'
+   ```
+
+2. **Coverage gate failure** (body contains "Code Coverage Gates Failed"):
+   - Parse uncovered files and line numbers from the review body
+   - Add unit tests for those specific lines
+   - Focus on the most impactful files first (most uncovered lines)
+
+3. **Code Health gate failure** (body contains "Prevent hotspot decline"):
+   - Parse the hotspot table for files and biomarkers
+   - For "Complex Method": extract helpers, split functions, reduce nesting
+   - For "Bumpy Road Ahead": reduce nested conditionals, extract early returns
+   - Resolve via code changes only (refactor/simplify/extract) so the CodeScene thread has a corresponding commit — suppression is not permitted
+
+4. Classify as **THIRD_PARTY_FIXABLE** and proceed to Step 5 (Fix)
+
+**Adding more third-party checks:** To make other third-party checks actionable, add their detection rules and fix strategies here.
 
 ### Step 4: Route
 
 - All checks pass → **exit CI_GREEN**
-- Only EXTERNAL failures → **exit CI_EXTERNAL_ONLY**
-- ACTIONS_FIXABLE failures exist → proceed to Step 5
+- Only EXTERNAL failures (no ACTIONS_FIXABLE or THIRD_PARTY_FIXABLE) → **exit CI_EXTERNAL_ONLY**
+- ACTIONS_FIXABLE or THIRD_PARTY_FIXABLE failures exist → proceed to Step 5
 
 ### Step 5: Fix
 
@@ -192,17 +224,63 @@ When fixing a CI failure, the agent MUST follow this discipline:
 | State | Meaning |
 |-------|---------|
 | `CI_GREEN` | All checks pass |
-| `CI_EXTERNAL_ONLY` | Only non-fixable checks failing |
+| `CI_EXTERNAL_ONLY` | Only truly non-fixable checks failing (not CodeScene or other recognized third-party checks) |
 | `CI_NO_CHECKS` | No checks appeared after 2 min |
 | `CI_TIMEOUT` | Total timeout or checks never settled |
 | `CI_ESCALATION` | 3+ fix attempts on same check |
 
 All exit states proceed to the next phase — `CI_GREEN`/`CI_EXTERNAL_ONLY` cleanly, others with a status note.
 
-## Pre-existing vs Introduced Policy
+## Pre-existing vs Introduced Failure Policy
 
-> If a check fails on the branch, fix it. Do NOT classify failures as "pre-existing" to skip them.
-> The branch must pass CI to merge, regardless of when the failure was introduced.
+**Default stance: fix it.** The branch must pass CI to merge.
+
+However, you MUST correctly attribute failures before fixing. A failure caused by code
+the PR introduced is NOT pre-existing — even if "those tests were passing before".
+
+### Mandatory Attribution Check
+
+Before classifying ANY test failure as pre-existing, run these steps:
+
+1. **Get files modified by the PR:**
+   ```bash
+   BASE_REF=$(gh pr view "$PR_NUM" --json baseRefName -q '.baseRefName')
+   PR_FILES=$(git diff "origin/$BASE_REF" --name-only)
+   ```
+
+2. **For each failing test, check if the error references PR-modified code:**
+   - Read the test failure output (stack trace, assertion error)
+   - Check whether the failing function/method/import lives in a PR-modified file
+   - Check whether the test file itself was modified by the PR
+   - If the error mentions a symbol (function, class, mock) that was added or changed
+     by the PR, the failure is PR-INTRODUCED
+
+3. **Classification rules:**
+
+   | Evidence | Classification | Action |
+   |----------|---------------|--------|
+   | Error references function/file modified by PR | **PR-INTRODUCED** | Fix it (add mocks, update assertions, etc.) |
+   | Test file was modified by PR | **PR-INTRODUCED** | Fix it |
+   | PR added new code paths that tests call without mocks (e.g., `Sentry.setTag`, DB guards) | **PR-INTRODUCED** | Add missing mocks/stubs |
+   | Error is in code completely unrelated to PR files | **POSSIBLY PRE-EXISTING** | Verify on base branch before skipping |
+
+4. **To verify a failure is truly pre-existing** (only if step 3 says POSSIBLY PRE-EXISTING):
+   ```bash
+   # Option A: Check base branch CI status
+   gh api "repos/$OWNER/$REPO/commits/$BASE_REF/check-runs" \
+     --jq '[.check_runs[] | select(.conclusion == "failure") | .name]'
+
+   # Option B: Run the failing test against base branch
+   git stash && git checkout "origin/$BASE_REF" && npx vitest run <failing-test-file> ; git checkout - && git stash pop
+   ```
+
+**Common PR-introduced failures that look pre-existing but are NOT:**
+- Adding `Sentry.setTag()` / `Sentry.captureException()` calls without mocking Sentry in tests
+- Adding `db.model.findUniqueOrThrow()` guards without adding DB mocks to tests
+- Changing function signatures without updating test call sites
+- Adding new imports that tests don't have stubs for
+
+**Never bulk-classify failures as pre-existing.** Each failure must be individually attributed.
 
 ## Shared State File
 
