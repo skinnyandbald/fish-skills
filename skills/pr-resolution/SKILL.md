@@ -93,7 +93,8 @@ Route based on status (or skip straight to Phase 1 if `gtg` is not installed):
 ## Phase 2: Classification & Grouping
 
 1. **Classify each comment** using `references/classification.md`
-2. **Group by file** for parallel execution:
+2. **CodeScene handling:** CodeScene comments flag measurable code health regressions (complexity, duplication, nesting). These are ALWAYS addressed with code changes — extract helper functions, reduce cyclomatic complexity, remove duplication. Never resolve a CodeScene thread without a corresponding code fix. Group CodeScene comments with their target file for parallel execution.
+3. **Group by file** for parallel execution:
 
 ```markdown
 ## Parallel Execution Plan
@@ -225,7 +226,7 @@ After pushing in Phase 5, monitor CI until green or exit condition. Follow the b
 
 After Phase 6 completes, launch the shepherd as a background agent to monitor for new bot comments and CI status.
 
-**This phase is MANDATORY.** Bots (CodeRabbit, Gemini) WILL re-review after your push and leave new comments within 1-5 minutes. If you skip this phase, those comments go unresolved. Do not rationalize skipping ("unlikely", "docs-only", "no new comments expected") — launch the shepherd every time.
+**This phase is MANDATORY.** Bots (CodeRabbit, Gemini, CodeScene) WILL re-review after your push and leave new comments within 1-5 minutes. If you skip this phase, those comments go unresolved. Do not rationalize skipping ("unlikely", "docs-only", "no new comments expected") — launch the shepherd every time.
 
 1. Capture context:
 ```bash
