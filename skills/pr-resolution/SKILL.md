@@ -88,6 +88,8 @@ Route based on status (or skip straight to Phase 1 if `gtg` is not installed):
 2. **Parse bot formats** using rules from `references/bot-formats.md`
 3. **Print enumeration** - counts MUST match before proceeding
 
+**Zero comments found?** Bots (CodeRabbit, Gemini, Cubic, CodeScene) take 1-5 minutes to post reviews. If discovery finds zero comments, skip Phases 2-5 and jump directly to Phase 6 (CI Gate), then Phase 7 (Shepherd). The shepherd will catch late-arriving bot comments. Do NOT exit early — the shepherd is the whole point when there are no initial comments.
+
 ---
 
 ## Phase 2: Classification & Grouping
@@ -188,8 +190,25 @@ This script:
 
 **If the script reports failures or remaining threads: DO NOT mark workflow as complete. Fix manually with `bin/resolve-pr-thread THREAD_ID`.**
 
-### 5f. Final verification
-5. Confirm script output shows "All threads resolved"
+### 5f. Final verification (MANDATORY)
+5. Run an independent GraphQL count check — do NOT rely solely on the script's output:
+```bash
+UNRESOLVED=$(gh api graphql -f query='
+  query($owner: String!, $repo: String!, $pr: Int!) {
+    repository(owner: $owner, name: $repo) {
+      pullRequest(number: $pr) {
+        reviewThreads(first: 1) { totalCount }
+        unresolvedThreads: reviewThreads(first: 1, filterBy: {resolved: false}) { totalCount }
+      }
+    }
+  }
+' -F owner="$OWNER" -F repo="$REPO" -F pr=$PR_NUM \
+  --jq '.data.repository.pullRequest.unresolvedThreads.totalCount')
+
+echo "Unresolved threads: $UNRESOLVED"
+```
+
+**If UNRESOLVED > 0:** Re-run `bin/resolve-all-threads $PR_NUM`, then re-check. If threads persist after two attempts, list the thread IDs in your output and proceed — the shepherd will catch them.
 
 **Workflow is NOT complete until all threads are resolved.**
 
@@ -226,7 +245,7 @@ After pushing in Phase 5, monitor CI until green or exit condition. Follow the b
 
 After Phase 6 completes, launch the shepherd as a background agent to monitor for new bot comments and CI status.
 
-**This phase is MANDATORY.** Bots (CodeRabbit, Gemini, CodeScene) WILL re-review after your push and leave new comments within 1-5 minutes. If you skip this phase, those comments go unresolved. Do not rationalize skipping ("unlikely", "docs-only", "no new comments expected") — launch the shepherd every time.
+**This phase is MANDATORY — even when zero comments were found in Phase 1.** Bots (CodeRabbit, Gemini, Cubic, CodeScene) take 1-5 minutes to post reviews after a PR is created or pushed. The shepherd catches these late-arriving comments. Do not rationalize skipping ("no comments found", "no push made", "unlikely", "docs-only", "no new comments expected") — launch the shepherd every time. If no push was made in Phase 5, use the current UTC timestamp for LAST_TIMESTAMP.
 
 1. Capture context:
 ```bash

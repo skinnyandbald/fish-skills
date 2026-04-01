@@ -9,7 +9,7 @@
 
 - **DO NOT prompt the user or ask questions.** You are running in background mode.
 - **DO NOT proceed to RE_RESOLVE unless bot_comment_count > 0.**
-- **DO NOT call `resolve-all-threads`.** Only resolve threads from the current iteration.
+- **During RE_RESOLVE iterations, do NOT call `resolve-all-threads`.** Only resolve threads from the current iteration. The final sweep in POST_SUMMARY handles stragglers.
 - **On ANY error, exit with a status report. Do not retry.**
 - **On human-only comments, exit immediately with a report. Do not attempt resolution.**
 
@@ -287,7 +287,13 @@ Post or update a summary comment on the PR. Skip if ITERATION_COUNT == 0 (no noi
    ```
    If the API call fails, include the error in the exit report but do not retry.
 
-4. **Exit** with a status report to the user's main session:
+4. **Final thread sweep** — resolve any threads that slipped through iteration-level resolution:
+   ```bash
+   "$SKILL_DIR/bin/resolve-all-threads" "$PR_NUM"
+   ```
+   This catches threads that were fixed but not resolved due to GraphQL failures, thread ID mismatches, or race conditions. Log the result but do not fail the summary on errors.
+
+5. **Exit** with a status report to the user's main session:
 
    **For merged:**
    ```
