@@ -190,8 +190,25 @@ This script:
 
 **If the script reports failures or remaining threads: DO NOT mark workflow as complete. Fix manually with `bin/resolve-pr-thread THREAD_ID`.**
 
-### 5f. Final verification
-5. Confirm script output shows "All threads resolved"
+### 5f. Final verification (MANDATORY)
+5. Run an independent GraphQL count check — do NOT rely solely on the script's output:
+```bash
+UNRESOLVED=$(gh api graphql -f query='
+  query($owner: String!, $repo: String!, $pr: Int!) {
+    repository(owner: $owner, name: $repo) {
+      pullRequest(number: $pr) {
+        reviewThreads(first: 1) { totalCount }
+        unresolvedThreads: reviewThreads(first: 1, filterBy: {resolved: false}) { totalCount }
+      }
+    }
+  }
+' -F owner="$OWNER" -F repo="$REPO" -F pr=$PR_NUM \
+  --jq '.data.repository.pullRequest.unresolvedThreads.totalCount')
+
+echo "Unresolved threads: $UNRESOLVED"
+```
+
+**If UNRESOLVED > 0:** Re-run `bin/resolve-all-threads $PR_NUM`, then re-check. If threads persist after two attempts, list the thread IDs in your output and proceed — the shepherd will catch them.
 
 **Workflow is NOT complete until all threads are resolved.**
 
