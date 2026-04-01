@@ -228,7 +228,7 @@ After pushing in Phase 5, monitor CI until green or exit condition. Follow the b
 
 After Phase 6 completes, launch the shepherd as a background agent to monitor for new bot comments and CI status.
 
-**This phase is MANDATORY — even when zero comments were found in Phase 1.** Bots (CodeRabbit, Gemini, Cubic, CodeScene) take 1-5 minutes to post reviews after a PR is created or pushed. The shepherd catches these late-arriving comments. Do not rationalize skipping ("no comments found", "no push made", "unlikely", "docs-only", "no new comments expected") — launch the shepherd every time. If no push was made in Phase 5, use the PR's current HEAD SHA for LAST_TIMESTAMP.
+**This phase is MANDATORY — even when zero comments were found in Phase 1.** Bots (CodeRabbit, Gemini, Cubic, CodeScene) take 1-5 minutes to post reviews after a PR is created or pushed. The shepherd catches these late-arriving comments. Do not rationalize skipping ("no comments found", "no push made", "unlikely", "docs-only", "no new comments expected") — launch the shepherd every time. If no push was made in Phase 5, use the current UTC timestamp for LAST_TIMESTAMP.
 
 1. Capture context:
 ```bash
