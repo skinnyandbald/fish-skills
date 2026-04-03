@@ -1,0 +1,23 @@
+.github/workflows/ci.yml
+  7c9085a4928aab1c 14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "28ee0cac6bd6d9cf99aae915c5b60b72b0d6e2de",
+  "prompts": {
+    "7c9085a4928aab1c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "30ac087f-3f76-4d02-bdd9-e4201d864bfc",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Ben Fisher",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
