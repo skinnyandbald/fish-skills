@@ -15,7 +15,7 @@ Your verbal pitch is always better than what you write from a blank page. This s
 
 ## Before Starting
 
-1. **Read the style guide** at `02_Areas/content-creation/style-guide.md` -- this is the voice bible
+1. **Read the style guide** at `.claude/skills/voice-guide/style-guide.md` -- this is the voice bible
 2. **Check for product marketing context** at `.claude/product-marketing-context.md` if it exists
 3. **Read the existing page** if rewriting (get the current copy so you know what to improve)
 
