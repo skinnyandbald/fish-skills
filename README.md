@@ -176,7 +176,6 @@ npx skills add skinnyandbald/fish-skills@eos  # install the /eos router
 |-------|---------|-------------|
 | **ascii** | `/ascii` | Create ASCII diagrams for flows, architectures, sequence diagrams, and state machines |
 | **clipboard** | `/clipboard` | Copy generated text to macOS clipboard — auto-triggers when content is paste-ready |
-| **de-ai-ify** | `/de-ai-ify` | Remove AI-generated jargon and restore human voice to text |
 | **invoice** | `/invoice [client] [items]` | Generate professional PDF invoices with auto-incrementing IDs |
 
 ## Skill Details
@@ -497,7 +496,6 @@ fish-skills/
 │   ├── ceo-briefing/                # Executive briefing generator
 │   ├── clipboard/                   # macOS clipboard integration
 │   ├── critic-review/               # Multi-model plan review (counselors dispatch)
-│   ├── de-ai-ify/                   # Strip AI jargon from text
 │   ├── deepproduct/                 # UX/product research prompt builder
 │   ├── deepstack/                   # Tech stack research prompt builder
 │   ├── eos/                         # EOS router (requires skinnyandbald/ceos)
