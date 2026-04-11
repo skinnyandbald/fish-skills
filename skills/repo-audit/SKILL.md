@@ -274,9 +274,6 @@ updates:
     open-pull-requests-limit: 5
     cooldown:
       default-days: 3
-      semver-major-days: 7
-      semver-minor-days: 3
-      semver-patch-days: 1
 DEPBOT
 
 gh api repos/{repo}/contents/.github/dependabot.yml \
@@ -330,9 +327,6 @@ updates:
     open-pull-requests-limit: 5
     cooldown:
       default-days: 3
-      semver-major-days: 7
-      semver-minor-days: 3
-      semver-patch-days: 1
 ```
 
 ### Fix Report
