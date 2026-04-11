@@ -105,7 +105,7 @@ workflows=$(gh api repos/{repo}/contents/.github/workflows --jq '.[].name' 2>/de
 
 # For each workflow file, fetch content and check
 for wf in $workflows; do
-  content=$(gh api repos/{repo}/contents/.github/workflows/$wf --jq '.content' | base64 -d)
+  content=$(gh api repos/{repo}/contents/.github/workflows/$wf --jq '.content' | base64 -D)
   if echo "$content" | grep -q 'semgrep ci' && echo "$content" | grep -q '\-\-config auto'; then
     # Flag this file
     echo "FAIL: $wf contains semgrep ci with --config auto"
@@ -149,7 +149,7 @@ gh api repos/{repo}/branches --paginate | jq -r '.[].name' | while read branch; 
 
   # Check tip commit date
   committed_at=$(gh api "repos/{repo}/git/refs/heads/${encoded_branch}" --jq '.object.url' \
-    | xargs gh api --jq '.committer.date')
+    | xargs gh api --jq '.commit.committer.date')
 
   # Flag if older than 60 days
   cutoff_60d=$(date -v-60d +%Y-%m-%dT%H:%M:%SZ)
@@ -172,13 +172,13 @@ This catches `@main`, `@master`, `@v1`, `@v1.2.3`, and any other non-SHA ref.
 ```bash
 # For each workflow file, fetch and scan
 for wf in $workflows; do
-  content=$(gh api repos/{repo}/contents/.github/workflows/$wf --jq '.content' | base64 -d)
+  content=$(gh api repos/{repo}/contents/.github/workflows/$wf --jq '.content' | base64 -D)
   # Find uses: lines with non-SHA refs for third-party actions
   echo "$content" | grep -E '^\s*uses:\s*' | while read line; do
     # Extract action ref (owner/repo@ref)
     action=$(echo "$line" | sed 's/.*uses:\s*//' | tr -d '"' | tr -d "'")
     owner=$(echo "$action" | cut -d'/' -f1)
-    ref=$(echo "$action" | sed 's/.*@//')
+    ref=$(echo "$action" | sed 's/.*@//' | cut -d' ' -f1)
 
     # Skip first-party actions
     [[ "$owner" == "actions" || "$owner" == "github" ]] && continue
@@ -253,6 +253,13 @@ Only push if the repo has a `package.json` (npm ecosystem) or `.github/workflows
 For new file creation, omit the `sha` field:
 
 ```bash
+# Check for ecosystem markers before fixing
+if ! gh api repos/{repo}/contents/package.json &>/dev/null && \
+   ! gh api repos/{repo}/contents/.github/workflows &>/dev/null; then
+  echo "Skipping {repo}: no npm or actions ecosystem found."
+  continue
+fi
+
 # Write template to temp file
 cat > /tmp/dependabot.yml << 'DEPBOT'
 version: 2
@@ -289,10 +296,10 @@ Scan ALL `*.yml` files under `.github/workflows/` (not just `security.yml`).
 ```bash
 # Get current file content and SHA
 sha=$(gh api repos/{repo}/contents/.github/workflows/{file} --jq '.sha')
-content=$(gh api repos/{repo}/contents/.github/workflows/{file} --jq '.content' | base64 -d)
+content=$(gh api repos/{repo}/contents/.github/workflows/{file} --jq '.content' | base64 -D)
 
 # Remove --config auto from the content
-fixed_content=$(echo "$content" | sed 's/--config auto//g')
+fixed_content=$(echo "$content" | sed '/semgrep ci/s/--config auto//g')
 
 # Write fixed content to temp file
 echo "$fixed_content" > /tmp/fixed-workflow.yml
