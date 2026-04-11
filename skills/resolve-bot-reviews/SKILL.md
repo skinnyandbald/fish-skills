@@ -67,11 +67,11 @@ gh api graphql -f query='
 
 ### 1c. Filter to bot authors
 
-Only process threads where the first comment's author is one of:
-- `coderabbitai[bot]`
-- `gemini-code-assist[bot]`
+Only process threads where the first comment's author matches one of these patterns (GraphQL returns the login without `[bot]` suffix, REST includes it):
+- `coderabbitai` or `coderabbitai[bot]`
+- `gemini-code-assist` or `gemini-code-assist[bot]`
 
-Discard all other threads.
+Match with a prefix check (starts with `coderabbitai` or `gemini-code-assist`). Discard all other threads.
 
 ### 1d. Categorize each thread
 
