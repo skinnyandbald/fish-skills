@@ -25,7 +25,7 @@ Apply 7 changes to the process-meeting-notes skill: mandatory transcript analysi
 1. `mkdir -p skills/process-meeting-notes/bin`
 2. Write the script (3 args: combined_count, skipped_count, l10_file)
 3. `chmod +x` the script
-4. Test locally: `bash bin/verify-extraction-completeness.sh 11 3 /path/to/test-l10.md` — should PASS with 8+ action items in the test file
+4. Test locally: `bash skills/process-meeting-notes/bin/verify-extraction-completeness.sh 11 3 /path/to/test-l10.md` — should PASS with 8+ action items in the test file
 
 ### Task 2: Update workflow — Step 3 (mandatory transcript analysis)
 **File:** `skills/process-meeting-notes/workflows/process-recent-meeting.md`

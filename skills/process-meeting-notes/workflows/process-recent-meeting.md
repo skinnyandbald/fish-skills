@@ -113,8 +113,10 @@ If K = 0 and the meeting was longer than 30 minutes, print an advisory:
 meeting of this length. Verify the transcript was fully read."
 (Do NOT force a re-scan — K=0 is valid if coverage appears correct.)
 
-Write N to /tmp/meeting-notes-{MEETING_ID}-extraction-count.txt for use at Checkpoint C.
-Use the Fireflies transcript ID as MEETING_ID to namespace temp files and prevent cross-run contamination.
+Define `MEETING_ID` from the Fireflies transcript ID selected in Step 1 (the `<selected_meeting_id>` value). Use `$MEETING_ID` consistently in all temp file paths and shell commands.
+
+Write N to `/tmp/meeting-notes-$MEETING_ID-extraction-count.txt` for use at Checkpoint C.
+Use the Fireflies transcript ID as `MEETING_ID` to namespace temp files and prevent cross-run contamination.
 
 ## Step 4: Categorize Extracted Items
 
@@ -154,9 +156,9 @@ Before creating issues, determine the correct repository for each item.
 
 **Detection logic:**
 1. Extract the project/company context from the meeting (participants, topic, keywords)
-2. Fetch the user's repo list once: `gh repo list skinnyandbald --limit 200 --json name --jq '.[].name'`. Fuzzy-match the meeting's project/company name against this list (case-insensitive, strip hyphens for comparison). If exactly one repo matches, use it. If multiple match, present options to the user. If zero match, route to SB.
+2. Fetch the authenticated user's repo list once: `GH_LOGIN=$(gh api user -q '.login' 2>/dev/null)` then `gh repo list "$GH_LOGIN" --limit 200 --json name --jq '.[].name'`. Fuzzy-match the meeting's project/company name against this list (case-insensitive, strip hyphens for comparison). If exactly one repo matches, use it. If multiple match, present options to the user. If zero match, route to SecondBrain.
 
-**Fallback:** If `gh` CLI is unavailable, rate-limited, or errors on all lookups, default all items to SB repo and notify the user: "Repo detection unavailable — routing all issues to SecondBrain."
+**Fallback:** If `gh` CLI is unavailable, rate-limited, or errors on all lookups, default all items to SecondBrain repo and notify the user: "Repo detection unavailable — routing all issues to SecondBrain."
 
 **Routing rules:**
 - **Product/engineering tasks** (code changes, features, bugs, technical debt) -> project repo if it exists
@@ -261,7 +263,7 @@ in exactly one state.
 Verify: X + Y + Z = COMBINED_COUNT
 If not equal, items were dropped. List what's missing before proceeding.
 
-Write Z (skipped count) to /tmp/meeting-notes-{MEETING_ID}-skipped-count.txt
+Write Z (skipped count) to `/tmp/meeting-notes-$MEETING_ID-skipped-count.txt`
 for use at Checkpoint C.
 
 ## Step 7: Save Transcript and Meeting Note to Vault
@@ -326,18 +328,30 @@ that full transcript analysis was unavailable.
 
 ### CHECKPOINT C: Run Verification Script
 
-Read COMBINED_COUNT from /tmp/meeting-notes-{MEETING_ID}-extraction-count.txt
-Read SKIPPED_COUNT from /tmp/meeting-notes-{MEETING_ID}-skipped-count.txt
+Before running verification, save the L10 content to a temp file for the script to validate:
+```bash
+L10_FILE_PATH="/tmp/meeting-notes-$MEETING_ID-l10-draft.md"
+# Write the generated L10 content to this path
+```
 
+Read counts from temp files:
+```bash
+COMBINED_COUNT=$(cat /tmp/meeting-notes-$MEETING_ID-extraction-count.txt)
+SKIPPED_COUNT=$(cat /tmp/meeting-notes-$MEETING_ID-skipped-count.txt)
+```
+
+Run the verification script:
+```bash
 bash ~/.claude/skills/process-meeting-notes/bin/verify-extraction-completeness.sh \
   "$COMBINED_COUNT" \
   "$SKIPPED_COUNT" \
   "$L10_FILE_PATH"
+```
 
 DO NOT mark the workflow as complete until this script exits 0.
 If it fails, add the missing items to the L10 and re-run.
 
-Clean up temp files after verification: `rm -f /tmp/meeting-notes-{MEETING_ID}-*.txt`
+Clean up temp files after verification: `rm -f /tmp/meeting-notes-$MEETING_ID-*.txt`
 
 ## Step 9: Present Final Summary
 

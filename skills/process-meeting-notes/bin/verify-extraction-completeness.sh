@@ -36,10 +36,16 @@ if [ ! -f "$L10_FILE" ]; then
   exit 1
 fi
 
+if [ "$SKIPPED_COUNT" -gt "$COMBINED_COUNT" ]; then
+  echo "FAIL: skipped_count ($SKIPPED_COUNT) cannot exceed combined_count ($COMBINED_COUNT)"
+  exit 1
+fi
+
 EXPECTED=$((COMBINED_COUNT - SKIPPED_COUNT))
 
 # Count checkboxes only within the Action Items section (not the whole file)
-L10_COUNT=$(awk '/^## Action Items/{flag=1; next} /^## /{flag=0} flag' "$L10_FILE" | grep -Ec '^[[:space:]]*[-*][[:space:]]*\[[ xX]\]' || true)
+# Uses dash-only format to enforce canonical L10 checkbox style (- [ ])
+L10_COUNT=$(awk '/^## Action Items/{flag=1; next} /^## /{flag=0} flag' "$L10_FILE" | grep -Ec '^[[:space:]]*-[[:space:]]*\[[ xX]\]' || true)
 
 echo "Combined extraction count (Fireflies + transcript): $COMBINED_COUNT"
 echo "Skipped by user: $SKIPPED_COUNT"

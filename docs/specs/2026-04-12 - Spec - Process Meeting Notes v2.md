@@ -33,13 +33,13 @@ The workflow also had no verification gate — no way to catch when items were d
 **Current workflow file:** `workflows/process-recent-meeting.md`, Step 3
 
 **Current text:**
-```
+```markdown
 ## Step 3: Retrieve Full Transcript (if needed)
 If action items are unclear or context is insufficient:
 ```
 
 **New text:**
-```
+```markdown
 ## Step 3: Retrieve and Analyze Full Transcript (MANDATORY)
 
 ALWAYS fetch the full transcript via Fireflies MCP. The automated summary
@@ -75,7 +75,7 @@ items. Do not include decisions in the action item extraction list.
 **Current:** Step 6 says "present to user" but doesn't prohibit pre-filtering.
 
 **Add to the top of Step 6:**
-```
+```markdown
 **CRITICAL: Present ALL extracted action items to the user for triage.**
 Do NOT pre-filter, skip, or decide on the user's behalf which items
 deserve GitHub issues. Present every item — including items assigned to
@@ -98,7 +98,7 @@ If the combined extraction count is 0, skip Step 6 (issue triage). Still generat
 
 **Detection logic:**
 1. Extract the project/company context from the meeting (participants, topic, keywords)
-2. Fetch the user's repo list once: `gh repo list skinnyandbald --limit 200 --json name --jq '.[].name'`. Fuzzy-match the meeting's project/company name against this list (case-insensitive, strip hyphens for comparison). If exactly one repo matches, use it. If multiple match, present options to the user. If zero match, route to SB.
+2. Fetch the authenticated user's repo list once: `GH_LOGIN=$(gh api user -q '.login' 2>/dev/null)` then `gh repo list "$GH_LOGIN" --limit 200 --json name --jq '.[].name'`. Fuzzy-match the meeting's project/company name against this list (case-insensitive, strip hyphens for comparison). If exactly one repo matches, use it. If multiple match, present options to the user. If zero match, route to SecondBrain.
 
 **Fallback:** If `gh` CLI is unavailable, rate-limited, or errors on all lookups, default all items to SB repo and notify the user: "Repo detection unavailable — routing all issues to SecondBrain."
 
@@ -108,7 +108,7 @@ If the combined extraction count is 0, skip Step 6 (issue triage). Still generat
 - **If no project repo exists** -> SB repo (with project prefix in title)
 
 **Present the routing to the user for each CREATE ISSUE item:**
-```
+```text
 PROPOSED ISSUE #3
   Title: [DISTIL] - Product - Add PII consent checkbox
   Repo: skinnyandbald/distil (detected from meeting context)
@@ -119,7 +119,7 @@ PROPOSED ISSUE #3
 
 **If multiple repos are relevant** (e.g., meeting covers both Distil product work and Ben's consulting tasks), group issues by repo in the triage table:
 
-```
+```text
 === skinnyandbald/distil (3 issues) ===
 #1 [CREATE ISSUE] Add PII consent checkbox -- Ben (this week)
 #2 [CREATE ISSUE] Model token costs -- Jared (this week)
@@ -137,7 +137,7 @@ PROPOSED ISSUE #3
 **Current:** Step 8 generates the L10 but doesn't explicitly require all participants or decisions.
 
 **Add to Step 8:**
-```
+```markdown
 **Action Items section MUST include tasks for ALL meeting participants.**
 The L10 format tracks accountability across everyone in the meeting. If
 Jared committed to 6 tasks and Ben committed to 5, all 11 appear in the
@@ -198,10 +198,16 @@ if [ ! -f "$L10_FILE" ]; then
   exit 1
 fi
 
+if [ "$SKIPPED_COUNT" -gt "$COMBINED_COUNT" ]; then
+  echo "FAIL: skipped_count ($SKIPPED_COUNT) cannot exceed combined_count ($COMBINED_COUNT)"
+  exit 1
+fi
+
 EXPECTED=$((COMBINED_COUNT - SKIPPED_COUNT))
 
 # Count checkboxes only within the Action Items section (not the whole file)
-L10_COUNT=$(awk '/^## Action Items/{flag=1; next} /^## /{flag=0} flag' "$L10_FILE" | grep -Ec '^[[:space:]]*[-*][[:space:]]*\[[ xX]\]' || true)
+# Uses dash-only format to enforce canonical L10 checkbox style (- [ ])
+L10_COUNT=$(awk '/^## Action Items/{flag=1; next} /^## /{flag=0} flag' "$L10_FILE" | grep -Ec '^[[:space:]]*-[[:space:]]*\[[ xX]\]' || true)
 
 echo "Combined extraction count (Fireflies + transcript): $COMBINED_COUNT"
 echo "Skipped by user: $SKIPPED_COUNT"
@@ -223,7 +229,7 @@ exit 0
 ### Change 5: Three mandatory checkpoints in the workflow
 
 **Checkpoint A — after Step 3 (transcript analysis):**
-```
+```text
 ### CHECKPOINT A: Extraction Count
 Print: "Extracted N total action items:"
 Print: "  - M from Fireflies automated summary"
@@ -234,12 +240,12 @@ If K = 0 and the meeting was longer than 30 minutes, print an advisory:
 meeting of this length. Verify the transcript was fully read."
 (Do NOT force a re-scan — K=0 is valid if coverage appears correct.)
 
-Write N to /tmp/meeting-notes-{MEETING_ID}-extraction-count.txt for use at Checkpoint C.
+Write N to /tmp/meeting-notes-$MEETING_ID-extraction-count.txt for use at Checkpoint C.
 Use the Fireflies transcript ID as MEETING_ID to namespace temp files and prevent cross-run contamination.
 ```
 
 **Checkpoint B — after Step 6 (issue triage):**
-```
+```text
 ### CHECKPOINT B: Issue Triage Completeness
 Print: "Triaged N action items:"
 Print: "  - X created as GitHub issues (issue_created)"
@@ -252,16 +258,20 @@ in exactly one state.
 Verify: X + Y + Z = COMBINED_COUNT
 If not equal, items were dropped. List what's missing before proceeding.
 
-Write Z (skipped count) to /tmp/meeting-notes-{MEETING_ID}-skipped-count.txt
+Write Z (skipped count) to /tmp/meeting-notes-$MEETING_ID-skipped-count.txt
 for use at Checkpoint C.
 ```
 
 **Checkpoint C — after Step 8 (L10 generation):**
-```
+```text
 ### CHECKPOINT C: Run Verification Script
 
-Read COMBINED_COUNT from /tmp/meeting-notes-{MEETING_ID}-extraction-count.txt
-Read SKIPPED_COUNT from /tmp/meeting-notes-{MEETING_ID}-skipped-count.txt
+Before running verification, save the L10 content to a temp file:
+L10_FILE_PATH="/tmp/meeting-notes-$MEETING_ID-l10-draft.md"
+# Write the generated L10 content to this path
+
+Read COMBINED_COUNT from /tmp/meeting-notes-$MEETING_ID-extraction-count.txt
+Read SKIPPED_COUNT from /tmp/meeting-notes-$MEETING_ID-skipped-count.txt
 
 bash ~/.claude/skills/process-meeting-notes/bin/verify-extraction-completeness.sh \
   "$COMBINED_COUNT" \
@@ -271,7 +281,7 @@ bash ~/.claude/skills/process-meeting-notes/bin/verify-extraction-completeness.s
 DO NOT mark the workflow as complete until this script exits 0.
 If it fails, add the missing items to the L10 and re-run.
 
-Clean up temp files after verification: `rm -f /tmp/meeting-notes-{MEETING_ID}-*.txt`
+Clean up temp files after verification: rm -f /tmp/meeting-notes-$MEETING_ID-*.txt
 ```
 
 ### Change 6: Update success criteria
@@ -279,7 +289,7 @@ Clean up temp files after verification: `rm -f /tmp/meeting-notes-{MEETING_ID}-*
 **Current success criteria** doesn't mention transcript analysis or completeness verification.
 
 **Add:**
-```
+```markdown
 - [ ] Full transcript retrieved and analyzed (not just Fireflies summary)
 - [ ] ALL action items from ALL participants included in L10
 - [ ] Decisions captured in L10 IDS section
@@ -301,9 +311,9 @@ Clean up temp files after verification: `rm -f /tmp/meeting-notes-{MEETING_ID}-*
 
 - The verification script must be portable (bash, no dependencies beyond awk and grep)
 - The subagent for transcript analysis must read the ENTIRE file in a single pass (only chunk if > 200K chars)
-- Fireflies' automated items are the FLOOR, not the ceiling. The transcript analysis should always find additional items in meetings > 30 minutes.
+- Fireflies' automated items are the FLOOR, not the ceiling. The transcript analysis typically finds additional items in meetings > 30 minutes, but K=0 is valid if transcript coverage appears correct.
 - The L10 is the authoritative record. Meeting notes (saved to vault) are secondary.
-- Shell variables do not persist across interactive steps — use temp files at `/tmp/meeting-notes-{MEETING_ID}-*.txt` (namespaced by Fireflies transcript ID) to pass counts between checkpoints and prevent cross-run contamination.
+- Shell variables do not persist across interactive steps — use temp files at `/tmp/meeting-notes-$MEETING_ID-*.txt` (namespaced by Fireflies transcript ID) to pass counts between checkpoints and prevent cross-run contamination.
 
 ## Testing
 
