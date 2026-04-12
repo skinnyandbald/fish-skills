@@ -1,19 +1,21 @@
 ---
 name: process-meeting-notes
-description: "Process Fireflies meeting transcripts to extract action items, create GitHub issues, compare against existing work, and generate EOS Level 10 Meeting summaries. Use after team meetings or when the user mentions meetings, Fireflies, L10, or action item extraction."
+description: "Process Fireflies meeting transcripts with mandatory full transcript analysis (not just Fireflies summary), extract action items from ALL participants, create GitHub issues with smart repo routing, run deterministic verification gates, and generate EOS Level 10 Meeting summaries. Use after team meetings or when the user mentions meetings, Fireflies, L10, or action item extraction."
 ---
 
 <essential_principles>
 ## How This Skill Works
 
-This skill processes meeting transcripts from Fireflies and converts them into actionable GitHub issues with EOS Level 10 Meeting documentation. It works with **any repository** you're currently in.
+This skill processes meeting transcripts from Fireflies with mandatory full transcript analysis — not just the Fireflies automated summary. It extracts action items from ALL participants, routes GitHub issues to the correct repository via smart detection, and runs a deterministic verification script to ensure no items are dropped. It works with **any repository** you're currently in.
 
-### Principle 1: Fireflies-First Data Retrieval
+### Principle 1: Mandatory Full Transcript Analysis
 
 Always fetch meeting data via Fireflies MCP tools:
 - `mcp__fireflies__fireflies_search` to find meetings
 - `mcp__fireflies__fireflies_get_summary` for action items, keywords, overview
-- `mcp__fireflies__fireflies_get_transcript` for detailed context when needed
+- `mcp__fireflies__fireflies_get_transcript` — ALWAYS fetch the full transcript; it is mandatory, not optional
+
+The Fireflies automated summary is a starting point. A subagent must read the entire transcript to extract additional action items that Fireflies missed. The verification script confirms no items were dropped.
 
 ### Principle 2: Dynamic Repository Context
 
