@@ -15,17 +15,21 @@ argument-hint: "[optional: PR number, GitHub URL, or 'current']"
 **Foreground steps (do these FIRST, before launching the agent):**
 
 1. Detect PR number from args, current branch, or ask user
-2. Print: "Launching PR resolution for #$PR_NUM in background. You'll be notified when it completes."
-3. Launch background agent with the full workflow:
+2. **Resolve the PR branch name** — run `gh pr view $PR_NUM --json headRefName -q .headRefName` to get the exact branch. Store as `$PR_BRANCH`.
+3. Print: "Launching PR resolution for #$PR_NUM (branch: $PR_BRANCH) in background. You'll be notified when it completes."
+4. Launch background agent with the full workflow, **passing the branch name**:
 
 ```
 Agent(
   run_in_background: true,
   prompt: "You are resolving PR comments for PR #$PR_NUM.
+Branch: $PR_BRANCH
 
 Read the pr-resolution skill at ~/.claude/skills/pr-resolution/SKILL.md and execute Phases 0-7.
 
 IMPORTANT:
+- FIRST: checkout the PR branch with `git checkout $PR_BRANCH && git pull origin $PR_BRANCH`
+- Verify you are on the correct branch before making ANY changes
 - For questions classified as [question] that need human input, skip them and note them in your final output
 - For CI failures, fix them as part of the workflow — do NOT stop or ask for help
 - Complete ALL phases including the CI gate (Phase 6) and shepherd launch (Phase 7)
@@ -63,6 +67,31 @@ Phase 7: Shepherd       → Background agent monitors for new bot comments + CI
 ---
 
 ## Phase 0: Pre-Flight
+
+### Branch checkout (MANDATORY — do this FIRST)
+
+The background agent inherits whatever branch the user was on. You MUST switch to the PR branch before doing anything else:
+
+```bash
+# Get PR branch from the prompt context (passed as $PR_BRANCH)
+# If not provided, resolve it:
+PR_BRANCH=$(gh pr view $PR_NUM --json headRefName -q '.headRefName')
+
+# Checkout and pull latest
+git checkout "$PR_BRANCH"
+git pull origin "$PR_BRANCH"
+
+# Verify — abort if wrong branch
+CURRENT=$(git branch --show-current)
+if [ "$CURRENT" != "$PR_BRANCH" ]; then
+  echo "FATAL: Expected branch $PR_BRANCH but on $CURRENT"
+  exit 1
+fi
+```
+
+**If checkout fails** (e.g. uncommitted changes on current branch): run `git stash` first, then checkout. Do NOT proceed on the wrong branch.
+
+### GoodToGo check (optional)
 
 **If `gtg` is installed**, run the GoodToGo pre-flight check (see `references/goodtogo.md`):
 
