@@ -1,0 +1,163 @@
+name: Dependency Age Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled, ready_for_review]
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+  statuses: write
+
+jobs:
+  gate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Dependabot metadata
+        if: github.event.pull_request.user.login == 'dependabot[bot]'
+        id: meta
+        uses: dependabot/fetch-metadata@21025c705c08248db411dc16f3619e6b5f9ea21a # v2.5.0
+
+      - name: Evaluate age gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          AUTHOR="${{ github.event.pull_request.user.login }}"
+          SHA="${{ github.event.pull_request.head.sha }}"
+          REPO="${{ github.repository }}"
+
+          if [ "$AUTHOR" != "dependabot[bot]" ]; then
+            gh api "repos/$REPO/statuses/$SHA" \
+              -f state=success \
+              -f context=dependency-age-gate \
+              -f description="Non-dependency PR — no gate required"
+            exit 0
+          fi
+
+          LABELS='${{ toJSON(github.event.pull_request.labels.*.name) }}'
+          if echo "$LABELS" | grep -q "security-override"; then
+            gh api "repos/$REPO/statuses/$SHA" \
+              -f state=success \
+              -f context=dependency-age-gate \
+              -f description="Security override — gate bypassed"
+            exit 0
+          fi
+
+          UPDATE_TYPE="${{ steps.meta.outputs.update-type }}"
+          case "$UPDATE_TYPE" in
+            version-update:semver-major) THRESHOLD_DAYS=7 ;;
+            *) THRESHOLD_DAYS=3 ;;
+          esac
+
+          CREATED_AT="${{ github.event.pull_request.created_at }}"
+          CREATED_EPOCH=$(date -d "$CREATED_AT" +%s)
+          NOW_EPOCH=$(date +%s)
+          DAYS_ELAPSED=$(( (NOW_EPOCH - CREATED_EPOCH) / 86400 ))
+
+          if [ "$DAYS_ELAPSED" -ge "$THRESHOLD_DAYS" ]; then
+            gh api "repos/$REPO/statuses/$SHA" \
+              -f state=success \
+              -f context=dependency-age-gate \
+              -f description="PR is ${DAYS_ELAPSED}d old (threshold: ${THRESHOLD_DAYS}d)"
+          else
+            REMAINING=$(( THRESHOLD_DAYS - DAYS_ELAPSED ))
+            gh api "repos/$REPO/statuses/$SHA" \
+              -f state=pending \
+              -f context=dependency-age-gate \
+              -f description="PR is ${DAYS_ELAPSED}d old — ${REMAINING}d remaining (threshold: ${THRESHOLD_DAYS}d)"
+          fi
+
+  recheck:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Re-evaluate open Dependabot PRs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          REPO="${{ github.repository }}"
+
+          gh pr list \
+            --repo "$REPO" \
+            --state open \
+            --author "app/dependabot" \
+            --json number,createdAt,headRefOid,labels,title \
+            --limit 100 \
+          | jq -c '.[]' | while IFS= read -r pr; do
+            PR_NUM=$(echo "$pr" | jq -r '.number')
+            HEAD_SHA=$(echo "$pr" | jq -r '.headRefOid')
+            CREATED_AT=$(echo "$pr" | jq -r '.createdAt')
+            TITLE=$(echo "$pr" | jq -r '.title')
+            HAS_OVERRIDE=$(echo "$pr" | jq -r '[.labels[].name] | map(select(. == "security-override")) | length')
+
+            if [ "$HAS_OVERRIDE" -gt 0 ]; then
+              gh api "repos/$REPO/statuses/$HEAD_SHA" \
+                -f state=success \
+                -f context=dependency-age-gate \
+                -f description="Security override — gate bypassed"
+              echo "PR #$PR_NUM: security-override label — passed"
+              continue
+            fi
+
+            # Detect major version bumps from PR title (e.g. "Bump foo from 2.x to 3.x")
+            if echo "$TITLE" | grep -qP 'from \d+\.' && echo "$TITLE" | grep -qP 'to \d+\.'; then
+              FROM_MAJOR=$(echo "$TITLE" | grep -oP 'from \K\d+' | head -1)
+              TO_MAJOR=$(echo "$TITLE" | grep -oP 'to \K\d+' | head -1)
+              if [ -n "$FROM_MAJOR" ] && [ -n "$TO_MAJOR" ] && [ "$FROM_MAJOR" != "$TO_MAJOR" ]; then
+                THRESHOLD_DAYS=7
+              else
+                THRESHOLD_DAYS=3
+              fi
+            else
+              THRESHOLD_DAYS=3
+            fi
+
+            CREATED_EPOCH=$(date -d "$CREATED_AT" +%s)
+            NOW_EPOCH=$(date +%s)
+            DAYS_ELAPSED=$(( (NOW_EPOCH - CREATED_EPOCH) / 86400 ))
+
+            if [ "$DAYS_ELAPSED" -ge "$THRESHOLD_DAYS" ]; then
+              STATE="success"
+              DESC="PR is ${DAYS_ELAPSED}d old (threshold: ${THRESHOLD_DAYS}d)"
+            else
+              REMAINING=$(( THRESHOLD_DAYS - DAYS_ELAPSED ))
+              STATE="pending"
+              DESC="PR is ${DAYS_ELAPSED}d old — ${REMAINING}d remaining (threshold: ${THRESHOLD_DAYS}d)"
+            fi
+
+            gh api "repos/$REPO/statuses/$HEAD_SHA" \
+              -f state="$STATE" \
+              -f context=dependency-age-gate \
+              -f description="$DESC"
+            echo "PR #$PR_NUM: $STATE ($DAYS_ELAPSED days, threshold: ${THRESHOLD_DAYS}d)"
+          done
+
+          # Auto-pass non-Dependabot PRs that are missing the status
+          gh pr list \
+            --repo "$REPO" \
+            --state open \
+            --json number,headRefOid,author \
+            --limit 100 \
+          | jq -c '.[] | select(.author.login != "dependabot[bot]" and .author.login != "app/dependabot")' \
+          | while IFS= read -r pr; do
+            PR_NUM=$(echo "$pr" | jq -r '.number')
+            HEAD_SHA=$(echo "$pr" | jq -r '.headRefOid')
+
+            EXISTING=$(gh api "repos/$REPO/commits/$HEAD_SHA/status" \
+              --jq '.statuses[] | select(.context == "dependency-age-gate") | .state' 2>/dev/null)
+            if [ -z "$EXISTING" ]; then
+              gh api "repos/$REPO/statuses/$HEAD_SHA" \
+                -f state=success \
+                -f context=dependency-age-gate \
+                -f description="Non-dependency PR — no gate required"
+              echo "PR #$PR_NUM: auto-passed (non-dependency)"
+            fi
+          done
