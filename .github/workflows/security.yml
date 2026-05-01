@@ -1,0 +1,13 @@
+name: Security Scanning
+
+on:
+  pull_request: {}
+  push:
+    branches: [main, master, develop]
+  schedule:
+    - cron: '0 6 * * 1' # Weekly Monday 6am UTC
+
+jobs:
+  security:
+    uses: skinnyandbald/github-defaults/.github/workflows/security-reusable.yml@main
+    secrets: inherit
