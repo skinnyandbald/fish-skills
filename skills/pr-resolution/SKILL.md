@@ -61,7 +61,7 @@ Phase 3: Resolution     → Launch parallel agents by file group
 Phase 4: Verification   → Local checks + GoodToGo gate (if installed)
 Phase 5: Completion     → Commit, push, resolve threads
 Phase 6: CI Gate        → Monitor CI, fix actionable failures, re-push
-Phase 7: Shepherd       → Background agent monitors for new bot comments + CI
+Phase 7: Shepherd       → Inline polling loop for new bot comments + CI
 ```
 
 ---
@@ -272,9 +272,9 @@ After pushing in Phase 5, monitor CI until green or exit condition. Follow the b
 
 ## Phase 7: Shepherd (MANDATORY — DO NOT SKIP)
 
-After Phase 6 completes, launch the shepherd as a background agent to monitor for new bot comments and CI status.
+After Phase 6 completes, continue polling for new bot comments **in the same agent**. Do NOT launch a separate background agent — you already have full context, and a new agent launch wastes tokens re-loading the system prompt.
 
-**This phase is MANDATORY — even when zero comments were found in Phase 1.** Bots (CodeRabbit, Gemini, Cubic, CodeScene) take 1-5 minutes to post reviews after a PR is created or pushed. The shepherd catches these late-arriving comments. Do not rationalize skipping ("no comments found", "no push made", "unlikely", "docs-only", "no new comments expected") — launch the shepherd every time. If no push was made in Phase 5, use the current UTC timestamp for LAST_TIMESTAMP.
+**This phase is MANDATORY — even when zero comments were found in Phase 1.** Bots (CodeRabbit, Gemini, Cubic, CodeScene) take 1-5 minutes to post reviews after a PR is created or pushed. The shepherd catches these late-arriving comments. Do not rationalize skipping ("no comments found", "no push made", "unlikely", "docs-only", "no new comments expected") — run the shepherd every time. If no push was made in Phase 5, use the current UTC timestamp for LAST_TIMESTAMP.
 
 1. Capture context:
 ```bash
@@ -283,24 +283,9 @@ BRANCH=$(git branch --show-current)
 RUN_ID=$(date +%s)
 ```
 
-2. Launch background agent:
-```
-Agent(
-  run_in_background: true,
-  prompt: "Read skills/pr-resolution/shepherd.md and follow it.
+2. Read `shepherd.md` in this skill directory and execute the shepherd state machine inline. You already have PR_NUM, LAST_TIMESTAMP, OWNER_REPO, BRANCH, and RUN_ID. Use `~/.claude/skills/pr-resolution` as the SKILL_DIR (do not use `find` to resolve it).
 
-    Context:
-    {\"PR_NUM\": $PR_NUM, \"LAST_TIMESTAMP\": \"$LAST_TIMESTAMP\", \"OWNER_REPO\": \"$OWNER_REPO\", \"BRANCH\": \"$BRANCH\", \"RUN_ID\": \"$RUN_ID\"}"
-)
-```
-
-3. Print: "Shepherd monitoring PR #$PR_NUM in background. You'll be notified when it completes."
-
-**If agent launch fails:** Print the error and exit cleanly. The initial resolution is already complete.
-
-**This phase is NOT re-entered during shepherd RE_RESOLVE iterations.**
-
-**Note:** Phase 7 always starts after Phase 6 completes. They never run concurrently.
+3. When the shepherd reaches POST_SUMMARY, include the summary in your final output and exit.
 
 ---
 

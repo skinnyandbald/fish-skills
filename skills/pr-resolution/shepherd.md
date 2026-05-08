@@ -1,7 +1,8 @@
 # PR Resolution Shepherd
 
-> **Background agent workflow.** This document is read by a Claude Code background agent.
+> **Phase 7 continuation.** This is executed inline by the same agent that ran Phases 0-6.
 > It monitors a PR for new bot review comments and autonomously re-resolves them.
+> Do NOT launch this as a separate background agent — run it in the current agent.
 >
 > **Reference:** `references/shepherd-states.md` for state machine diagram.
 
@@ -41,12 +42,9 @@ OWNER="${OWNER_REPO%/*}"
 REPO="${OWNER_REPO#*/}"
 ```
 
-Resolve the skill directory for script paths:
+Set the skill directory (passed from Phase 7, or use the known path):
 ```bash
-SKILL_DIR=$(find ~/.claude/skills -name "pr-resolution" -type d 2>/dev/null | head -1)
-if [ -z "$SKILL_DIR" ]; then
-  SKILL_DIR=$(find .claude/skills -name "pr-resolution" -type d 2>/dev/null | head -1)
-fi
+SKILL_DIR="${SKILL_DIR:-$HOME/.claude/skills/pr-resolution}"
 ```
 
 ## State Machine
