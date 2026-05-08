@@ -125,7 +125,7 @@ Route based on status (or skip straight to Phase 1 if `gtg` is not installed):
 
 1. **Classify each comment** using `references/classification.md`
 2. **Validate each comment** — read the actual code at the referenced lines and verify the bot's finding is correct. See the Validation section in `references/classification.md` for the full checklist. Mark invalid findings with resolution type `invalid`.
-3. **Reply to invalid findings** — for each comment you determine is invalid, post a direct reply to that comment thread explaining why the finding doesn't apply BEFORE resolving the thread. Use `gh api` to reply (see `references/completion.md` for comment reply patterns), then resolve.
+3. **Reply to invalid findings** — for each comment you determine is invalid, post a direct reply to that comment thread explaining why the finding doesn't apply BEFORE resolving the thread. Use `gh api` to reply (see `references/completion.md` for comment reply patterns), then resolve using `~/.claude/skills/pr-resolution/bin/resolve-pr-thread NODE_ID`.
 4. **CodeScene handling:** CodeScene comments flag measurable code health regressions (complexity, duplication, nesting). Treat them as high-confidence, but still validate each finding against the referenced code/context before applying changes.
 5. **Group valid comments by file** for parallel execution:
 
