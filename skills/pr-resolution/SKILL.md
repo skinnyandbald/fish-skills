@@ -174,16 +174,6 @@ Agent 3: "Fix CI failures"
 
 Wait for all agents to complete.
 
-### Per-comment thread resolution (after push)
-
-After Phase 5c push completes, resolve each thread individually as you confirm its comment was addressed. For each comment:
-
-1. **Verify the fix landed** — check the pushed diff covers the comment's concern
-2. **Resolve that specific thread** — `~/.claude/skills/pr-resolution/bin/resolve-pr-thread NODE_ID`
-3. **Move to the next comment**
-
-Do NOT use `resolve-all-threads` to bulk-resolve. A thread should only be marked resolved when you have confirmed the fix for that specific comment exists in the pushed code.
-
 ---
 
 ## Phase 4: Verification Gate (MANDATORY)
