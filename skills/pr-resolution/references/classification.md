@@ -58,5 +58,5 @@ For EACH comment, before writing any code:
 3. **Code diff blocks** (```diff) → verify the suggested change is correct, then implement if valid
 4. **Fix confirmed nitpicks without asking** — but still verify the issue exists first
 5. **Only ask human for questions or genuine uncertainty**
-6. **CodeScene comments flag measurable regressions** — these are almost always valid because they're based on static analysis metrics. Address with code changes (extract functions, reduce nesting, remove duplication).
+6. **CodeScene comments flag measurable regressions** — treat these as high-confidence signals, but still validate each finding against the referenced code/context before changing code.
 7. **Skip invalid findings confidently.** Resolve the thread with a brief explanation of why the finding doesn't apply. Don't implement wrong suggestions just because a bot said so.
