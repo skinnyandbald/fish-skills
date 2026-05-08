@@ -49,7 +49,6 @@ IMPORTANT:
 | Parse CodeRabbit | `~/.claude/skills/pr-resolution/bin/parse-coderabbit-review PR_NUM` |
 | Check CI | `gh pr checks` |
 | Resolve thread | `~/.claude/skills/pr-resolution/bin/resolve-pr-thread NODE_ID` |
-| Resolve all threads | `~/.claude/skills/pr-resolution/bin/resolve-all-threads PR_NUM` |
 
 ## Workflow Overview
 
@@ -207,22 +206,24 @@ LAST_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 ### 5d. Post resolution summary
 4. Post resolution summary comment to PR
 
-### 5e. Resolve ALL GitHub threads (MANDATORY)
+### 5e. Resolve threads individually (MANDATORY)
 
-**Run the resolve-all-threads script:**
+Resolve each thread one-by-one, only after confirming the comment was addressed:
+
+- **Invalid findings:** already resolved in Phase 2 (after posting reply)
+- **Code fixes:** resolve now, after verifying the fix is in the pushed commit
+- **Won't fix / disagree:** resolve now, after posting a reply explaining why
+- **Non-actionable:** resolve now
+
+For each thread:
 ```bash
-~/.claude/skills/pr-resolution/bin/resolve-all-threads $PR_NUM
+~/.claude/skills/pr-resolution/bin/resolve-pr-thread NODE_ID
 ```
 
-This script:
-- Queries all unresolved threads on the PR
-- Resolves each one via GraphQL mutation
-- Verifies zero unresolved threads remain
-
-**If the script reports failures or remaining threads: DO NOT mark workflow as complete. Fix manually with `bin/resolve-pr-thread THREAD_ID`.**
+**Do NOT use `resolve-all-threads` to bulk-resolve.** Each thread must be individually confirmed as addressed before resolving. Bulk resolution hides unaddressed comments.
 
 ### 5f. Final verification (MANDATORY)
-5. Run an independent GraphQL count check — do NOT rely solely on the script's output:
+5. Verify zero unresolved threads remain:
 ```bash
 UNRESOLVED=$(gh api graphql -f query='
   query($owner: String!, $repo: String!, $pr: Int!) {
@@ -239,9 +240,9 @@ UNRESOLVED=$(gh api graphql -f query='
 echo "Unresolved threads: $UNRESOLVED"
 ```
 
-**If UNRESOLVED > 0:** Re-run `bin/resolve-all-threads $PR_NUM`, then re-check. If threads persist after two attempts, list the thread IDs in your output and proceed — the shepherd will catch them.
+**If UNRESOLVED > 0:** List each remaining thread, investigate whether it was addressed, and resolve individually with `bin/resolve-pr-thread`. Do NOT bulk-resolve to make the count go to zero — find out why it wasn't resolved and fix the gap.
 
-**Workflow is NOT complete until all threads are resolved.**
+**Workflow is NOT complete until every thread is verified as addressed and resolved.**
 
 ---
 
