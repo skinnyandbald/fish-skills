@@ -121,11 +121,13 @@ Route based on status (or skip straight to Phase 1 if `gtg` is not installed):
 
 ---
 
-## Phase 2: Classification & Grouping
+## Phase 2: Classification, Validation & Grouping
 
 1. **Classify each comment** using `references/classification.md`
-2. **CodeScene handling:** CodeScene comments flag measurable code health regressions (complexity, duplication, nesting). These are ALWAYS addressed with code changes — extract helper functions, reduce cyclomatic complexity, remove duplication. Never resolve a CodeScene thread without a corresponding code fix. Group CodeScene comments with their target file for parallel execution.
-3. **Group by file** for parallel execution:
+2. **Validate each comment** — read the actual code at the referenced lines and verify the bot's finding is correct. See the Validation section in `references/classification.md` for the full checklist. Mark invalid findings with resolution type `invalid`.
+3. **Reply to invalid findings** — for each comment you determine is invalid, post a direct reply to that comment thread explaining why the finding doesn't apply BEFORE resolving the thread. Use `gh api` to reply (see `references/completion.md` for comment reply patterns), then resolve using `~/.claude/skills/pr-resolution/bin/resolve-pr-thread NODE_ID`.
+4. **CodeScene handling:** CodeScene comments flag measurable code health regressions (complexity, duplication, nesting). Treat them as high-confidence, but still validate each finding against the referenced code/context before applying changes.
+5. **Group valid comments by file** for parallel execution:
 
 ```markdown
 ## Parallel Execution Plan
@@ -293,22 +295,30 @@ RUN_ID=$(date +%s)
 
 ```markdown
 ## Discovery
-1. [blocking] src/api/route.ts:45 - Security issue
-2. [suggestion] src/api/route.ts:67 - Add validation
-3. [suggestion] src/components/Form.tsx:23 - Add types
-4. [nitpick] src/utils/format.ts:12 - Typo
+1. [blocking] src/api/route.ts:45 - "Missing auth check"
+2. [suggestion] src/api/route.ts:67 - "Add input validation"
+3. [suggestion] src/components/Form.tsx:23 - "Restore removed guard"
+4. [nitpick] src/utils/format.ts:12 - "Trailing whitespace"
 5. [question] src/lib/auth.ts:89 - "Handle null?"
 6. CI: Lint error
 
-## Parallel Plan (after asking human about #5)
+## Validation
+1. ✓ VALID — auth middleware skipped for this route, real issue
+2. ✓ VALID — user input passed unsanitized to query
+3. ✗ INVALID — guard was intentionally removed in prior commit (git blame confirms)
+   → Reply to thread: "This guard was removed in abc123 because [reason]. Not restoring."
+4. ✗ INVALID — no trailing whitespace exists at line 12, false positive
+   → Reply to thread: "Checked the file — no trailing whitespace at this line."
+5. [question] → Ask human
+
+## Parallel Plan (2 valid + 1 question + 1 CI)
 - Agent 1: src/api/route.ts (#1, #2)
-- Agent 2: src/components/Form.tsx (#3)
-- Agent 3: src/utils/format.ts (#4)
-- Agent 4: src/lib/auth.ts (#5 - if fix)
-- Agent 5: CI fix (#6)
+- Agent 2: src/lib/auth.ts (#5 - question)
+- Agent 3: CI fix (#6)
 
 ## Execution
-Launch agents in parallel → Wait → Verify → Commit → Push
+Reply to #3, #4 with reasons → Resolve those threads →
+Launch fix agents in parallel → Wait → Verify → Commit → Push
 ```
 
 ---
