@@ -70,33 +70,21 @@ gh pr comment $PR_NUM --body "## PR Comment Resolution Summary
 *All N comments resolved*"
 ```
 
-## Step 4: Resolve ALL GitHub Threads (MANDATORY)
+## Step 4: Resolve Threads Individually (MANDATORY)
 
-**Run the batch resolution script:**
-
-```bash
-~/.claude/skills/pr-resolution/bin/resolve-all-threads $PR_NUM
-```
-
-This script resolves every unresolved review thread and verifies zero remain.
-
-**Manual fallback** (if the script fails for a specific thread):
+Resolve each review thread one-by-one after confirming the comment was addressed:
 
 ```bash
 ~/.claude/skills/pr-resolution/bin/resolve-pr-thread "THREAD_NODE_ID"
 ```
 
+**Rules:**
+- Only resolve a thread after you've verified the fix is in the pushed commit (for code fixes) or posted a reply (for invalid/wont_fix)
+- Do NOT use `resolve-all-threads` to bulk-resolve — it hides unaddressed comments
+- Invalid findings should already be resolved in Phase 2 (after posting reply)
+
 ## Step 5: Post-Resolution Verification (MANDATORY)
 
-**Confirm the script output ends with:**
+Verify zero unresolved threads remain. If any remain, investigate each one — don't bulk-resolve to make the number go to zero.
 
-```
-All threads resolved
-```
-
-If the script exited non-zero or reports remaining threads:
-1. Note which thread IDs failed from the script output
-2. Resolve them manually with `bin/resolve-pr-thread THREAD_ID`
-3. Re-run `bin/resolve-all-threads $PR_NUM` to verify
-
-**HARD BLOCK: Workflow is NOT complete until `resolve-all-threads` exits 0 and prints "All threads resolved".**
+**HARD BLOCK: Workflow is NOT complete until every thread is individually confirmed as addressed and resolved.**
