@@ -4,6 +4,28 @@ Final steps after verification passes. **Every step is mandatory.**
 
 ---
 
+## Replying to Review Comments
+
+Use this pattern to reply to a specific review comment (e.g., to explain why a finding is invalid). You need the comment's `id` (numeric ID from the REST API, not the GraphQL node ID):
+
+```bash
+gh api "repos/$OWNER/$REPO/pulls/$PR_NUM/comments/$COMMENT_ID/replies" \
+  --method POST \
+  -f body="This finding doesn't apply — [brief reason]."
+```
+
+For top-level review body comments (not inline), reply to the review thread using:
+
+```bash
+gh pr comment $PR_NUM --body "> [quote the relevant finding]
+
+This doesn't apply — [brief reason]."
+```
+
+Always reply BEFORE resolving the thread so the explanation is visible.
+
+---
+
 ## Step 1: Commit
 
 ```bash
@@ -30,6 +52,11 @@ gh pr comment $PR_NUM --body "## PR Comment Resolution Summary
 | Comment | Resolution |
 |---------|------------|
 | [@author on file:line](link) | Description |
+
+### Invalid (N items)
+| Comment | Reason |
+|---------|--------|
+| [@author on file:line](link) | Why the finding doesn't apply |
 
 ### Won't Fix (N items)
 | Comment | Reason |
