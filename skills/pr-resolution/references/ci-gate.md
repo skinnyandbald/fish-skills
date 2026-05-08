@@ -116,7 +116,7 @@ Some third-party checks (not GitHub Actions) are still actionable because they p
 
 ```bash
 # Check if any CodeScene checks exist in the settled check data
-HAS_CODESCENE=$(echo "$CHECK_DATA" | jq '[.runs[] | select(.app_slug == "codescene" or (.name | test("CodeScene"; "i")))] | length')
+HAS_CODESCENE=$(echo "$CHECK_DATA" | jq 'reduce (.runs[] | select(.app_slug == "codescene" or (.name | test("CodeScene"; "i")))) as $_ (0; . + 1)')
 ```
 
 **CodeScene** (only when `HAS_CODESCENE > 0`):
