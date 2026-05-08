@@ -254,11 +254,12 @@ After pushing in Phase 5, monitor CI until green or exit condition. Follow the b
 2. **Settle wait** — poll every 60s until all checks reach terminal status (15 min timeout)
 3. **Classify failures** using the decision matrix from `references/ci-gate.md`:
    - ACTIONS_FIXABLE: GitHub Actions run (`app_slug == "github-actions"`) + failing job name matches fixable pattern + local npm command exists
-   - EXTERNAL: everything else (third-party apps, no local repro, transient infra failures)
-4. **For ACTIONS_FIXABLE failures:**
-   a. Fetch truncated failure logs (`tail -n 300`, grep for errors)
+   - THIRD_PARTY_FIXABLE: recognized third-party checks that post structured feedback as PR review comments. **Only applies if the check actually appears in the repo's check runs** — see Step 3b in `references/ci-gate.md` for detection rules and fix strategies per provider
+   - EXTERNAL: everything else (unrecognized third-party apps, no local repro, transient infra failures)
+4. **For ACTIONS_FIXABLE or THIRD_PARTY_FIXABLE failures:**
+   a. Fetch failure details (truncated logs for Actions; PR review comments for third-party)
    b. Diagnose — prioritize PR-modified files, expand scope if needed
-   c. Fix the code, verify with local command (`timeout 120 npm run <command>`)
+   c. Fix the code, verify locally where possible (`timeout 120 npm run <command>`)
    d. Commit with `fix(ci): resolve <check-name> failure`
    e. Push, wait 60s grace period, update HEAD_SHA and LAST_TIMESTAMP
    f. Return to step 1

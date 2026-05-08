@@ -110,15 +110,22 @@ Everything not matching all three conditions is **EXTERNAL** — unless it's a r
 
 ### Step 3b: Classify Third-Party Actionable Checks
 
-Some third-party checks (not GitHub Actions) are still actionable because they post structured feedback as PR review comments.
+Some third-party checks (not GitHub Actions) are still actionable because they post structured feedback as PR review comments. **This step only applies if the check actually appears in the repo's check runs** — if a provider isn't installed on the repo, its check runs won't exist and this step is naturally skipped.
 
-**CodeScene** (`app_slug == "codescene"` or check name contains "CodeScene"):
+**Detection:** After collecting all check runs in Step 2, scan for recognized third-party `app_slug` values. Only apply the rules below for providers whose checks actually appeared.
+
+```bash
+# Check if any CodeScene checks exist in the settled check data
+HAS_CODESCENE=$(echo "$CHECK_DATA" | jq 'reduce (.runs[] | select(.app_slug == "codescene" or (.name | test("CodeScene"; "i")))) as $_ (0; . + 1)')
+```
+
+**CodeScene** (only when `HAS_CODESCENE > 0`):
 
 CodeScene posts two types of gates as PR review comments:
 1. **Code Coverage Gate** — requires new/changed code to meet a coverage threshold
 2. **Code Health Gate** — flags complexity increases (Complex Method, Bumpy Road Ahead)
 
-**When CodeScene fails:**
+**When a CodeScene check has a failing conclusion:**
 1. Read the latest CodeScene review comment on the PR:
    ```bash
    gh api "repos/$OWNER/$REPO/pulls/$PR_NUM/reviews" \
@@ -138,7 +145,7 @@ CodeScene posts two types of gates as PR review comments:
 
 4. Classify as **THIRD_PARTY_FIXABLE** and proceed to Step 5 (Fix)
 
-**Adding more third-party checks:** To make other third-party checks actionable, add their detection rules and fix strategies here.
+**Adding more third-party checks:** To make other third-party checks actionable, add a detection block above (check `app_slug` or name pattern in the settled check data), document the fix strategy, and classify as THIRD_PARTY_FIXABLE.
 
 ### Step 4: Route
 
