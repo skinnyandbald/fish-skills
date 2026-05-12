@@ -52,6 +52,7 @@ CLAUDE_IS_SYMLINK=false
 [ -f ".cursorrules" ] && echo ".cursorrules found"
 [ -d ".beads" ] && echo ".beads/ found"
 [ -d ".claude/learnings" ] && echo ".claude/learnings/ found"
+[ -d "docs/solutions" ] && echo "docs/solutions/ found"
 [ -d "docs/claude" ] && echo "docs/claude/ found"
 echo "CLAUDE.md exists: $CLAUDE_EXISTS (symlink: $CLAUDE_IS_SYMLINK)"
 echo "AGENTS.md exists: $AGENTS_EXISTS"
@@ -246,8 +247,9 @@ This creates the `.beads/` directory with config, issue tracking, and git hooks.
 ### Step 6: Create Directories
 
 Create if missing:
-- `.claude/learnings/` — for `/capture-learning` skill
+- `docs/solutions/` — institutional learnings for AI retrieval (Compound Engineering pattern: markdown with YAML frontmatter, grouped by category subdirs such as `best-practices/`, `runtime-errors/`). Agents and hooks search here alongside `AGENTS.md` / `CLAUDE.md` when the project documents that path. Add `docs/solutions/.gitkeep` if the tree is empty so git tracks the directory.
 - `docs/claude/` — for dynamic imports from AGENTS.md / CLAUDE.md
+- `.claude/learnings/` — optional; freeform notes if you use session hooks that read this path (not the same layout as `docs/solutions/`)
 
 ### Step 7: Add Cross-References
 
@@ -268,8 +270,9 @@ Present a deterministic report card. Track each file's outcome through the run a
 | CLAUDE.md | ✅ Created (symlink → AGENTS.md) | ⏭️ Skipped (symlink intact) | ⏭️ Skipped (standalone file, N lines) |
 | STYLE_GUIDE.md | ✅ Created (N lines) | ⏭️ Skipped (already existed, N lines) |
 | .beads/ | ✅ Initialized | ⏭️ Skipped (already existed) |
-| .claude/learnings/ | ✅ Created | ⏭️ Already existed |
+| docs/solutions/ | ✅ Created | ⏭️ Already existed |
 | docs/claude/ | ✅ Created | ⏭️ Already existed |
+| .claude/learnings/ | ✅ Created | ⏭️ Already existed |
 ```
 
 Then add:
@@ -361,8 +364,11 @@ Read-only audit of your setup. Does not write anything.
    ❌ STYLE_GUIDE.md missing — run /setup-ai or /generate-comprehensive-style-guide
    ✅ .beads/ initialized
    ❌ .beads/ missing — run /setup-ai or bd init
-   ✅ .claude/learnings/ exists
+   ✅ docs/solutions/ exists (structured learnings / Compound pattern)
+   ❌ docs/solutions/ missing — run /setup-ai or mkdir -p docs/solutions && touch docs/solutions/.gitkeep
+   ✅ docs/claude/ exists
    ❌ docs/claude/ missing
+   ✅ .claude/learnings/ exists (optional hook notes)
    ✅ Background processes directive found
    ✅ TDD directive found (tdd_required section detected)
    ❌ TDD directive missing — add <tdd_required> block to Behavior Directives
