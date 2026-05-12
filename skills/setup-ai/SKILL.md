@@ -246,7 +246,7 @@ This creates the `.beads/` directory with config, issue tracking, and git hooks.
 ### Step 6: Create Directories
 
 Create if missing:
-- `.claude/learnings/` — for `/capture-learning` skill
+- `.claude/learnings/` — optional project learnings (markdown your team maintains)
 - `docs/claude/` — for dynamic imports from AGENTS.md / CLAUDE.md
 
 ### Step 7: Add Cross-References
