@@ -134,7 +134,6 @@ Each skill runs in Claude Code's context with access to your codebase, git histo
 |-------|---------|-------------|
 | **setup-ai** | `/setup-ai [--global\|--project\|--check]` | One-command AI onboarding — generates AGENTS.md, STYLE_GUIDE.md, and configures hooks/plugins |
 | **git-worktree** | `/git-worktree [cmd] [args]` | Manage Git worktrees for isolated parallel development |
-| **capture-learning** | `/capture-learning` | Capture problem-solving narratives as structured learnings |
 | **handoff** | `/handoff` | Generate or resume from structured session handoffs for seamless context transfer |
 | **finalize** | `/finalize` | Clean up completed feature work — remove false starts, debug statements, and experimental remnants |
 | **test** | `/test` | Auto-detect test framework, run suite, diagnose failures, and fix them |
@@ -297,36 +296,6 @@ Requires Fireflies MCP integration in Claude Code.
 
 **Vault integration:** Set `MEETING_NOTES_DIR` and `MEETING_TRANSCRIPTS_DIR` in `~/.env` to auto-save meeting notes and transcripts to your knowledge base. See the [skill README](skills/process-meeting-notes/README.md) for details.
 
-### capture-learning
-
-Capture problem-solving narratives with a 6-element structure:
-
-1. The Problem
-2. Initial Assumption
-3. Actual Reality
-4. Troubleshooting Journey
-5. The Solution
-6. The Takeaway
-
-Saves to `<project-root>/.claude/learnings/YYYY-MM-DD-problem-description.md`. Falls back to `~/.claude/learnings/` if not in a git repo. Trigger with phrases like "Great job, log this" or "Capture this learning".
-
-After saving, optionally promotes the learning to `~/.claude/learnings/global-patterns.md` — a cross-project knowledge store that the Superpowers code-reviewer checks on every review (see [Hooks](#hooks)).
-
-**Setup:** Add this to your project's `CLAUDE.md` so Claude reads past learnings and captures new ones:
-
-```markdown
-## Learnings
-Before starting work, check `.claude/learnings/` for relevant past
-problem-solving narratives. Apply those lessons instead of repeating
-mistakes.
-
-**IMPORTANT:** After solving any non-trivial debugging session or
-discovering something that contradicts an initial assumption, invoke
-`/capture-learning` before moving on. Do not skip this step.
-```
-
-The `.claude/learnings/` directory is created automatically on first capture. Without the `CLAUDE.md` snippet, Claude won't check for existing learnings or know to capture new ones.
-
 ### handoff
 
 Generate or resume from a structured handoff document when ending a session or switching contexts. Auto-detects git branch and working tree state, infers role/status/next steps from conversation context, and outputs a formatted document the next session can consume immediately.
@@ -414,7 +383,7 @@ The `hooks/` directory contains session-start automation that keeps your Claude 
 
 ### session-start-hook.ts
 
-Runs on every session start. Currently patches the [Superpowers](https://github.com/obra/superpowers) code-reviewer template with a **knowledge-lookup Step 0** that checks `docs/solutions/` (Compound Engineering), `.claude/learnings/` (capture-learning), and `~/.claude/learnings/global-patterns.md` (cross-project patterns) before reviewing any code.
+Runs on every session start. Currently patches the [Superpowers](https://github.com/obra/superpowers) code-reviewer template with a **knowledge-lookup Step 0** that checks `docs/solutions/` (Compound Engineering), `.claude/learnings/` (project-specific notes), and `~/.claude/learnings/global-patterns.md` (cross-project patterns) before reviewing any code.
 
 **Why a hook instead of a direct file edit:** Superpowers stores its templates in versioned directories (`~/.claude/plugins/cache/superpowers-marketplace/superpowers/4.3.1/`). Each plugin update creates a new versioned directory with fresh files, silently dropping any direct edits. The session-start hook re-applies the patch on every session, so it survives updates automatically.
 
@@ -461,7 +430,16 @@ The canonical content injected into the Superpowers code-reviewer template. Edit
 
 ### Cross-project patterns
 
-After solving a non-trivial bug, run `/capture-learning`. At the end it asks "Promote to global cross-project patterns?" — say yes and it appends a structured entry to `~/.claude/learnings/global-patterns.md`. The session-start hook ensures every future code review (in any project) sees these patterns.
+When you want a fix or invariant to show up in every project's code review, append a structured entry to `~/.claude/learnings/global-patterns.md`. The session-start hook injects that file into the Superpowers code-reviewer Step 0 on each session.
+
+Use a repeatable shape (one pattern per `##` section, stable bullet labels) so Step 0 and reviewers can skim the file—same idea as dated notes under `.claude/learnings/`, but in one shared file:
+
+~~~markdown
+## <short title> — <YYYY-MM-DD>
+**Applies when:** …stack or workflow where this matters…
+**Invariant:** …rule to enforce across projects…
+**Avoid:** …anti-pattern or footgun…
+~~~
 
 ## Recommended Plugins
 
@@ -477,7 +455,7 @@ claude plugins:add obra/superpowers
 
 ### [Episodic Memory](https://github.com/obra/episodic-memory)
 
-Gives Claude persistent memory across sessions. It indexes your conversation history so Claude can search past sessions for decisions, solutions, and context you've already discussed. Pairs especially well with `/capture-learning` — learnings you capture become searchable knowledge.
+Gives Claude persistent memory across sessions. It indexes your conversation history so Claude can search past sessions for decisions, solutions, and context you've already discussed.
 
 ```sh
 claude plugins:add obra/episodic-memory
@@ -492,7 +470,6 @@ fish-skills/
 ├── skills/
 │   ├── ascii/                       # ASCII diagram generation
 │   ├── audit-claude-md/             # CLAUDE.md best-practices audit
-│   ├── capture-learning/            # Problem-solving narrative capture
 │   ├── ceo-briefing/                # Executive briefing generator
 │   ├── clipboard/                   # macOS clipboard integration
 │   ├── critic-review/               # Multi-model plan review (counselors dispatch)

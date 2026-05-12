@@ -108,7 +108,7 @@ npx @dotenvx/dotenvx run -- npx prisma migrate deploy  # Apply migrations
 
 ## Learnings
 
-Check `.claude/learnings/` before starting work. After solving non-trivial debugging or discovering contradicted assumptions, invoke `/capture-learning`.
+Check `.claude/learnings/` before starting work. After non-trivial debugging or contradicted assumptions, add a dated note there (problem, wrong assumption, reality, fix, takeaway).
 
 ## Tools & MCPs
 
@@ -167,7 +167,7 @@ These rules are enforced by pre-commit and Claude Code hooks — no CLAUDE.md co
 
 **Architecture (22/22):** Linked detailed guides 5/5 — 9 guides in `docs/claude/`. Conciseness 6/6 — ~150 lines, all detail in linked files. Critical warnings 5/5 — "CRITICAL" on Task Management, TDD, DB Migrations; "MANDATORY" on Quality Gates; "Do NOT" throughout. Section coherence 3/3 — Quality Gates referenced from Git Workflow ("MANDATORY: Follow the Quality Gates workflow"), Session Close protocol chains task sync + quality gates + git. Code-enforced vs prompt-enforced separation 3/3 — Section "Hooks (Enforced by Code, Not Prompts)" explicitly lists 3 rules enforced by hooks and states "no CLAUDE.md compliance needed."
 
-**Memory & Learning (10/10):** Learnings directory 5/5 — `.claude/learnings/` referenced. Capture learning trigger 5/5 — "invoke `/capture-learning`" after non-trivial debugging or contradicted assumptions.
+**Memory & Learning (10/10):** Learnings directory 5/5 — `.claude/learnings/` referenced. Postmortem discipline 5/5 — explicit instruction to document non-trivial debugging and contradicted assumptions under `.claude/learnings/`.
 
 **Advanced (11/16):** Frontend/UI guidelines 3/3 — `<frontend_aesthetics>` section with specific typography, color, motion, and background rules. Security guidelines 4/4 — inline rules (Zod at API boundaries, no raw SQL, review for auth/secrets) plus linked Security Guide. Parallel workflows 4/4 — worktree with copy-paste block, CWD warning, parallel session guidance. MCP/tool configuration 0/5 — brief mention ("Prefer CLI over MCPs") but no list of configured MCPs or what each does.
 
