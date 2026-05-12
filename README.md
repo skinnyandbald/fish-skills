@@ -432,6 +432,15 @@ The canonical content injected into the Superpowers code-reviewer template. Edit
 
 When you want a fix or invariant to show up in every project's code review, append a structured entry to `~/.claude/learnings/global-patterns.md`. The session-start hook injects that file into the Superpowers code-reviewer Step 0 on each session.
 
+Use a repeatable shape (one pattern per `##` section, stable bullet labels) so Step 0 and reviewers can skim the file—same idea as dated notes under `.claude/learnings/`, but in one shared file:
+
+~~~markdown
+## <short title> — <YYYY-MM-DD>
+**Applies when:** …stack or workflow where this matters…
+**Invariant:** …rule to enforce across projects…
+**Avoid:** …anti-pattern or footgun…
+~~~
+
 ## Recommended Plugins
 
 These Claude Code plugins pair well with fish-skills. They're not required, but they make your workflow significantly better.
