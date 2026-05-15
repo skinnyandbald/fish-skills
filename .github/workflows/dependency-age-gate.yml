@@ -49,11 +49,7 @@ jobs:
             exit 0
           fi
 
-          UPDATE_TYPE="${{ steps.meta.outputs.update-type }}"
-          case "$UPDATE_TYPE" in
-            version-update:semver-major) THRESHOLD_DAYS=7 ;;
-            *) THRESHOLD_DAYS=3 ;;
-          esac
+          THRESHOLD_DAYS=7
 
           CREATED_AT="${{ github.event.pull_request.created_at }}"
           CREATED_EPOCH=$(date -d "$CREATED_AT" +%s)
@@ -107,18 +103,7 @@ jobs:
               continue
             fi
 
-            # Detect major version bumps from PR title (e.g. "Bump foo from 2.x to 3.x")
-            if echo "$TITLE" | grep -qP 'from \d+\.' && echo "$TITLE" | grep -qP 'to \d+\.'; then
-              FROM_MAJOR=$(echo "$TITLE" | grep -oP 'from \K\d+' | head -1)
-              TO_MAJOR=$(echo "$TITLE" | grep -oP 'to \K\d+' | head -1)
-              if [ -n "$FROM_MAJOR" ] && [ -n "$TO_MAJOR" ] && [ "$FROM_MAJOR" != "$TO_MAJOR" ]; then
-                THRESHOLD_DAYS=7
-              else
-                THRESHOLD_DAYS=3
-              fi
-            else
-              THRESHOLD_DAYS=3
-            fi
+            THRESHOLD_DAYS=7
 
             CREATED_EPOCH=$(date -d "$CREATED_AT" +%s)
             NOW_EPOCH=$(date +%s)
