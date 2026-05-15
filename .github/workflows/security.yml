@@ -1,0 +1,20 @@
+name: Security Scanning
+
+on:
+  pull_request: {}
+  push:
+    branches: [main, master, develop]
+  schedule:
+    - cron: '0 6 * * 1' # Weekly Monday 6am UTC
+
+permissions:
+  contents: read
+  pull-requests: read
+  security-events: write
+  actions: read
+
+jobs:
+  security:
+    uses: skinnyandbald/github-defaults/.github/workflows/security-reusable.yml@133687168670c547164d4d3fa0635ee28a82f480 # main as of 2026-05-14
+    secrets:
+      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
