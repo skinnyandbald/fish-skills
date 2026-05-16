@@ -155,24 +155,19 @@ CodeScene posts two types of gates as PR review comments:
 
 ### Step 4b: Mergeability gate
 
-A fresh push can trigger a new conflict if main moved during your work. CI green alone is insufficient evidence the PR can land.
+A fresh push can trigger a new conflict if main moved during your work. CI green alone is insufficient evidence the PR can land. Use the same `bin/check-mergeability` script invoked in Phase 0:
 
 ```bash
-read -r MERGEABLE MERGE_STATE < <(gh pr view "$PR_NUM" --json mergeable,mergeStateStatus --jq '"\(.mergeable) \(.mergeStateStatus)"')
-
-# Same UNKNOWN polling pattern as Phase 0 — GitHub computes async after each push
-for i in 1 2 3 4 5 6; do
-  [ "$MERGEABLE" != "UNKNOWN" ] && break
-  sleep 10
-  read -r MERGEABLE MERGE_STATE < <(gh pr view "$PR_NUM" --json mergeable,mergeStateStatus --jq '"\(.mergeable) \(.mergeStateStatus)"')
-done
+STATUS=$(~/.claude/skills/pr-resolution/bin/check-mergeability "$PR_NUM" | jq -r '.status')
 ```
 
-| `mergeable` | Action |
-|-------------|--------|
-| `MERGEABLE` | All-checks-pass → **exit CI_GREEN**. Only-EXTERNAL → **exit CI_EXTERNAL_ONLY**. |
-| `CONFLICTING` | **exit CI_MERGE_CONFLICT** — a new conflict appeared since the last push. Do not loop; the conflict resolution is outside the skill's scope. |
-| `UNKNOWN` (after polling) | **exit CI_UNKNOWN_MERGE_STATE** — GitHub never settled. |
+| `STATUS` | Action |
+|----------|--------|
+| `CLEAN` | All-checks-pass → **exit CI_GREEN**. Only-EXTERNAL → **exit CI_EXTERNAL_ONLY**. |
+| `BEHIND` | Auto-sync (same as Phase 0), push, return to CI gate Step 1 to re-run checks against the new SHA. |
+| `CONFLICT` | **exit CI_MERGE_CONFLICT** — a new conflict appeared since the last push. Do not loop; conflict resolution is outside the skill's scope. |
+| `UNKNOWN` | **exit CI_UNKNOWN_MERGE_STATE** — GitHub never settled. |
+| `ERROR` | **exit CI_MERGE_CHECK_ERROR** — script or API failure; surface the error. |
 
 ### Step 5: Fix
 
@@ -258,6 +253,7 @@ When fixing a CI failure, the agent MUST follow this discipline:
 | `CI_ESCALATION` | 3+ fix attempts on same check |
 | `CI_MERGE_CONFLICT` | All checks settled but `mergeable == CONFLICTING` (new conflict appeared during the run) |
 | `CI_UNKNOWN_MERGE_STATE` | GitHub never finished computing mergeability — needs human investigation |
+| `CI_MERGE_CHECK_ERROR` | `bin/check-mergeability` failed (API error or usage problem) |
 
 All exit states proceed to the next phase — `CI_GREEN`/`CI_EXTERNAL_ONLY` cleanly, others with a status note. `CI_MERGE_CONFLICT` and `CI_UNKNOWN_MERGE_STATE` must be surfaced prominently in the final report; do not silently succeed.
 

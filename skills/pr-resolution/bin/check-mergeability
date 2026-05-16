@@ -1,0 +1,84 @@
+#!/bin/bash
+# Check the GitHub mergeability state of a PR.
+# Polls for UNKNOWN state up to ~60 seconds (GitHub computes async after pushes).
+#
+# Usage: bin/check-mergeability PR_NUM [OWNER_REPO]
+#
+# Output: JSON with status, mergeable, mergeStateStatus, poll_count
+#
+# Status values:
+#   CLEAN     — mergeable, no action needed (CLEAN/UNSTABLE/HAS_HOOKS state)
+#   BEHIND    — mergeable but behind base branch; should auto-sync
+#   CONFLICT  — conflicts exist; needs manual resolution
+#   UNKNOWN   — GitHub couldn't compute after max polling
+#   ERROR     — API call failed or usage error
+#
+# Polling: defaults to 6 attempts at 10s intervals. Override with
+#   CHECK_MERGEABILITY_MAX_POLLS and CHECK_MERGEABILITY_SLEEP env vars
+#   (useful for tests — set both to small values).
+
+set -euo pipefail
+
+PR_NUM="${1:-}"
+OWNER_REPO="${2:-}"
+
+MAX_POLLS="${CHECK_MERGEABILITY_MAX_POLLS:-6}"
+SLEEP_SECS="${CHECK_MERGEABILITY_SLEEP:-10}"
+
+if [ -z "$PR_NUM" ]; then
+  echo '{"status":"ERROR","error_type":"usage","message":"Usage: check-mergeability PR_NUM [OWNER_REPO]"}'
+  exit 1
+fi
+
+# Build the gh argv. Append --repo only when the caller provided one;
+# otherwise gh uses the current repo (which the tests rely on for mocking).
+GH_ARGS=(pr view "$PR_NUM" --json mergeable,mergeStateStatus)
+if [ -n "$OWNER_REPO" ]; then
+  GH_ARGS+=(--repo "$OWNER_REPO")
+fi
+
+POLL_COUNT=0
+MERGEABLE="UNKNOWN"
+MERGE_STATE=""
+
+while [ "$POLL_COUNT" -lt "$MAX_POLLS" ]; do
+  POLL_COUNT=$((POLL_COUNT + 1))
+
+  RESPONSE=$(gh "${GH_ARGS[@]}" 2>&1) || {
+    echo "{\"status\":\"ERROR\",\"error_type\":\"api_error\",\"message\":$(echo "$RESPONSE" | jq -Rs .)}"
+    exit 1
+  }
+
+  MERGEABLE=$(echo "$RESPONSE" | jq -r '.mergeable // "UNKNOWN"')
+  MERGE_STATE=$(echo "$RESPONSE" | jq -r '.mergeStateStatus // ""')
+
+  # Stop polling as soon as GitHub returns a definitive state
+  if [ "$MERGEABLE" != "UNKNOWN" ]; then
+    break
+  fi
+
+  # Only sleep if we're going to poll again
+  if [ "$POLL_COUNT" -lt "$MAX_POLLS" ]; then
+    sleep "$SLEEP_SECS"
+  fi
+done
+
+# Route on (mergeable, mergeStateStatus)
+case "$MERGEABLE" in
+  MERGEABLE)
+    case "$MERGE_STATE" in
+      BEHIND) STATUS="BEHIND" ;;
+      *) STATUS="CLEAN" ;;   # CLEAN, UNSTABLE, HAS_HOOKS, BLOCKED, DRAFT all proceed
+    esac
+    ;;
+  CONFLICTING) STATUS="CONFLICT" ;;
+  UNKNOWN) STATUS="UNKNOWN" ;;
+  *) STATUS="UNKNOWN" ;;
+esac
+
+jq -nc \
+  --arg status "$STATUS" \
+  --arg mergeable "$MERGEABLE" \
+  --arg mergeStateStatus "$MERGE_STATE" \
+  --argjson poll_count "$POLL_COUNT" \
+  '{status: $status, mergeable: $mergeable, mergeStateStatus: $mergeStateStatus, poll_count: $poll_count}'

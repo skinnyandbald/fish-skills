@@ -95,26 +95,23 @@ fi
 CI green ≠ mergeable. GitHub tracks merge state separately from check runs, so a PR can have all-passing CI but still be blocked by a merge conflict with the base branch. The skill must detect this explicitly — `gh pr checks` alone will not.
 
 ```bash
-read -r MERGEABLE MERGE_STATE < <(gh pr view "$PR_NUM" --json mergeable,mergeStateStatus --jq '"\(.mergeable) \(.mergeStateStatus)"')
-
-# GitHub computes mergeability asynchronously after a push. UNKNOWN means "still computing" — poll up to 60s.
-for i in 1 2 3 4 5 6; do
-  [ "$MERGEABLE" != "UNKNOWN" ] && break
-  sleep 10
-  read -r MERGEABLE MERGE_STATE < <(gh pr view "$PR_NUM" --json mergeable,mergeStateStatus --jq '"\(.mergeable) \(.mergeStateStatus)"')
-done
+RESULT=$(~/.claude/skills/pr-resolution/bin/check-mergeability "$PR_NUM")
+STATUS=$(echo "$RESULT" | jq -r '.status')
 ```
 
-Route on the result:
+`bin/check-mergeability` polls `gh pr view --json mergeable,mergeStateStatus` up to 60s (GitHub computes asynchronously after pushes) and returns one of these statuses:
 
-| `mergeable` | `mergeStateStatus` | Action |
-|-------------|--------------------|--------|
-| `MERGEABLE` | `CLEAN`, `UNSTABLE`, `HAS_HOOKS` | Continue to Discovery |
-| `MERGEABLE` | `BEHIND` | Auto-sync: `git merge origin/<base>` (no conflicts expected). Push. Re-check. Continue. |
-| `CONFLICTING` | `DIRTY` | **STOP.** Do NOT attempt to resolve conflicts automatically — they often have semantic meaning a code review missed. Exit with status `PRE_FLIGHT_CONFLICT` and report: conflicting files (`git merge --no-commit origin/<base>; git diff --name-only --diff-filter=U; git merge --abort`), instruction to resolve manually. |
-| `UNKNOWN` (after polling) | any | Exit with `PRE_FLIGHT_UNKNOWN_MERGE_STATE` — GitHub couldn't compute; humans should investigate. |
+| Status | Meaning | Action |
+|--------|---------|--------|
+| `CLEAN` | `MERGEABLE` and base is current (or only failing checks) | Continue to Discovery |
+| `BEHIND` | `MERGEABLE` but PR is behind base | Auto-sync: `git merge origin/<base>` (no conflicts expected since GitHub said MERGEABLE). Push. Re-check. Continue. |
+| `CONFLICT` | `CONFLICTING` / `DIRTY` | **STOP.** Exit `PRE_FLIGHT_CONFLICT`. Report conflicting files (`git merge --no-commit origin/<base>; git diff --name-only --diff-filter=U; git merge --abort`). Do NOT auto-resolve — conflicts often carry semantic meaning a code review missed. |
+| `UNKNOWN` | GitHub couldn't compute after polling | Exit `PRE_FLIGHT_UNKNOWN_MERGE_STATE` — humans should investigate. |
+| `ERROR` | API or usage failure | Exit `PRE_FLIGHT_ERROR` and surface the error message. |
 
 **Rationale:** Resolving conflicts is a code decision, not a process step. The skill's job is to surface them, not paper over them. Auto-merging clean updates (`BEHIND` without conflict) is safe because git already verified no overlap.
+
+**Tests:** `bin/tests/check-mergeability.test.sh` covers all five status paths plus argument validation and `--repo` forwarding.
 
 ### GoodToGo check (optional)
 
