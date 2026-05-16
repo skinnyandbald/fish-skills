@@ -293,6 +293,7 @@ After pushing in Phase 5, monitor CI until green or exit condition. Follow the b
 
 **Exit routing:**
 - `CI_GREEN` or `CI_EXTERNAL_ONLY` → proceed to Phase 7
+- `CI_MERGE_CONFLICT` or `CI_UNKNOWN_MERGE_STATE` or `CI_MERGE_CHECK_ERROR` → report prominently (non-success), proceed to Phase 7
 - `CI_TIMEOUT` or `CI_ESCALATION` or `CI_NO_CHECKS` → report status, proceed to Phase 7
 
 **Pre-existing failure policy:** If a check fails on the branch, fix it. Do NOT classify failures as "pre-existing" to skip them.
