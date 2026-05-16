@@ -149,9 +149,25 @@ CodeScene posts two types of gates as PR review comments:
 
 ### Step 4: Route
 
-- All checks pass → **exit CI_GREEN**
-- Only EXTERNAL failures (no ACTIONS_FIXABLE or THIRD_PARTY_FIXABLE) → **exit CI_EXTERNAL_ONLY**
+- All checks pass → proceed to Step 4b (mergeability gate)
+- Only EXTERNAL failures (no ACTIONS_FIXABLE or THIRD_PARTY_FIXABLE) → proceed to Step 4b (mergeability gate)
 - ACTIONS_FIXABLE or THIRD_PARTY_FIXABLE failures exist → proceed to Step 5
+
+### Step 4b: Mergeability gate
+
+A fresh push can trigger a new conflict if main moved during your work. CI green alone is insufficient evidence the PR can land. Use the same `bin/check-mergeability` script invoked in Phase 0:
+
+```bash
+STATUS=$(~/.claude/skills/pr-resolution/bin/check-mergeability "$PR_NUM" | jq -r '.status')
+```
+
+| `STATUS` | Action |
+|----------|--------|
+| `CLEAN` | All-checks-pass → **exit CI_GREEN**. Only-EXTERNAL → **exit CI_EXTERNAL_ONLY**. |
+| `BEHIND` | Auto-sync (same as Phase 0), push, return to CI gate Step 1 to re-run checks against the new SHA. |
+| `CONFLICT` | **exit CI_MERGE_CONFLICT** — a new conflict appeared since the last push. Do not loop; conflict resolution is outside the skill's scope. |
+| `UNKNOWN` | **exit CI_UNKNOWN_MERGE_STATE** — GitHub never settled. |
+| `ERROR` | **exit CI_MERGE_CHECK_ERROR** — script or API failure; surface the error. |
 
 ### Step 5: Fix
 
@@ -230,13 +246,16 @@ When fixing a CI failure, the agent MUST follow this discipline:
 
 | State | Meaning |
 |-------|---------|
-| `CI_GREEN` | All checks pass |
-| `CI_EXTERNAL_ONLY` | Only truly non-fixable checks failing (not CodeScene or other recognized third-party checks) |
+| `CI_GREEN` | All checks pass AND `mergeable == MERGEABLE` |
+| `CI_EXTERNAL_ONLY` | Only truly non-fixable checks failing AND `mergeable == MERGEABLE` |
 | `CI_NO_CHECKS` | No checks appeared after 2 min |
 | `CI_TIMEOUT` | Total timeout or checks never settled |
 | `CI_ESCALATION` | 3+ fix attempts on same check |
+| `CI_MERGE_CONFLICT` | All checks settled but `mergeable == CONFLICTING` (new conflict appeared during the run) |
+| `CI_UNKNOWN_MERGE_STATE` | GitHub never finished computing mergeability — needs human investigation |
+| `CI_MERGE_CHECK_ERROR` | `bin/check-mergeability` failed (API error or usage problem) |
 
-All exit states proceed to the next phase — `CI_GREEN`/`CI_EXTERNAL_ONLY` cleanly, others with a status note.
+All exit states proceed to the next phase — `CI_GREEN`/`CI_EXTERNAL_ONLY` cleanly, others with a status note. `CI_MERGE_CONFLICT` and `CI_UNKNOWN_MERGE_STATE` must be surfaced prominently in the final report; do not silently succeed.
 
 ## Pre-existing vs Introduced Failure Policy
 
