@@ -53,13 +53,13 @@ IMPORTANT:
 ## Workflow Overview
 
 ```text
-Phase 0: Pre-Flight     → GoodToGo status check (if installed, otherwise skip)
+Phase 0: Pre-Flight     → Branch checkout + mergeability check + GoodToGo (if installed)
 Phase 1: Discovery      → Gather comments, parse bot formats, enumerate
 Phase 2: Classification → Categorize by priority, group by file
 Phase 3: Resolution     → Launch parallel agents by file group
 Phase 4: Verification   → Local checks + GoodToGo gate (if installed)
 Phase 5: Completion     → Commit, push, resolve threads
-Phase 6: CI Gate        → Monitor CI, fix actionable failures, re-push
+Phase 6: CI Gate        → Monitor CI + mergeability, fix actionable failures, re-push
 Phase 7: Shepherd       → Inline polling loop for new bot comments + CI
 ```
 
@@ -89,6 +89,31 @@ fi
 ```
 
 **If checkout fails** (e.g. uncommitted changes on current branch): run `git stash` first, then checkout. Do NOT proceed on the wrong branch.
+
+### Mergeability check (MANDATORY — do this BEFORE Discovery)
+
+CI green ≠ mergeable. GitHub tracks merge state separately from check runs, so a PR can have all-passing CI but still be blocked by a merge conflict with the base branch. The skill must detect this explicitly — `gh pr checks` alone will not.
+
+```bash
+RESULT=$(~/.claude/skills/pr-resolution/bin/check-mergeability "$PR_NUM")
+STATUS=$(echo "$RESULT" | jq -r '.status')
+BASE_REF=$(gh pr view "$PR_NUM" --json baseRefName -q '.baseRefName')
+git fetch origin "$BASE_REF"
+```
+
+`bin/check-mergeability` polls `gh pr view --json mergeable,mergeStateStatus` up to 60s (GitHub computes asynchronously after pushes) and returns one of these statuses:
+
+| Status | Meaning | Action |
+|--------|---------|--------|
+| `CLEAN` | `MERGEABLE` and base is current (or only failing checks) | Continue to Discovery |
+| `BEHIND` | `MERGEABLE` but PR is behind base | Auto-sync: `git merge "origin/$BASE_REF"` (no conflicts expected since GitHub said MERGEABLE). Push. Re-check. Continue. |
+| `CONFLICT` | `CONFLICTING` / `DIRTY` | **STOP.** Exit `PRE_FLIGHT_CONFLICT`. Report conflicting files (`git merge --no-commit "origin/$BASE_REF"; git diff --name-only --diff-filter=U; git merge --abort`). Do NOT auto-resolve — conflicts often carry semantic meaning a code review missed. |
+| `UNKNOWN` | GitHub couldn't compute after polling | Exit `PRE_FLIGHT_UNKNOWN_MERGE_STATE` — humans should investigate. |
+| `ERROR` | API or usage failure | Exit `PRE_FLIGHT_ERROR` and surface the error message. |
+
+**Rationale:** Resolving conflicts is a code decision, not a process step. The skill's job is to surface them, not paper over them. Auto-merging clean updates (`BEHIND` without conflict) is safe because git already verified no overlap.
+
+**Tests:** `bin/tests/check-mergeability.test.sh` covers all five status paths plus argument validation and `--repo` forwarding.
 
 ### GoodToGo check (optional)
 
@@ -268,6 +293,7 @@ After pushing in Phase 5, monitor CI until green or exit condition. Follow the b
 
 **Exit routing:**
 - `CI_GREEN` or `CI_EXTERNAL_ONLY` → proceed to Phase 7
+- `CI_MERGE_CONFLICT` or `CI_UNKNOWN_MERGE_STATE` or `CI_MERGE_CHECK_ERROR` → report prominently (non-success), proceed to Phase 7
 - `CI_TIMEOUT` or `CI_ESCALATION` or `CI_NO_CHECKS` → report status, proceed to Phase 7
 
 **Pre-existing failure policy:** If a check fails on the branch, fix it. Do NOT classify failures as "pre-existing" to skip them.
