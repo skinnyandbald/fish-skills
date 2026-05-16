@@ -97,6 +97,8 @@ CI green ≠ mergeable. GitHub tracks merge state separately from check runs, so
 ```bash
 RESULT=$(~/.claude/skills/pr-resolution/bin/check-mergeability "$PR_NUM")
 STATUS=$(echo "$RESULT" | jq -r '.status')
+BASE_REF=$(gh pr view "$PR_NUM" --json baseRefName -q '.baseRefName')
+git fetch origin "$BASE_REF"
 ```
 
 `bin/check-mergeability` polls `gh pr view --json mergeable,mergeStateStatus` up to 60s (GitHub computes asynchronously after pushes) and returns one of these statuses:
@@ -104,8 +106,8 @@ STATUS=$(echo "$RESULT" | jq -r '.status')
 | Status | Meaning | Action |
 |--------|---------|--------|
 | `CLEAN` | `MERGEABLE` and base is current (or only failing checks) | Continue to Discovery |
-| `BEHIND` | `MERGEABLE` but PR is behind base | Auto-sync: `git merge origin/<base>` (no conflicts expected since GitHub said MERGEABLE). Push. Re-check. Continue. |
-| `CONFLICT` | `CONFLICTING` / `DIRTY` | **STOP.** Exit `PRE_FLIGHT_CONFLICT`. Report conflicting files (`git merge --no-commit origin/<base>; git diff --name-only --diff-filter=U; git merge --abort`). Do NOT auto-resolve — conflicts often carry semantic meaning a code review missed. |
+| `BEHIND` | `MERGEABLE` but PR is behind base | Auto-sync: `git merge "origin/$BASE_REF"` (no conflicts expected since GitHub said MERGEABLE). Push. Re-check. Continue. |
+| `CONFLICT` | `CONFLICTING` / `DIRTY` | **STOP.** Exit `PRE_FLIGHT_CONFLICT`. Report conflicting files (`git merge --no-commit "origin/$BASE_REF"; git diff --name-only --diff-filter=U; git merge --abort`). Do NOT auto-resolve — conflicts often carry semantic meaning a code review missed. |
 | `UNKNOWN` | GitHub couldn't compute after polling | Exit `PRE_FLIGHT_UNKNOWN_MERGE_STATE` — humans should investigate. |
 | `ERROR` | API or usage failure | Exit `PRE_FLIGHT_ERROR` and surface the error message. |
 
