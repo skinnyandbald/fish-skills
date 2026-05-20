@@ -105,9 +105,10 @@ SKILL_DIR="${SKILL_DIR:-$HOME/.claude/skills/pr-resolution}"
        runs: [.check_runs[] | {name: .name, status: .status, conclusion: .conclusion, app_slug: .app.slug}]
      }' 2>/dev/null || echo '{"total":0,"completed":0,"runs":[]}')
    SETTLE_DECISION=$(cd "$SKILL_DIR" && npx tsx lib/shepherd-state.ts evaluate-settle \
-     "{\"runs\":$(echo "$CHECK_DATA" | jq -c '.runs')}")
+     "{\"runs\":$(echo "$CHECK_DATA" | jq -c '.runs')}" 2>/dev/null)
    SETTLE_ACTION=$(echo "$SETTLE_DECISION" | jq -r '.action')
    ```
+   - If SETTLE_ACTION is empty or `null` (command failure) → log warning, treat as KEEP_WAITING (continue watching)
    - If KEEP_WAITING → continue watching (checks still running, no Actions failures)
    - If SETTLED or FAIL_FAST, check for failures:
      a. Classify using `references/ci-gate.md` decision matrix (Actions app + job name match + local command)

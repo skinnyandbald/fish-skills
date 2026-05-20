@@ -55,8 +55,15 @@ while true; do
     }')
 
   SETTLE_DECISION=$(cd "$SKILL_DIR" && npx tsx lib/shepherd-state.ts evaluate-settle \
-    "{\"runs\":$(echo "$CHECK_DATA" | jq -c '.runs')}")
+    "{\"runs\":$(echo "$CHECK_DATA" | jq -c '.runs')}" 2>/dev/null)
   SETTLE_ACTION=$(echo "$SETTLE_DECISION" | jq -r '.action')
+
+  # If evaluate-settle failed (empty/null action), treat as not settled and continue the loop
+  if [ -z "$SETTLE_ACTION" ] || [ "$SETTLE_ACTION" = "null" ]; then
+    echo "Warning: evaluate-settle returned empty action, retrying..."
+    sleep 60
+    continue
+  fi
 
   if [ "$SETTLE_ACTION" = "SETTLED" ]; then break; fi
   if [ "$SETTLE_ACTION" = "FAIL_FAST" ]; then
