@@ -6,6 +6,7 @@
 ## Prerequisites
 
 - `OWNER`, `REPO`, `BRANCH`, `PR_NUM` must be set
+- `SKILL_DIR` must be set (usually `$HOME/.claude/skills/pr-resolution`)
 - `STATE_FILE=/tmp/ci-gate-state-$PR_NUM`
 
 ## Algorithm
@@ -40,7 +41,7 @@ fi
 
 ### Step 2: Settle Wait
 
-Poll until all checks reach terminal status (`status == "completed"`).
+Poll until all checks reach terminal status, with **fail-fast** for GitHub Actions failures. If an Actions check has already failed, there's no point waiting for bot checks (CodeRabbit, CodeScene) to finish — proceed directly to classification and fix.
 
 ```bash
 # Poll every 60s, up to 15 minutes
@@ -52,8 +53,18 @@ while true; do
       completed: [.check_runs[] | select(.status == "completed")] | length,
       runs: [.check_runs[] | {name: .name, status: .status, conclusion: .conclusion, app_slug: .app.slug}]
     }')
-  PENDING=$(($(echo "$CHECK_DATA" | jq '.total') - $(echo "$CHECK_DATA" | jq '.completed')))
-  if [ "$PENDING" -eq 0 ]; then break; fi
+
+  SETTLE_DECISION=$(cd "$SKILL_DIR" && npx tsx lib/shepherd-state.ts evaluate-settle \
+    "{\"runs\":$(echo "$CHECK_DATA" | jq -c '.runs')}")
+  SETTLE_ACTION=$(echo "$SETTLE_DECISION" | jq -r '.action')
+
+  if [ "$SETTLE_ACTION" = "SETTLED" ]; then break; fi
+  if [ "$SETTLE_ACTION" = "FAIL_FAST" ]; then
+    FAST_NAMES=$(echo "$SETTLE_DECISION" | jq -r '.actions_failures | join(", ")')
+    FAST_PENDING=$(echo "$SETTLE_DECISION" | jq -r '.pending_count')
+    echo "Fail-fast: GitHub Actions check(s) [$FAST_NAMES] already failed, skipping wait for $FAST_PENDING remaining check(s)"
+    break
+  fi
 
   ELAPSED=$(( $(date +%s) - SETTLE_START ))
   if [ "$ELAPSED" -gt 900 ]; then  # 15 minutes
