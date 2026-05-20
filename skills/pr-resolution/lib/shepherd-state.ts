@@ -106,6 +106,39 @@ export function filterThreadsForResolution(
     .map((t) => t.id);
 }
 
+export interface CheckRun {
+  name: string;
+  status: string;
+  conclusion: string | null;
+  app_slug: string;
+}
+
+export interface SettleDecision {
+  action: "SETTLED" | "KEEP_WAITING" | "FAIL_FAST";
+  pending_count: number;
+  actions_failures: string[];
+}
+
+const FAILING_CONCLUSIONS = new Set(["failure", "timed_out", "cancelled", "startup_failure", "action_required"]);
+
+export function evaluateSettleStatus(runs: CheckRun[]): SettleDecision {
+  const pending = runs.filter((r) => r.status !== "completed");
+  const actionsFailures = runs.filter(
+    (r) => r.status === "completed" && r.app_slug === "github-actions" && FAILING_CONCLUSIONS.has(r.conclusion ?? ""),
+  );
+  const failureNames = actionsFailures.map((r) => r.name);
+
+  if (pending.length === 0) {
+    return { action: "SETTLED", pending_count: 0, actions_failures: failureNames };
+  }
+
+  if (actionsFailures.length > 0) {
+    return { action: "FAIL_FAST", pending_count: pending.length, actions_failures: failureNames };
+  }
+
+  return { action: "KEEP_WAITING", pending_count: pending.length, actions_failures: [] };
+}
+
 const TIMEOUT_SECONDS = 7200; // 2 hours
 
 export function shouldTimeout(elapsedSeconds: number): boolean {
@@ -139,7 +172,7 @@ if (isCLI) {
 
   try {
     const input = JSON.parse(jsonArg);
-    let result: RouteOutput | TrackFlagsOutput | string[] | SummaryAction | { timeout: boolean };
+    let result: RouteOutput | TrackFlagsOutput | string[] | SummaryAction | { timeout: boolean } | SettleDecision;
 
     if (subcommand === "route") {
       result = route(input as RouteInput);
@@ -151,6 +184,8 @@ if (isCLI) {
       result = determineSummaryAction(input.comment_id);
     } else if (subcommand === "should-timeout") {
       result = { timeout: shouldTimeout(input.elapsed) };
+    } else if (subcommand === "evaluate-settle") {
+      result = evaluateSettleStatus(input.runs as CheckRun[]);
     } else {
       console.error(`Unknown subcommand: ${subcommand}`);
       process.exit(1);

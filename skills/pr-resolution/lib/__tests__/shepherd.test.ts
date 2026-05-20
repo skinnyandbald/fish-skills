@@ -5,6 +5,7 @@ import {
   filterThreadsForResolution,
   determineSummaryAction,
   shouldTimeout,
+  evaluateSettleStatus,
 } from "../shepherd-state.js";
 
 describe("Shepherd state routing", () => {
@@ -209,5 +210,104 @@ describe("Edge cases", () => {
       { id: "PRRT_1", path: "src/x.ts", isResolved: false, lastAuthor: "coderabbitai[bot]", lastCreatedAt: "2026-06-01T00:00:00Z" },
     ], "2026-06-01T00:00:00Z"); // Same timestamp
     expect(threads).toEqual([]); // strict > means same-second excluded
+  });
+});
+
+describe("CI settle status evaluation", () => {
+  // T37: All checks completed and passing → SETTLED
+  it("returns SETTLED when all checks completed successfully", () => {
+    const result = evaluateSettleStatus([
+      { name: "Typecheck & Tests", status: "completed", conclusion: "success", app_slug: "github-actions" },
+      { name: "CodeRabbit", status: "completed", conclusion: "success", app_slug: "coderabbit-ai" },
+      { name: "CodeScene", status: "completed", conclusion: "neutral", app_slug: "codescene" },
+    ]);
+    expect(result.action).toBe("SETTLED");
+    expect(result.pending_count).toBe(0);
+    expect(result.actions_failures).toEqual([]);
+  });
+
+  // T38: Some checks still running, none failed → KEEP_WAITING
+  it("returns KEEP_WAITING when checks are pending and none failed", () => {
+    const result = evaluateSettleStatus([
+      { name: "Typecheck & Tests", status: "completed", conclusion: "success", app_slug: "github-actions" },
+      { name: "CodeRabbit", status: "in_progress", conclusion: null, app_slug: "coderabbit-ai" },
+    ]);
+    expect(result.action).toBe("KEEP_WAITING");
+    expect(result.pending_count).toBe(1);
+    expect(result.actions_failures).toEqual([]);
+  });
+
+  // T39: THE BUG — Actions check failed while bot check still pending → FAIL_FAST
+  it("returns FAIL_FAST when a GitHub Actions check failed even though other checks are pending", () => {
+    const result = evaluateSettleStatus([
+      { name: "CI / Typecheck & Tests", status: "completed", conclusion: "failure", app_slug: "github-actions" },
+      { name: "Semgrep", status: "completed", conclusion: "success", app_slug: "github-actions" },
+      { name: "CodeRabbit", status: "in_progress", conclusion: null, app_slug: "coderabbit-ai" },
+      { name: "CodeScene Code Health", status: "completed", conclusion: "success", app_slug: "codescene" },
+    ]);
+    expect(result.action).toBe("FAIL_FAST");
+    expect(result.pending_count).toBe(1);
+    expect(result.actions_failures).toEqual(["CI / Typecheck & Tests"]);
+  });
+
+  // T40: Non-Actions check failed while pending → KEEP_WAITING (only Actions failures trigger fail-fast)
+  it("keeps waiting when only non-Actions checks have failed", () => {
+    const result = evaluateSettleStatus([
+      { name: "Typecheck & Tests", status: "completed", conclusion: "success", app_slug: "github-actions" },
+      { name: "CodeScene Coverage", status: "completed", conclusion: "failure", app_slug: "codescene" },
+      { name: "CodeRabbit", status: "in_progress", conclusion: null, app_slug: "coderabbit-ai" },
+    ]);
+    expect(result.action).toBe("KEEP_WAITING");
+    expect(result.pending_count).toBe(1);
+    expect(result.actions_failures).toEqual([]);
+  });
+
+  // T41: Actions timed_out counts as failure for fail-fast
+  it("treats timed_out and cancelled Actions checks as fail-fast triggers", () => {
+    const result = evaluateSettleStatus([
+      { name: "CI / Build", status: "completed", conclusion: "timed_out", app_slug: "github-actions" },
+      { name: "CodeRabbit", status: "queued", conclusion: null, app_slug: "coderabbit-ai" },
+    ]);
+    expect(result.action).toBe("FAIL_FAST");
+    expect(result.actions_failures).toEqual(["CI / Build"]);
+  });
+
+  // T42: All checks settled with failures → SETTLED (not FAIL_FAST)
+  it("returns SETTLED when all checks completed even if some failed", () => {
+    const result = evaluateSettleStatus([
+      { name: "Typecheck & Tests", status: "completed", conclusion: "failure", app_slug: "github-actions" },
+      { name: "CodeRabbit", status: "completed", conclusion: "success", app_slug: "coderabbit-ai" },
+    ]);
+    expect(result.action).toBe("SETTLED");
+    expect(result.pending_count).toBe(0);
+    expect(result.actions_failures).toEqual(["Typecheck & Tests"]);
+  });
+
+  // T43: Multiple Actions failures with pending checks
+  it("reports all failed Actions check names on fail-fast", () => {
+    const result = evaluateSettleStatus([
+      { name: "CI / Lint", status: "completed", conclusion: "failure", app_slug: "github-actions" },
+      { name: "CI / Typecheck", status: "completed", conclusion: "failure", app_slug: "github-actions" },
+      { name: "CodeRabbit", status: "in_progress", conclusion: null, app_slug: "coderabbit-ai" },
+    ]);
+    expect(result.action).toBe("FAIL_FAST");
+    expect(result.actions_failures).toEqual(["CI / Lint", "CI / Typecheck"]);
+  });
+
+  // T44: Empty check runs array → SETTLED (edge case)
+  it("returns SETTLED for empty check runs", () => {
+    const result = evaluateSettleStatus([]);
+    expect(result.action).toBe("SETTLED");
+    expect(result.pending_count).toBe(0);
+  });
+
+  // T45: skipped conclusion is passing, not failing
+  it("treats skipped conclusion as passing", () => {
+    const result = evaluateSettleStatus([
+      { name: "CI / Optional", status: "completed", conclusion: "skipped", app_slug: "github-actions" },
+      { name: "CodeRabbit", status: "in_progress", conclusion: null, app_slug: "coderabbit-ai" },
+    ]);
+    expect(result.action).toBe("KEEP_WAITING");
+    expect(result.actions_failures).toEqual([]);
   });
 });
