@@ -160,10 +160,10 @@ SKILL_DIR="${SKILL_DIR:-$HOME/.claude/skills/pr-resolution}"
      id: .id,
      path: .path,
      isResolved: .isResolved,
-     lastAuthor: .comments.nodes[0].author.login,
-     isBot: (.comments.nodes[0].author.__typename == "Bot"),
-     lastCreatedAt: .comments.nodes[0].createdAt,
-     lastBody: .comments.nodes[0].body
+     lastAuthor: .comments.nodes[0]?.author?.login,
+     isBot: (.comments.nodes[0]?.author?.__typename == "Bot"),
+     lastCreatedAt: .comments.nodes[0]?.createdAt,
+     lastBody: .comments.nodes[0]?.body
    }]')
 
    # Check for GraphQL errors in the response
