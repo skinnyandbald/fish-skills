@@ -173,9 +173,12 @@ CodeScene posts two types of gates as PR review comments:
 
 ### Step 4b: Mergeability gate
 
-A fresh push can trigger a new conflict if main moved during your work. CI green alone is insufficient evidence the PR can land. Use the same `bin/check-mergeability` script invoked in Phase 0:
+A fresh push can trigger a new conflict if main moved during your work. CI green alone is insufficient evidence the PR can land.
+
+**Wait 30 seconds before checking** — GitHub recomputes mergeability asynchronously after a push. Polling immediately can return a stale `MERGEABLE` result from before the conflict was detected, causing the gate to pass incorrectly.
 
 ```bash
+sleep 30  # allow GitHub to recompute mergeability after push
 STATUS=$(~/.claude/skills/pr-resolution/bin/check-mergeability "$PR_NUM" | jq -r '.status')
 ```
 
