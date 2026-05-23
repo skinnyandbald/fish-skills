@@ -197,6 +197,15 @@ Agent 3: "Fix CI failures"
 | CI failures | → Dedicated agent |
 | Questions | → Ask human first |
 
+**Pre-existing failures discovered during Phase 3:**
+
+| Type | Action |
+|------|--------|
+| Blocking CI (PR can't pass without fix) | Fix in this PR. After editing the out-of-scope file, immediately run `bin/check-mergeability` to catch any new conflict before proceeding. Flag the out-of-scope change prominently in the Phase 5 resolution summary. |
+| Non-blocking (tests were already failing on main) | Do NOT fix in this PR. Create a GitHub issue with `gh issue create` documenting the failure so it isn't lost. Reference the issue in the Phase 5 summary. |
+
+Out-of-scope edits can introduce merge conflicts that Phase 0 couldn't anticipate (the conflict didn't exist yet). The immediate post-edit mergeability check is the safeguard.
+
 Wait for all agents to complete.
 
 ---
