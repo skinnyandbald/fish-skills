@@ -142,7 +142,7 @@ SKILL_DIR="${SKILL_DIR:-$HOME/.claude/skills/pr-resolution}"
                path
                isResolved
                comments(last: 1) {
-                 nodes { createdAt author { login } body }
+                 nodes { createdAt author { __typename login } body }
                }
              }
              pageInfo { hasNextPage endCursor }
@@ -152,14 +152,18 @@ SKILL_DIR="${SKILL_DIR:-$HOME/.claude/skills/pr-resolution}"
      }
    ' -F owner="$OWNER" -F repo="$REPO" -F pr="$PR_NUM")
 
-   # Flatten paginated results and extract thread info (including path for file flag tracking)
+   # Flatten paginated results and extract thread info (including path for file flag tracking).
+   # isBot is derived from __typename, not from a "[bot]" suffix on login: GraphQL
+   # returns plain slugs (`coderabbitai`, `gemini-code-assist`), so suffix-matching
+   # silently filters every real bot thread out.
    THREADS=$(echo "$THREADS_RAW" | jq '[.[].data.repository.pullRequest.reviewThreads.nodes[] | {
      id: .id,
      path: .path,
      isResolved: .isResolved,
-     lastAuthor: .comments.nodes[0].author.login,
-     lastCreatedAt: .comments.nodes[0].createdAt,
-     lastBody: .comments.nodes[0].body
+     lastAuthor: .comments.nodes[0]?.author?.login,
+     isBot: (.comments.nodes[0]?.author?.__typename == "Bot"),
+     lastCreatedAt: .comments.nodes[0]?.createdAt,
+     lastBody: .comments.nodes[0]?.body
    }]')
 
    # Check for GraphQL errors in the response
