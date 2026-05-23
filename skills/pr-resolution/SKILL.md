@@ -197,6 +197,15 @@ Agent 3: "Fix CI failures"
 | CI failures | → Dedicated agent |
 | Questions | → Ask human first |
 
+**Pre-existing failures discovered during Phase 3:**
+
+| Type | Action |
+|------|--------|
+| Required checks failing (branch protection blocks merge) | Fix in this PR. After editing the out-of-scope file, perform a local merge check (e.g., `git fetch origin $BASE_REF && git merge --no-commit origin/$BASE_REF`) to catch any new conflict before proceeding. Flag the out-of-scope change prominently in the Phase 5 resolution summary. |
+| Non-required checks failing (pre-existing on main, not required for merge) | Do NOT fix in this PR. Create a GitHub issue with `gh issue create --title "[title]" --body "[details]"` documenting the failure so it isn't lost. Reference the issue in the Phase 5 summary. |
+
+Out-of-scope edits can introduce merge conflicts that Phase 0 couldn't anticipate (the conflict didn't exist yet). The immediate post-edit local merge check is the safeguard.
+
 Wait for all agents to complete.
 
 ---
