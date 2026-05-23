@@ -138,8 +138,8 @@ describe("Thread discovery filtering", () => {
   // T25: Human thread exclusion
   it("excludes threads where latest comment is from human", () => {
     const threads = filterThreadsForResolution([
-      { id: "PRRT_1", path: "src/a.ts", isResolved: false, lastAuthor: "alice", lastCreatedAt: "2026-06-01T00:00:00Z" },
-      { id: "PRRT_2", path: "src/b.ts", isResolved: false, lastAuthor: "coderabbitai[bot]", lastCreatedAt: "2026-06-01T00:00:00Z" },
+      { id: "PRRT_1", path: "src/a.ts", isResolved: false, lastAuthor: "alice", isBot: false, lastCreatedAt: "2026-06-01T00:00:00Z" },
+      { id: "PRRT_2", path: "src/b.ts", isResolved: false, lastAuthor: "coderabbitai", isBot: true, lastCreatedAt: "2026-06-01T00:00:00Z" },
     ], "2025-01-01T00:00:00Z");
     expect(threads).toEqual(["PRRT_2"]);
   });
@@ -147,9 +147,30 @@ describe("Thread discovery filtering", () => {
   // T26: Bot reply on old thread
   it("discovers thread with old root but new bot reply", () => {
     const threads = filterThreadsForResolution([
-      { id: "PRRT_3", path: "src/c.ts", isResolved: false, lastAuthor: "coderabbitai[bot]", lastCreatedAt: "2026-06-01T00:00:00Z" },
+      { id: "PRRT_3", path: "src/c.ts", isResolved: false, lastAuthor: "coderabbitai", isBot: true, lastCreatedAt: "2026-06-01T00:00:00Z" },
     ], "2026-05-01T00:00:00Z");
     expect(threads).toEqual(["PRRT_3"]);
+  });
+
+  // Regression: GraphQL author.login on Bot accounts returns the plain slug
+  // (e.g. "coderabbitai", "gemini-code-assist") — no "[bot]" suffix.
+  // The previous filter used `endsWith("[bot]")` and silently dropped every
+  // real bot thread. Source of truth is now __typename, surfaced as isBot.
+  it("includes bot threads whose login has no [bot] suffix (GraphQL reality)", () => {
+    const threads = filterThreadsForResolution([
+      { id: "PRRT_cr", path: "src/a.ts", isResolved: false, lastAuthor: "coderabbitai", isBot: true, lastCreatedAt: "2026-06-01T00:00:00Z" },
+      { id: "PRRT_gem", path: "src/b.ts", isResolved: false, lastAuthor: "gemini-code-assist", isBot: true, lastCreatedAt: "2026-06-01T00:00:00Z" },
+    ], "2025-01-01T00:00:00Z");
+    expect(threads).toEqual(["PRRT_cr", "PRRT_gem"]);
+  });
+
+  // Defense: a human with "[bot]" in their login (unusual but possible) must
+  // not be treated as a bot. isBot is the only signal we trust.
+  it("excludes human threads even if login coincidentally contains [bot]", () => {
+    const threads = filterThreadsForResolution([
+      { id: "PRRT_imposter", path: "src/a.ts", isResolved: false, lastAuthor: "human[bot]name", isBot: false, lastCreatedAt: "2026-06-01T00:00:00Z" },
+    ], "2025-01-01T00:00:00Z");
+    expect(threads).toEqual([]);
   });
 });
 
@@ -157,7 +178,7 @@ describe("Thread ID mapping", () => {
   // T27: GraphQL thread IDs have PRRT_ prefix
   it("accepts PRRT_ prefixed thread IDs", () => {
     const threads = filterThreadsForResolution([
-      { id: "PRRT_kwDOQ5hYsc5p5d0U", path: "src/Button.tsx", isResolved: false, lastAuthor: "coderabbitai[bot]", lastCreatedAt: "2026-06-01T00:00:00Z" },
+      { id: "PRRT_kwDOQ5hYsc5p5d0U", path: "src/Button.tsx", isResolved: false, lastAuthor: "coderabbitai", isBot: true, lastCreatedAt: "2026-06-01T00:00:00Z" },
     ], "2025-01-01T00:00:00Z");
     expect(threads[0]).toMatch(/^PRRT_/);
   });
@@ -165,7 +186,7 @@ describe("Thread ID mapping", () => {
   // T28: REST comment IDs rejected
   it("rejects PRRC_ prefixed IDs", () => {
     const threads = filterThreadsForResolution([
-      { id: "PRRC_kwDOQ5hYsc5p5d0U", path: "src/x.ts", isResolved: false, lastAuthor: "coderabbitai[bot]", lastCreatedAt: "2026-06-01T00:00:00Z" },
+      { id: "PRRC_kwDOQ5hYsc5p5d0U", path: "src/x.ts", isResolved: false, lastAuthor: "coderabbitai", isBot: true, lastCreatedAt: "2026-06-01T00:00:00Z" },
     ], "2025-01-01T00:00:00Z");
     expect(threads).toEqual([]);
   });
@@ -176,7 +197,8 @@ describe("Thread ID mapping", () => {
       id: `PRRT_thread${i}`,
       path: `src/file${i}.ts`,
       isResolved: false,
-      lastAuthor: "coderabbitai[bot]",
+      lastAuthor: "coderabbitai",
+      isBot: true,
       lastCreatedAt: "2026-06-01T00:00:00Z",
     }));
     const threads = filterThreadsForResolution(manyThreads, "2025-01-01T00:00:00Z");
@@ -188,7 +210,7 @@ describe("Edge cases", () => {
   // T34: GraphQL partial errors — data still processed
   it("filters valid bot-authored unresolved threads", () => {
     const threads = filterThreadsForResolution([
-      { id: "PRRT_1", path: "src/x.ts", isResolved: false, lastAuthor: "coderabbitai[bot]", lastCreatedAt: "2026-06-01T00:00:00Z" },
+      { id: "PRRT_1", path: "src/x.ts", isResolved: false, lastAuthor: "coderabbitai", isBot: true, lastCreatedAt: "2026-06-01T00:00:00Z" },
     ], "2025-01-01T00:00:00Z");
     expect(threads).toHaveLength(1);
   });
@@ -207,7 +229,7 @@ describe("Edge cases", () => {
   // T36: Same-second timestamp
   it("excludes comments at exact same second as timestamp (strict >)", () => {
     const threads = filterThreadsForResolution([
-      { id: "PRRT_1", path: "src/x.ts", isResolved: false, lastAuthor: "coderabbitai[bot]", lastCreatedAt: "2026-06-01T00:00:00Z" },
+      { id: "PRRT_1", path: "src/x.ts", isResolved: false, lastAuthor: "coderabbitai", isBot: true, lastCreatedAt: "2026-06-01T00:00:00Z" },
     ], "2026-06-01T00:00:00Z"); // Same timestamp
     expect(threads).toEqual([]); // strict > means same-second excluded
   });

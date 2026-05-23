@@ -85,6 +85,11 @@ export interface ThreadInfo {
   path: string;
   isResolved: boolean;
   lastAuthor: string;
+  // True when GraphQL author.__typename === "Bot". Don't infer from a "[bot]"
+  // suffix on lastAuthor — GraphQL returns the plain slug (`coderabbitai`,
+  // `gemini-code-assist`), so suffix-matching silently drops every real
+  // bot thread.
+  isBot: boolean;
   lastCreatedAt: string;
 }
 
@@ -97,9 +102,10 @@ export function filterThreadsForResolution(
       if (typeof t.id !== "string") return false;
       if (typeof t.lastAuthor !== "string") return false;
       if (typeof t.lastCreatedAt !== "string") return false;
+      if (typeof t.isBot !== "boolean") return false;
       if (t.isResolved) return false;
       if (t.lastCreatedAt <= lastTimestamp) return false;
-      if (!t.lastAuthor.endsWith("[bot]")) return false;
+      if (!t.isBot) return false;
       if (!t.id.startsWith("PRRT_")) return false;
       return true;
     })
