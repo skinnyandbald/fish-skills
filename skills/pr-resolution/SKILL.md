@@ -201,10 +201,10 @@ Agent 3: "Fix CI failures"
 
 | Type | Action |
 |------|--------|
-| Blocking CI (PR can't pass without fix) | Fix in this PR. After editing the out-of-scope file, immediately run `bin/check-mergeability` to catch any new conflict before proceeding. Flag the out-of-scope change prominently in the Phase 5 resolution summary. |
+| Blocking CI (PR can't pass without fix) | Fix in this PR. After editing the out-of-scope file, perform a local merge check (e.g., `git fetch origin $BASE_REF && git merge --no-commit origin/$BASE_REF`) to catch any new conflict before proceeding. Flag the out-of-scope change prominently in the Phase 5 resolution summary. |
 | Non-blocking (tests were already failing on main) | Do NOT fix in this PR. Create a GitHub issue with `gh issue create` documenting the failure so it isn't lost. Reference the issue in the Phase 5 summary. |
 
-Out-of-scope edits can introduce merge conflicts that Phase 0 couldn't anticipate (the conflict didn't exist yet). The immediate post-edit mergeability check is the safeguard.
+Out-of-scope edits can introduce merge conflicts that Phase 0 couldn't anticipate (the conflict didn't exist yet). The immediate post-edit local merge check is the safeguard.
 
 Wait for all agents to complete.
 
