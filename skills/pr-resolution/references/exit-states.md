@@ -1,7 +1,7 @@
 # Exit States
 
 > Complete taxonomy of every exit state the PR resolution workflow can produce.
-> Referenced by SKILL.md (Phase 0, Phase 6), ci-gate.md, and shepherd.md.
+> Referenced by SKILL.md (Phase 0), ci-gate.md, and shepherd-states.md.
 
 ## Phase 0: Pre-Flight
 
@@ -18,7 +18,7 @@ Phase 0 exits terminate the workflow immediately. No phases 1-7 run.
 | State | Severity | Meaning | Next |
 |-------|----------|---------|------|
 | `CI_GREEN` | success | All checks pass, PR is mergeable | Phase 7 |
-| `CI_EXTERNAL_ONLY` | warning | Only non-fixable third-party checks failing, PR is mergeable | Phase 7 |
+| `CI_EXTERNAL_ONLY` | warning | Only non-fixable checks failing (third-party or Actions without local repro), PR is mergeable | Phase 7 |
 | `CI_NO_CHECKS` | warning | No check runs appeared for HEAD SHA after 2 minutes | Phase 7 |
 | `CI_TIMEOUT` | warning | Total 30-min timeout or checks never reached terminal status | Phase 7 |
 | `CI_ESCALATION` | error | 3+ fix attempts exhausted on the same check | Phase 7 |

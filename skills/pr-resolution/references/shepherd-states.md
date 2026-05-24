@@ -36,7 +36,7 @@ RE_RESOLVE
 
 ## Exit Reasons
 
-See `references/exit-states.md` for the consolidated taxonomy across all phases.
+See `exit-states.md` for the consolidated taxonomy across all phases.
 
 | Reason | Description |
 |--------|-------------|
