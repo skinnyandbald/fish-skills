@@ -1,21 +1,28 @@
 ---
 name: process-meeting-notes
-description: "Process Fireflies meeting transcripts with mandatory full transcript analysis (not just Fireflies summary), extract action items from ALL participants, create GitHub issues with smart repo routing, run deterministic verification gates, and generate EOS Level 10 Meeting summaries. Use after team meetings or when the user mentions meetings, Fireflies, L10, or action item extraction."
+description: "Process meeting transcripts from Fireflies and Plaud with mandatory full transcript analysis, extract action items from ALL participants, create GitHub issues with smart repo routing, run deterministic verification gates, and generate EOS Level 10 Meeting summaries. When invoked bare (no arguments), scans both sources for unprocessed meetings and walks through them one by one. Use after team meetings or when the user mentions meetings, Fireflies, Plaud, L10, or action item extraction."
 ---
 
 <essential_principles>
 ## How This Skill Works
 
-This skill processes meeting transcripts from Fireflies with mandatory full transcript analysis — not just the Fireflies automated summary. It extracts action items from ALL participants, routes GitHub issues to the correct repository via smart detection, and runs a deterministic verification script to ensure no items are dropped. It works with **any repository** you're currently in.
+This skill processes meeting transcripts from **Fireflies** and **Plaud** with mandatory full transcript analysis — not just automated summaries. It extracts action items from ALL participants, routes GitHub issues to the correct repository via smart detection, and runs a deterministic verification script to ensure no items are dropped. It works with **any repository** you're currently in.
 
 ### Principle 1: Mandatory Full Transcript Analysis
 
-Always fetch meeting data via Fireflies MCP tools:
+Fetch meeting data from the appropriate source:
+
+**Fireflies MCP:**
 - `mcp__fireflies__fireflies_search` to find meetings
 - `mcp__fireflies__fireflies_get_summary` for action items, keywords, overview
 - `mcp__fireflies__fireflies_get_transcript` — ALWAYS fetch the full transcript; it is mandatory, not optional
 
-The Fireflies automated summary is a starting point. A subagent must read the entire transcript to extract additional action items that Fireflies missed. The verification script confirms no items were dropped.
+**Plaud MCP:**
+- `mcp__plaud__list_files` to browse/find recordings
+- `mcp__plaud__get_note` for AI-generated summary and action items
+- `mcp__plaud__get_transcript` for timestamped transcript with speaker labels
+
+For both sources: the automated summary is a starting point. A subagent must read the entire transcript to extract additional action items the summary missed. The verification script confirms no items were dropped.
 
 ### Principle 2: Dynamic Repository Context
 
@@ -98,10 +105,13 @@ The `processed_note` field links the raw transcript to its structured meeting no
 <intake>
 What would you like to do?
 
-1. **Process recent meeting** - Analyze the most recent Fireflies meeting and extract action items
+0. **Process unprocessed inbox** - Scan Fireflies and Plaud for unprocessed meetings, walk through each one
+1. **Process recent meeting** - Analyze the most recent meeting from Fireflies or Plaud and extract action items
 2. **Search specific meeting** - Find a meeting by date, keyword, or participant
 3. **Create issues from notes** - I already have meeting notes to convert to GitHub issues
 4. **Generate L10 summary only** - Create EOS Level 10 summary without creating issues
+
+**If invoked with no arguments, default to option 0.**
 
 **Wait for response before proceeding.**
 </intake>
@@ -109,6 +119,7 @@ What would you like to do?
 <routing>
 | Response | Workflow |
 |----------|----------|
+| 0, no args, "unprocessed", "inbox" | `workflows/process-unprocessed-inbox.md` |
 | 1, "recent", "latest", "today" | `workflows/process-recent-meeting.md` |
 | 2, "search", "find", "specific" | `workflows/search-meeting.md` |
 | 3, "create", "notes", "issues" | `workflows/create-issues-from-notes.md` |
@@ -127,6 +138,7 @@ All domain knowledge in `references/`:
 <workflows_index>
 | Workflow | Purpose |
 |----------|---------|
+| process-unprocessed-inbox.md | Scan Fireflies + Plaud for unprocessed meetings, present queue, walk through each |
 | process-recent-meeting.md | Full workflow: detect context → fetch → compare → create issues → L10 summary |
 | search-meeting.md | Find specific meeting by criteria |
 | create-issues-from-notes.md | Convert provided notes to GitHub issues |

@@ -41,43 +41,64 @@ gh project list --owner $REPO_OWNER --format json 2>/dev/null
 
 **Cache detected context for use throughout workflow.**
 
-## Step 1: Fetch Recent Meeting from Fireflies
+## Step 1: Fetch Recent Meeting
 
-Use Fireflies MCP to find and retrieve recent meetings:
+Determine the source (Fireflies or Plaud) and fetch recent meetings.
 
+**If source is Fireflies (or not yet known):**
 ```
 mcp__fireflies__fireflies_get_transcripts with limit: 5
 ```
-
-Or search by keyword if user provided context:
+Or search by keyword:
 ```
 mcp__fireflies__fireflies_search with query: "keyword:\"<term>\" limit:5"
 ```
+
+**If source is Plaud:**
+```
+mcp__plaud__list_files with page: 1, page_size: 10
+```
+
+If coming from the inbox workflow (`process-unprocessed-inbox.md`), the source
+and meeting ID are already known — skip the listing and proceed directly to
+Step 2 with the provided ID.
 
 Present the meeting list to user and confirm which one to process.
 
 ## Step 2: Retrieve Meeting Summary
 
-Once meeting is selected, fetch the full summary:
+Once meeting is selected, fetch the summary from the appropriate source.
 
+**Fireflies:**
 ```
 mcp__fireflies__fireflies_get_summary with transcriptId: <selected_meeting_id>
 ```
+Extract: Action Items, Keywords, Overview, Participants.
 
-Extract from the summary:
-- **Action Items** (direct from Fireflies extraction)
-- **Keywords** (topics discussed)
-- **Overview** (meeting context)
-- **Participants** (who attended)
+**Plaud:**
+```
+mcp__plaud__get_note with fileId: <selected_file_id>
+```
+The note returns a Markdown document with Core Synopsis, Decision Architecture,
+and Action Items sections. Extract the same categories from this structure.
 
 ## Step 3: Retrieve and Analyze Full Transcript (MANDATORY)
 
-ALWAYS fetch the full transcript via Fireflies MCP. The automated summary
-is a starting point, not the final extraction.
+ALWAYS fetch the full transcript. The automated summary is a starting point,
+not the final extraction.
 
+**Fireflies:**
 ```
 mcp__fireflies__fireflies_get_transcript with transcriptId: <selected_meeting_id>
 ```
+
+**Plaud:**
+```
+mcp__plaud__get_transcript with fileId: <selected_file_id>
+```
+The Plaud transcript returns an array. The item with `data_type: "transaction"`
+contains JSON-encoded segments, each with `{content, start_time, end_time, speaker}`.
+Parse these into the same `[MM:SS - MM:SS] Speaker: content` format used downstream.
 
 Dispatch a subagent to read the transcript and extract:
 - Explicit commitments: "I'll handle...", "Let me do...", "I need to..."
@@ -113,10 +134,14 @@ If K = 0 and the meeting was longer than 30 minutes, print an advisory:
 meeting of this length. Verify the transcript was fully read."
 (Do NOT force a re-scan — K=0 is valid if coverage appears correct.)
 
-Define `MEETING_ID` from the Fireflies transcript ID selected in Step 1 (the `<selected_meeting_id>` value). Use `$MEETING_ID` consistently in all temp file paths and shell commands.
+Define `MEETING_ID` from the source-specific ID selected in Step 1:
+- Fireflies: use the transcript ID (the `<selected_meeting_id>` value)
+- Plaud: use the file ID (the `<selected_file_id>` value)
+
+Use `$MEETING_ID` consistently in all temp file paths and shell commands.
 
 Write N to `/tmp/meeting-notes-$MEETING_ID-extraction-count.txt` for use at Checkpoint C.
-Use the Fireflies transcript ID as `MEETING_ID` to namespace temp files and prevent cross-run contamination.
+The source-specific ID namespaces temp files and prevents cross-run contamination.
 
 ## Step 4: Categorize Extracted Items
 
@@ -277,10 +302,39 @@ for use at Checkpoint C.
 
 **7a. Save raw transcript:**
 - If transcript was pasted directly by the user, always save it (it's not recoverable elsewhere)
-- If transcript was fetched from Fireflies, save it too (local copy for search/reference)
+- If transcript was fetched from Fireflies or Plaud, save it too (local copy for search/reference)
 - Save to `$MEETING_TRANSCRIPTS_DIR/YYYY-MM-DD - Source - Topic.md`
-- Source = "Fireflies" if fetched via MCP, "Pasted" if user provided it
+- Source = "Fireflies", "PLAUD", or "Pasted" depending on origin
 - Include frontmatter with `processed_note` linking to the structured note
+
+**Source-specific frontmatter:**
+
+Fireflies:
+```yaml
+---
+date: YYYY-MM-DD
+type: transcript
+source: fireflies
+fireflies_id: <transcript_id>
+meeting_type: <type>
+attendees: [...]
+processed_note: "YYYY-MM-DD - Entity - Topic.md"
+---
+```
+
+Plaud:
+```yaml
+---
+date: YYYY-MM-DD
+type: transcript
+source: plaud
+plaud_id: <file_id>
+duration: HH:MM:SS
+speakers: <count>
+tags: [transcript, from-plaud]
+processed_note: "YYYY-MM-DD - Entity - Topic.md"
+---
+```
 
 **7b. Save structured meeting note:**
 - Save the L10 summary (from Step 8) to `$MEETING_NOTES_DIR/YYYY-MM-DD - Entity - Topic.md`
@@ -322,9 +376,9 @@ Link GitHub issue numbers inline where issues were created:
 For each decision: record what was decided, who decided, and any rationale.
 Decisions are distinct from action items — they go in IDS, not Action Items.
 
-**Fireflies API failure handling:** If the Fireflies transcript fetch fails,
-warn the user and proceed with the Fireflies summary only. Note in the L10
-that full transcript analysis was unavailable.
+**Transcript fetch failure handling:** If the transcript fetch fails (Fireflies
+or Plaud API error), warn the user and proceed with the summary only. Note in
+the L10 that full transcript analysis was unavailable.
 
 ### CHECKPOINT C: Run Verification Script
 
@@ -364,7 +418,7 @@ Display the complete L10 summary and ask:
 <success_criteria>
 This workflow is complete when:
 - [ ] Repository context detected (owner, name, labels, milestones)
-- [ ] Meeting transcript retrieved from Fireflies
+- [ ] Meeting transcript retrieved from Fireflies or Plaud
 - [ ] All action items extracted and categorized
 - [ ] Comparison against existing issues in current repo completed
 - [ ] User confirmed/skipped each proposed issue
@@ -374,7 +428,7 @@ This workflow is complete when:
 - [ ] Raw transcript saved to vault (if configured or user requested)
 - [ ] Structured meeting note saved to vault (if configured or user requested)
 - [ ] Summary saved or shared as requested
-- [ ] Full transcript retrieved and analyzed (not just Fireflies summary)
+- [ ] Full transcript retrieved and analyzed (not just automated summary)
 - [ ] ALL action items from ALL participants included in L10
 - [ ] Decisions captured in L10 IDS section
 - [ ] Verification script passed (L10 count >= combined - skipped)
