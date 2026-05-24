@@ -21,8 +21,9 @@ INITIAL_POLL
 
 WATCHING
   → timeout (2h) → POST_SUMMARY → EXIT
+  → quiet_period (5 consecutive quiet polls + CI settled) → POST_SUMMARY → EXIT
   → NO_CHANGES → WATCHING (loop)
-  → NEW_COMMENTS (bot) → RE_RESOLVE
+  → NEW_COMMENTS (bot) → RE_RESOLVE (resets quiet counter)
   → NEW_COMMENTS (human only) → POST_SUMMARY → EXIT
   → MERGED/CLOSED → POST_SUMMARY → EXIT
   → ERROR → POST_SUMMARY → EXIT
@@ -41,6 +42,7 @@ RE_RESOLVE
 | merged | PR was merged |
 | closed | PR was closed without merging |
 | timeout | 2-hour wall-clock timeout |
+| quiet_period | CI settled + 5 consecutive polls with no new comments (~5 min silence) |
 | escalation | Same file flagged 3+ times |
 | human_review | Human-only comments detected |
 | push_failed | git push failed |

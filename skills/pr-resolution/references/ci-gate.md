@@ -265,6 +265,8 @@ When fixing a CI failure, the agent MUST follow this discipline:
 
 ## Exit States
 
+See `exit-states.md` for the consolidated taxonomy across all phases.
+
 | State | Meaning |
 |-------|---------|
 | `CI_GREEN` | All checks pass AND `mergeable == MERGEABLE` |
