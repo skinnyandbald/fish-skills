@@ -5,6 +5,7 @@ import {
   filterThreadsForResolution,
   determineSummaryAction,
   shouldTimeout,
+  shouldExitQuiet,
   evaluateSettleStatus,
 } from "../shepherd-state.js";
 
@@ -331,5 +332,31 @@ describe("CI settle status evaluation", () => {
     ]);
     expect(result.action).toBe("KEEP_WAITING");
     expect(result.actions_failures).toEqual([]);
+  });
+
+  // T46: Quiet exit triggers at threshold when CI settled
+  it("exits quiet at 5 consecutive polls with CI settled", () => {
+    expect(shouldExitQuiet(5, true)).toBe(true);
+  });
+
+  // T47: Below threshold does not trigger quiet exit
+  it("does not exit quiet below threshold", () => {
+    expect(shouldExitQuiet(4, true)).toBe(false);
+  });
+
+  // T48: Quiet exit blocked when CI not settled
+  it("does not exit quiet when CI is not settled", () => {
+    expect(shouldExitQuiet(5, false)).toBe(false);
+    expect(shouldExitQuiet(10, false)).toBe(false);
+  });
+
+  // T49: Above threshold still exits (counter can overshoot)
+  it("exits quiet above threshold with CI settled", () => {
+    expect(shouldExitQuiet(8, true)).toBe(true);
+  });
+
+  // T50: Zero quiet polls never triggers
+  it("does not exit quiet at zero polls", () => {
+    expect(shouldExitQuiet(0, true)).toBe(false);
   });
 });
