@@ -111,6 +111,8 @@ git fetch origin "$BASE_REF"
 | `UNKNOWN` | GitHub couldn't compute after polling | Exit `PRE_FLIGHT_UNKNOWN_MERGE_STATE` — humans should investigate. |
 | `ERROR` | API or usage failure | Exit `PRE_FLIGHT_ERROR` and surface the error message. |
 
+See `references/exit-states.md` for the complete exit state taxonomy across all phases.
+
 **Rationale:** Resolving conflicts is a code decision, not a process step. The skill's job is to surface them, not paper over them. Auto-merging clean updates (`BEHIND` without conflict) is safe because git already verified no overlap.
 
 **Tests:** `bin/tests/check-mergeability.test.sh` covers all five status paths plus argument validation and `--repo` forwarding.
