@@ -448,8 +448,9 @@ content signal.
 - `capability` = "here's how to do something better" (techniques, frameworks, workflows)
 - `stuck` = "here's what's blocking you and why" (diagnosis, reframes, identity threats)
 
-**Append to `## Ready` section** of `angle-queue.md`. Do not rewrite the file —
-use Edit to insert after the `## Ready` line.
+**Append to `## Ready` section** of `angle-queue.md`.
+If `## Ready` is missing, skip append and notify the user with a warning.
+Do not rewrite the file — use Edit to insert after the `## Ready` line.
 
 If angles were extracted, print:
 ```text
@@ -484,5 +485,5 @@ This workflow is complete when:
 - [ ] User triaged every extracted item (none silently dropped)
 - [ ] All three triage states sum to COMBINED_COUNT
 - [ ] Issues routed to correct repos (project repo for product work, SB for business tasks)
-- [ ] Content angles extracted and appended to angle queue (if meeting had signal)
+- [ ] Content angles extracted and appended to angle queue (if meeting had signal AND queue file/Ready section were resolvable); otherwise skip was reported
 </success_criteria>
