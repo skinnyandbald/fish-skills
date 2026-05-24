@@ -35,6 +35,7 @@ All Phase 6 exits proceed to Phase 7. `CI_GREEN` and `CI_EXTERNAL_ONLY` proceed 
 | `merged` | success | PR was merged during monitoring |
 | `closed` | warning | PR was closed without merging |
 | `timeout` | warning | 2-hour wall-clock timeout reached |
+| `quiet_period` | success | CI settled + 5 consecutive polls with no new comments (~5 min of silence after last activity) |
 | `human_review` | info | Human-only comments detected — shepherd exits for human attention |
 | `escalation` | error | Same file flagged by bots 3+ times — infinite fix loop detected |
 | `push_failed` | error | `git push` failed during a re-resolve iteration |
