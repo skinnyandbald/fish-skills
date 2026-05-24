@@ -413,6 +413,54 @@ If it fails, add the missing items to the L10 and re-run.
 
 Clean up temp files after verification: `rm -f /tmp/meeting-notes-$MEETING_ID-*.txt`
 
+## Step 8.5: Extract Content Angles (Optional)
+
+Mine the meeting for content-worthy moments and append to the spark angle
+queue.
+
+**Resolve the angle queue path:** Use `$CONTENT_CREATION_DIR/angle-queue.md` if
+set, otherwise fall back to `02_Areas/content-creation/angle-queue.md`.
+
+Skip this step if:
+- The meeting was purely operational (standup, sprint planning, no insights)
+- No `angle-queue.md` exists at the resolved path
+- The angle queue file cannot be resolved
+
+**What to extract:**
+
+Look for these signals in the transcript analysis and L10 already generated:
+- Contrarian takes that challenge conventional wisdom
+- Real examples with specific numbers or outcomes (not hypothetical)
+- Pattern recognition across participants ("three people described the same problem")
+- War stories with concrete details
+- Questions the user asked that reveal a unique angle or framework
+
+**What to skip:**
+- Generic meeting outcomes ("we decided to ship the feature")
+- Other participants' internal tasks
+- Anything that restates common knowledge without a twist
+
+**Extract 0-3 angles max.** Zero is a valid outcome — not every meeting has
+content signal.
+
+**Format each angle** to match the spark angle queue:
+```text
+- **Angle Title** | Source: YYYY-MM-DD Meeting Name | Persona: capability|stuck | Type: pattern|contrarian|war-story|client-result | Platform: linkedin|both|newsletter | Extracted: YYYY-MM-DD | "key quote or context"
+```
+
+**Persona mapping:**
+- `capability` = "here's how to do something better" (techniques, frameworks, workflows)
+- `stuck` = "here's what's blocking you and why" (diagnosis, reframes, identity threats)
+
+**Append to `## Ready` section** of `angle-queue.md`.
+If `## Ready` is missing, skip append and notify the user with a warning.
+Do not rewrite the file — use Edit to insert after the `## Ready` line.
+
+If angles were extracted, print:
+```text
+Content mining: added N angle(s) to spark queue
+```
+
 ## Step 9: Present Final Summary
 
 Display the complete L10 summary and ask:
@@ -441,4 +489,5 @@ This workflow is complete when:
 - [ ] User triaged every extracted item (none silently dropped)
 - [ ] All three triage states sum to COMBINED_COUNT
 - [ ] Issues routed to correct repos (project repo for product work, SB for business tasks)
+- [ ] Content angles extracted and appended to angle queue (if meeting had signal AND queue file/Ready section were resolvable); otherwise skip was reported
 </success_criteria>
