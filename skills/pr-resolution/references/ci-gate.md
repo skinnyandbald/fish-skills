@@ -265,7 +265,7 @@ When fixing a CI failure, the agent MUST follow this discipline:
 
 ## Exit States
 
-See `exit-states.md` for the consolidated taxonomy across all phases.
+See `exit-states.md` for the consolidated taxonomy across all phases (Pre-Flight, CI Gate, Shepherd).
 
 | State | Meaning |
 |-------|---------|
