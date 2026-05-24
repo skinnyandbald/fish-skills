@@ -31,6 +31,7 @@ Initialize state:
 ```bash
 START_TIME=$(date +%s)
 ITERATION_COUNT=0
+QUIET_POLLS=0    # Consecutive polls with no new comments (reset on any activity)
 FILE_FLAGS='{}'  # JSON object: { "path": count }
 SKIP_LIST='[]'   # JSON array of file paths
 BATCHED_QUESTIONS='[]'  # JSON array of { file, comment, bot }
@@ -121,7 +122,28 @@ SKILL_DIR="${SKILL_DIR:-$HOME/.claude/skills/pr-resolution}"
      d. If attempts exhausted → note in POST_SUMMARY, continue watching for comments
    - If all pass → no action needed
 
-5. Route and follow action (same as INITIAL_POLL step 3-4).
+5. **Route the poll result:**
+   ```bash
+   ROUTE=$(cd "$SKILL_DIR" && npx tsx lib/shepherd-state.ts route "$POLL_RESULT")
+   ROUTE_ACTION=$(echo "$ROUTE" | jq -r '.action')
+   ```
+
+6. **Update quiet poll counter and check for quiet exit:**
+   ```bash
+   if [ "$ROUTE_ACTION" = "CONTINUE_WATCHING" ]; then
+     QUIET_POLLS=$((QUIET_POLLS + 1))
+     CI_SETTLED=$([ "$SETTLE_ACTION" = "SETTLED" ] && echo "true" || echo "false")
+     QUIET_CHECK=$(cd "$SKILL_DIR" && npx tsx lib/shepherd-state.ts should-exit-quiet \
+       "{\"quiet_polls\":$QUIET_POLLS,\"ci_settled\":$CI_SETTLED}")
+     if [ "$(echo "$QUIET_CHECK" | jq -r '.quiet')" = "true" ]; then
+       # → go to POST_SUMMARY with reason "quiet_period"
+     fi
+   else
+     QUIET_POLLS=0  # Any activity resets the counter
+   fi
+   ```
+
+7. Follow the action (same as INITIAL_POLL step 4).
 
 ### RE_RESOLVE
 
@@ -251,7 +273,10 @@ SKILL_DIR="${SKILL_DIR:-$HOME/.claude/skills/pr-resolution}"
     fi
     ```
 
-11. Go back to **INITIAL_POLL** (restart polling after push).
+11. Reset quiet counter and go back to **INITIAL_POLL** (restart polling after push):
+    ```bash
+    QUIET_POLLS=0
+    ```
 
 ### POST_SUMMARY
 

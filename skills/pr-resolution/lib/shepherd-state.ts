@@ -7,6 +7,7 @@
 //   npx tsx lib/shepherd-state.ts filter-threads '{"threads":[...],"last_timestamp":"..."}'
 //   npx tsx lib/shepherd-state.ts summary-action '{"comment_id":"12345"}'
 //   npx tsx lib/shepherd-state.ts should-timeout '{"elapsed":7201}'
+//   npx tsx lib/shepherd-state.ts should-exit-quiet '{"quiet_polls":5,"ci_settled":true}'
 
 export interface RouteInput {
   bot_comment_count: number;
@@ -146,9 +147,14 @@ export function evaluateSettleStatus(runs: CheckRun[]): SettleDecision {
 }
 
 const TIMEOUT_SECONDS = 7200; // 2 hours
+const QUIET_POLLS_THRESHOLD = 5; // 5 consecutive quiet polls × 60s = ~5 min of silence
 
 export function shouldTimeout(elapsedSeconds: number): boolean {
   return elapsedSeconds >= TIMEOUT_SECONDS;
+}
+
+export function shouldExitQuiet(quietPolls: number, ciSettled: boolean): boolean {
+  return ciSettled && quietPolls >= QUIET_POLLS_THRESHOLD;
 }
 
 export interface SummaryAction {
@@ -178,7 +184,7 @@ if (isCLI) {
 
   try {
     const input = JSON.parse(jsonArg);
-    let result: RouteOutput | TrackFlagsOutput | string[] | SummaryAction | { timeout: boolean } | SettleDecision;
+    let result: RouteOutput | TrackFlagsOutput | string[] | SummaryAction | { timeout: boolean } | { quiet: boolean } | SettleDecision;
 
     if (subcommand === "route") {
       result = route(input as RouteInput);
@@ -190,6 +196,8 @@ if (isCLI) {
       result = determineSummaryAction(input.comment_id);
     } else if (subcommand === "should-timeout") {
       result = { timeout: shouldTimeout(input.elapsed) };
+    } else if (subcommand === "should-exit-quiet") {
+      result = { quiet: shouldExitQuiet(input.quiet_polls, input.ci_settled) };
     } else if (subcommand === "evaluate-settle") {
       result = evaluateSettleStatus(input.runs as CheckRun[]);
     } else {
