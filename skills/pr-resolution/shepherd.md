@@ -122,9 +122,14 @@ SKILL_DIR="${SKILL_DIR:-$HOME/.claude/skills/pr-resolution}"
      d. If attempts exhausted → note in POST_SUMMARY, continue watching for comments
    - If all pass → no action needed
 
-5. **Update quiet poll counter and check for quiet exit:**
+5. **Route the poll result:**
    ```bash
+   ROUTE=$(cd "$SKILL_DIR" && npx tsx lib/shepherd-state.ts route "$POLL_RESULT")
    ROUTE_ACTION=$(echo "$ROUTE" | jq -r '.action')
+   ```
+
+6. **Update quiet poll counter and check for quiet exit:**
+   ```bash
    if [ "$ROUTE_ACTION" = "CONTINUE_WATCHING" ]; then
      QUIET_POLLS=$((QUIET_POLLS + 1))
      CI_SETTLED=$([ "$SETTLE_ACTION" = "SETTLED" ] && echo "true" || echo "false")
@@ -138,7 +143,7 @@ SKILL_DIR="${SKILL_DIR:-$HOME/.claude/skills/pr-resolution}"
    fi
    ```
 
-6. Route and follow action (same as INITIAL_POLL step 3-4).
+7. Follow the action (same as INITIAL_POLL step 4).
 
 ### RE_RESOLVE
 
