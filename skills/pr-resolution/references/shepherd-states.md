@@ -36,6 +36,8 @@ RE_RESOLVE
 
 ## Exit Reasons
 
+See `exit-states.md` for the consolidated taxonomy across all phases.
+
 | Reason | Description |
 |--------|-------------|
 | merged | PR was merged |
