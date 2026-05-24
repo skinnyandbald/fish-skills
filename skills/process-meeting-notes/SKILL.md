@@ -17,10 +17,14 @@ Fetch meeting data from the appropriate source:
 - `mcp__fireflies__fireflies_get_summary` for action items, keywords, overview
 - `mcp__fireflies__fireflies_get_transcript` — ALWAYS fetch the full transcript; it is mandatory, not optional
 
-**Plaud MCP:**
+**Plaud MCP (optional):**
 - `mcp__plaud__list_files` to browse/find recordings
 - `mcp__plaud__get_note` for AI-generated summary and action items
 - `mcp__plaud__get_transcript` for timestamped transcript with speaker labels
+
+Plaud tools are optional. If Plaud MCP is not configured in the current
+environment, skip Plaud steps gracefully and process Fireflies-only. Do not
+fail or error when Plaud tools are unavailable.
 
 For both sources: the automated summary is a starting point. A subagent must read the entire transcript to extract additional action items the summary missed. The verification script confirms no items were dropped.
 

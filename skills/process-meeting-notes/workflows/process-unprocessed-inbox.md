@@ -8,19 +8,23 @@ into the vault. Present a unified queue and walk through each one using the
 ## Step 1: Scan Fireflies for Recent Meetings
 
 Fetch recent Fireflies meetings:
-```
+```text
 mcp__fireflies__fireflies_get_transcripts with limit: 20
 ```
 
 Collect each meeting's ID and title into a candidate list:
-```
+```text
 FIREFLIES_CANDIDATES = [{ id, title, date, duration, source: "fireflies" }, ...]
 ```
 
-## Step 2: Scan Plaud for Recent Recordings
+## Step 2: Scan Plaud for Recent Recordings (if available)
+
+If Plaud MCP tools are not configured in the current environment, skip this
+step and proceed with Fireflies-only candidates. Note to the user:
+"Plaud MCP not available — scanning Fireflies only."
 
 Fetch recent Plaud recordings:
-```
+```text
 mcp__plaud__list_files with page: 1, page_size: 20
 ```
 
@@ -29,7 +33,7 @@ fetch additional pages (up to 5 pages max = 100 recordings) to cover a
 reasonable window.
 
 Collect each recording into the same candidate format:
-```
+```text
 PLAUD_CANDIDATES = [{ id, title, date, duration, source: "plaud" }, ...]
 ```
 
@@ -40,16 +44,28 @@ the vault by grepping for the source-specific ID in frontmatter.
 
 **Fireflies — check for `fireflies_id`:**
 ```bash
-grep -rl "fireflies_id: <id>" "$MEETING_TRANSCRIPTS_DIR" 2>/dev/null
+grep -rlF "fireflies_id: <id>" "$MEETING_TRANSCRIPTS_DIR" 2>/dev/null
 ```
 
 **Plaud — check for `plaud_id`:**
 ```bash
-grep -rl "plaud_id: <id>" "$MEETING_TRANSCRIPTS_DIR" 2>/dev/null
+grep -rlF "plaud_id: <id>" "$MEETING_TRANSCRIPTS_DIR" 2>/dev/null
 ```
+
+Use `-F` (fixed-string match) to avoid regex interpretation of special
+characters in IDs. The `<id>` placeholder above represents the exact
+source-specific ID value — substitute it literally at runtime.
 
 If `MEETING_TRANSCRIPTS_DIR` is not set, check the project's CLAUDE.md for
 the transcripts path. For SecondBrain, it's `02_Areas/notes/transcripts/`.
+
+**If `MEETING_TRANSCRIPTS_DIR` cannot be resolved** (not set and not found in
+CLAUDE.md), **stop the inbox scan** and tell the user:
+"Cannot determine transcripts directory. Set `MEETING_TRANSCRIPTS_DIR` in your
+project's CLAUDE.md or environment, then re-run."
+Without a valid transcripts path, the deduplication check has no directory to
+scan, so every meeting would appear unprocessed on every run. Exit early
+instead of silently producing duplicates.
 
 **If grep returns a match:** the meeting has already been processed. Remove
 from the candidate list.
@@ -61,7 +77,7 @@ from the candidate list.
 Merge remaining Fireflies and Plaud candidates into one list, sorted by
 date (newest first). Present to the user:
 
-```
+```text
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   UNPROCESSED MEETINGS (N total)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -101,7 +117,7 @@ After each meeting is fully processed (L10 saved, issues triaged, verification
 passed), move to the next item in the queue.
 
 Between meetings, print a brief separator:
-```
+```text
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   Completed 1/N. Moving to next: "Coffee chat Pierre" (Plaud, 2026-05-21)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -111,7 +127,7 @@ Between meetings, print a brief separator:
 
 After all selected meetings are processed, present a roll-up:
 
-```
+```text
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   INBOX PROCESSING COMPLETE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

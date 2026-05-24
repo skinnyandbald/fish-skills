@@ -45,23 +45,28 @@ gh project list --owner $REPO_OWNER --format json 2>/dev/null
 
 Determine the source (Fireflies or Plaud) and fetch recent meetings.
 
-**If source is Fireflies (or not yet known):**
-```
+If coming from the inbox workflow (`process-unprocessed-inbox.md`), the source
+and meeting ID are already known — skip the listing and proceed directly to
+Step 2 with the provided ID.
+
+**If source is not yet known:** Check both sources (Fireflies first, then
+Plaud if available) and present a combined list so the user can pick the
+correct meeting regardless of source. Skip Plaud if its MCP tools are not
+configured.
+
+**If source is Fireflies:**
+```text
 mcp__fireflies__fireflies_get_transcripts with limit: 5
 ```
 Or search by keyword:
-```
+```text
 mcp__fireflies__fireflies_search with query: "keyword:\"<term>\" limit:5"
 ```
 
 **If source is Plaud:**
-```
+```text
 mcp__plaud__list_files with page: 1, page_size: 10
 ```
-
-If coming from the inbox workflow (`process-unprocessed-inbox.md`), the source
-and meeting ID are already known — skip the listing and proceed directly to
-Step 2 with the provided ID.
 
 Present the meeting list to user and confirm which one to process.
 
@@ -70,13 +75,13 @@ Present the meeting list to user and confirm which one to process.
 Once meeting is selected, fetch the summary from the appropriate source.
 
 **Fireflies:**
-```
+```text
 mcp__fireflies__fireflies_get_summary with transcriptId: <selected_meeting_id>
 ```
 Extract: Action Items, Keywords, Overview, Participants.
 
 **Plaud:**
-```
+```text
 mcp__plaud__get_note with fileId: <selected_file_id>
 ```
 The note returns a Markdown document with Core Synopsis, Decision Architecture,
@@ -88,12 +93,12 @@ ALWAYS fetch the full transcript. The automated summary is a starting point,
 not the final extraction.
 
 **Fireflies:**
-```
+```text
 mcp__fireflies__fireflies_get_transcript with transcriptId: <selected_meeting_id>
 ```
 
 **Plaud:**
-```
+```text
 mcp__plaud__get_transcript with fileId: <selected_file_id>
 ```
 The Plaud transcript returns an array. The item with `data_type: "transaction"`
@@ -304,7 +309,7 @@ for use at Checkpoint C.
 - If transcript was pasted directly by the user, always save it (it's not recoverable elsewhere)
 - If transcript was fetched from Fireflies or Plaud, save it too (local copy for search/reference)
 - Save to `$MEETING_TRANSCRIPTS_DIR/YYYY-MM-DD - Source - Topic.md`
-- Source = "Fireflies", "PLAUD", or "Pasted" depending on origin
+- Source = "Fireflies", "Plaud", or "Pasted" depending on origin
 - Include frontmatter with `processed_note` linking to the structured note
 
 **Source-specific frontmatter:**
@@ -318,6 +323,7 @@ source: fireflies
 fireflies_id: <transcript_id>
 meeting_type: <type>
 attendees: [...]
+tags: [transcript, from-fireflies]
 processed_note: "YYYY-MM-DD - Entity - Topic.md"
 ---
 ```
