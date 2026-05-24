@@ -416,10 +416,14 @@ Clean up temp files after verification: `rm -f /tmp/meeting-notes-$MEETING_ID-*.
 ## Step 8.5: Extract Content Angles (Optional)
 
 Mine the meeting for content-worthy moments and append to the spark angle
-queue. Skip this step if:
+queue.
+
+**Resolve the angle queue path:** Use `$CONTENT_CREATION_DIR/angle-queue.md` if
+set, otherwise fall back to `02_Areas/content-creation/angle-queue.md`.
+
+Skip this step if:
 - The meeting was purely operational (standup, sprint planning, no insights)
-- No `angle-queue.md` exists at `$CONTENT_CREATION_DIR/angle-queue.md`
-  (check `02_Areas/content-creation/angle-queue.md` for SecondBrain)
+- No `angle-queue.md` exists at the resolved path
 - The angle queue file cannot be resolved
 
 **What to extract:**
