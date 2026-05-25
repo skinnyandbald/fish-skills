@@ -81,11 +81,8 @@ mcp__fireflies__fireflies_get_summary with transcriptId: <selected_meeting_id>
 Extract: Action Items, Keywords, Overview, Participants.
 
 **Plaud:**
-```text
-mcp__plaud__get_note with fileId: <selected_file_id>
-```
-The note returns a Markdown document with Core Synopsis, Decision Architecture,
-and Action Items sections. Extract the same categories from this structure.
+Skip this step for Plaud — do NOT call `get_note`. The skill generates its own
+summary from the full transcript in Step 3. Plaud's AI notes are not used.
 
 ## Step 3: Retrieve and Analyze Full Transcript (MANDATORY)
 
@@ -315,8 +312,8 @@ for use at Checkpoint C.
 - Include frontmatter with `processed_note` linking to the structured note
 - **Body format:** MUST be normalized Fireflies format per Principle 1b in SKILL.md:
   `Speaker Name: content` — one line per segment, no timestamps, no bold
-- **NEVER save AI summary content (from `get_note` or `get_summary`) to the transcripts folder.**
-  Summaries go in the structured meeting note (Step 7b). Transcripts folder = raw dialogue only.
+- **NEVER save AI summary content to the transcripts folder.** Do not call `get_note` at all.
+  The skill generates its own summaries in the structured meeting note (Step 7b). Transcripts folder = raw dialogue only.
 
 **Source-specific frontmatter:**
 
