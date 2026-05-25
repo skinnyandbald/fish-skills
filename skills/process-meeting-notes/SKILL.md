@@ -28,6 +28,40 @@ fail or error when Plaud tools are unavailable.
 
 For both sources: the automated summary is a starting point. A subagent must read the entire transcript to extract additional action items the summary missed. The verification script confirms no items were dropped.
 
+### Principle 1b: Transcript File Format (CRITICAL)
+
+When saving transcripts to the vault, ALL transcripts MUST use normalized Fireflies format regardless of source:
+
+```
+Speaker Name: Content of what they said in this segment.
+Speaker Name: Next thing they said.
+Other Person: Their response.
+```
+
+**Rules:**
+- One line per speech segment
+- Format: `Speaker Name: content` — no timestamps, no bold, no brackets
+- Use the speaker's real name when available (from Plaud `speaker` field or Fireflies attribution)
+- NO `[MM:SS - MM:SS]` timestamps, NO `**Speaker:**` bold formatting
+- The transcript body is raw dialogue only — no markdown headers or summary sections
+
+**For Plaud specifically:**
+- Call `get_transcript` (NOT `get_note`) to populate the transcript file
+- Parse the returned JSON segments: each has `{content, speaker, start_time, end_time}`
+- Convert each segment to one line: `{speaker}: {content}`
+- NEVER save `get_note` output (AI summary) to the transcripts folder — that goes in the structured meeting note only
+
+**For Fireflies:**
+- Call `fireflies_get_transcript` — it natively outputs in the correct speaker-attributed format
+
+### Principle 1c: Source ID in Frontmatter (MANDATORY)
+
+Every transcript file MUST include the source recording ID in YAML frontmatter:
+- Plaud recordings: `plaud_id: <file_id from Plaud>`
+- Fireflies recordings: `fireflies_id: <transcriptId from Fireflies>`
+
+This is the deduplication key for the unprocessed inbox workflow. Never skip it.
+
 ### Principle 2: Dynamic Repository Context
 
 At workflow start, detect the current repository:

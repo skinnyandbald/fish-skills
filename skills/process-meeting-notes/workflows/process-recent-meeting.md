@@ -103,7 +103,9 @@ mcp__plaud__get_transcript with fileId: <selected_file_id>
 ```
 The Plaud transcript returns an array. The item with `data_type: "transaction"`
 contains JSON-encoded segments, each with `{content, start_time, end_time, speaker}`.
-Parse these into the same `[MM:SS - MM:SS] Speaker: content` format used downstream.
+Parse each segment into normalized Fireflies format: `Speaker Name: content`
+(one line per segment, no timestamps, no bold, no brackets). See Principle 1b
+in SKILL.md for the exact format spec.
 
 Dispatch a subagent to read the transcript and extract:
 - Explicit commitments: "I'll handle...", "Let me do...", "I need to..."
@@ -309,8 +311,12 @@ for use at Checkpoint C.
 - If transcript was pasted directly by the user, always save it (it's not recoverable elsewhere)
 - If transcript was fetched from Fireflies or Plaud, save it too (local copy for search/reference)
 - Save to `$MEETING_TRANSCRIPTS_DIR/YYYY-MM-DD - Source - Topic.md`
-- Source = "Fireflies", "Plaud", or "Pasted" depending on origin
+- Source = "Fireflies", "PLAUD", or "Pasted" depending on origin
 - Include frontmatter with `processed_note` linking to the structured note
+- **Body format:** MUST be normalized Fireflies format per Principle 1b in SKILL.md:
+  `Speaker Name: content` — one line per segment, no timestamps, no bold
+- **NEVER save AI summary content (from `get_note` or `get_summary`) to the transcripts folder.**
+  Summaries go in the structured meeting note (Step 7b). Transcripts folder = raw dialogue only.
 
 **Source-specific frontmatter:**
 
