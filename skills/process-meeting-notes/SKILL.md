@@ -66,8 +66,10 @@ Other Person: Their response.
 Every transcript file MUST include the source recording ID in YAML frontmatter:
 - Plaud recordings: `plaud_id: <file_id from Plaud>`
 - Fireflies recordings: `fireflies_id: <transcriptId from Fireflies>`
+- Pasted transcripts (`source: pasted`): exempt — no provider ID exists
 
-This is the deduplication key for the unprocessed inbox workflow. Never skip it.
+This is the deduplication key for the unprocessed inbox workflow. Never skip it
+for Plaud or Fireflies sources.
 
 ### Principle 2: Dynamic Repository Context
 
