@@ -113,7 +113,7 @@ Dispatch a subagent to read the transcript and extract:
 
 The subagent MUST read the ENTIRE transcript file in a single pass. A vague
 "summarize this" prompt will lose detail. Be explicit: "Read the full file,
-then list every action item with the speaker name and timestamp."
+then list every action item with the speaker name and a supporting quote."
 
 If the transcript exceeds 200K chars, fall back to chunked reading with
 offset/limit to cover the whole file — but try single-pass first.

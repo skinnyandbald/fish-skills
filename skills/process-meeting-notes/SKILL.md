@@ -39,7 +39,7 @@ itself from the raw transcript — never from a third-party AI summary.
 
 When saving transcripts to the vault, ALL transcripts MUST use normalized Fireflies format regardless of source:
 
-```
+```text
 Speaker Name: Content of what they said in this segment.
 Speaker Name: Next thing they said.
 Other Person: Their response.
@@ -138,6 +138,8 @@ Transcripts: `YYYY-MM-DD - Source - Topic.md` (e.g., `2026-03-13 - Fireflies - H
 date: YYYY-MM-DD
 type: transcript
 source: fireflies | pasted | plaud
+fireflies_id: <transcript_id>  # required when source: fireflies
+plaud_id: <file_id>            # required when source: plaud
 meeting_type: sales | internal | peer-advisory | other
 attendees: [...]
 processed_note: "YYYY-MM-DD - Entity - Topic.md"
