@@ -17,7 +17,7 @@ The pr-resolution skill's CI gate (Phase 6, Step 5) only had execution instructi
 
 # Root Cause
 
-Structural gap in `ci-gate.md`: Step 3b correctly classified CodeScene as THIRD_PARTY_FIXABLE with fix strategies (add tests, refactor), but Step 5 only said "For each ACTIONS_FIXABLE failure:" with no parallel section. The agent followed Step 5's structure literally and found nothing to do for third-party checks.
+Structural gap in [`ci-gate.md`](../../../skills/pr-resolution/references/ci-gate.md): Step 3b correctly classified CodeScene as THIRD_PARTY_FIXABLE with fix strategies (add tests, refactor), but Step 5 only said "For each ACTIONS_FIXABLE failure:" with no parallel section. The agent followed Step 5's structure literally and found nothing to do for third-party checks.
 
 Additionally, the agent misdiagnosed WHAT was uncovered — it blamed "untestable main()" when the actual coverage gap was `??` fallback branches in utility functions that were straightforward to test.
 
