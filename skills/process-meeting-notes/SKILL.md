@@ -110,6 +110,29 @@ Action items MUST always use markdown checkbox format — never tables or plain 
 - [ ] Action description -- **Owner Name** (due date)
 ```
 This enables Obsidian task tracking and interactive checkboxes.
+
+### Principle 7: CRM Pipeline Awareness
+
+After saving to vault (Step 7), detect whether the meeting is CRM-relevant
+(sales, discovery, client, or diagnostic). If so, check Attio for existing
+deals, propose stage transitions and task updates, and execute only after
+user confirmation.
+
+**Detection uses short-circuit evaluation to avoid unnecessary API calls:**
+1. Check `attio_deal_id` in frontmatter — signal 4 (validate deal exists before trusting)
+2. Check `meeting_type` (sales/discovery/client/diagnostic) — signal 1, local, no API
+3. Check Fireflies/Plaud keywords — signal 2, local, no API
+4. Query Attio for active deal linkage — signal 3, **only as tiebreaker when exactly 1 local signal exists**
+Zero-signal meetings never touch the Attio API.
+
+**Key constraints:**
+- MCP `create_record` cannot create deals (owner field unsupported). Use REST API via curl when deal creation is needed.
+- Only deal-advancing tasks go to Attio (per `attio-task-scope.md`). Everything else stays as GitHub issues.
+- All changes are collected and presented for confirmation before execution.
+- On partial failure: log pending changes to temp file, warn user, do not continue silently.
+
+See `references/attio-crm-integration.md` for deal stages, task templates,
+MCP tool inventory, and REST API curl template.
 </essential_principles>
 
 <configuration>
@@ -182,6 +205,7 @@ All domain knowledge in `references/`:
 
 **EOS Framework:** eos-level-10-format.md
 **GitHub Integration:** github-project-config.md (dynamic detection patterns)
+**Attio CRM Integration:** attio-crm-integration.md (deal stages, MCP tools, task templates, REST API)
 </reference_index>
 
 <workflows_index>

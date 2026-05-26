@@ -355,6 +355,187 @@ processed_note: "YYYY-MM-DD - Entity - Topic.md"
 - Entity = group or company name (e.g., "Hampton", "Hugo", "CouponFollow")
 - Topic = short description (e.g., "Core Meeting", "Sprint Kickoff")
 
+## Step 7.5: CRM Pipeline Update
+
+**Skip this step if:** the meeting has 0 CRM-relevant signals (see Principle 7 in SKILL.md).
+
+Read `references/attio-crm-integration.md` before executing this step.
+
+### 7.5-detect: Check CRM Relevance
+
+Evaluate signals in **short-circuit order** to avoid unnecessary API calls:
+
+**Fast path (no API — re-run only):**
+4. **Frontmatter signal:** If a structured meeting note already exists from a prior run (Step 7b writes `attio_deal_id` on first successful CRM update), check its `attio_deal_id` field. On first-run processing, this signal is naturally absent — fall through to local signals. If present, **validate the deal exists** via MCP `get-records-by-ids`. If valid → skip detection, go directly to 7.5a. If deal is missing/archived → flag the ID as stale (do not clear frontmatter yet — detection must remain read-only), fall through to normal detection. The stale ID is cleared in 7.5-execute after user confirmation.
+
+**Local signals (no API):**
+1. **Meeting type signal:** `meeting_type` (from frontmatter or Fireflies/Plaud metadata) is one of: `sales`, `discovery`, `client`, `diagnostic`
+2. **Keyword signal:** Fireflies or Plaud summary keywords (from Step 2) contain any of: pricing, proposal, diagnostic, engagement, retainer, sprint, consulting, quote, SOW
+
+**API signal (tiebreaker only):**
+3. **Active deal signal:** Only query Attio if exactly 1 local signal is present. Search for participant emails linked to active deals (Lead or In Progress stage):
+   ```
+   mcp__claude_ai_Attio__search-records with object: "deals", query: "<participant email or company name>"
+   ```
+   Filter results for stages Lead or In Progress. Check if any deal's `associated_people` or `associated_company` matches a meeting participant.
+
+**Decision:**
+- **Signal 4 valid** → proceed directly to 7.5a with known deal ID
+- **2+ local signals (1+2)** → proceed to 7.5a without API call
+- **1 local signal** → query Attio (signal 3). If match → proceed. If no match → ask user.
+- **0 local signals** → skip to Step 8 silently. **Do not query Attio.**
+
+### 7.5a: Find the Deal
+
+1. **If `attio_deal_id` is known** (from frontmatter signal): fetch the deal directly:
+   ```
+   mcp__claude_ai_Attio__get-records-by-ids with object: "deals", record_ids: ["<attio_deal_id>"]
+   ```
+
+2. **Otherwise:** search by company name and participant emails:
+   ```
+   mcp__claude_ai_Attio__search-records with object: "deals", query: "<company name>"
+   ```
+   Filter results to stages Lead or In Progress.
+
+3. **If multiple deals found:** present a numbered list and ask user to pick.
+
+4. **If zero deals found:**
+   Print: "No Attio deal found for {company}. Create one? (yes/no)"
+   - **If yes:** Create via REST API (MCP cannot create deals -- see reference doc for curl template). Use the company name + meeting type for the deal name. Set stage to Lead. Link to the company and person records if they exist.
+   - **If no:** Print "Skipping CRM update." and proceed to Step 8.
+   - **On API error (4xx/5xx):** Print the error. Do not leave a partial deal. Skip CRM steps.
+
+Extract from the deal record: `deal_id`, `deal_name`, current `stage`, current `next_step`, `offer_type` (consulting or partnership).
+
+### 7.5b: Determine Stage Transition
+
+Read the current stage from the deal record. Handle by current stage:
+
+**If Lead:**
+| Target | Trigger |
+|--------|---------|
+| In Progress | Discovery/diagnostic call happened, agreed next commercial step |
+| Lost | Prospect declined, ghosted, or call revealed bad fit |
+
+**If In Progress:**
+| Target | Trigger |
+|--------|---------|
+| Won | Payment confirmed or contract signed (require explicit user confirmation — Tally/n8n is normal source of truth. Do not infer Won from transcript language.) |
+| Lost | Explicit no from prospect |
+
+**If Won or Lost:**
+No stage transition. Update `next_step` only if the meeting produced actionable follow-ups. Won-stage meetings are typically delivery — present as: "This appears to be a delivery meeting on a Won deal. Update next step only?"
+
+If the meeting doesn't clearly indicate a transition, default to **no stage change** but still update `next_step`. Always include `next_step` in the confirmation UX for user review.
+
+**Collect but do not execute:** save the proposed stage change (or "no change") for the confirmation UX.
+
+### 7.5c: Collect Deal Updates
+
+Collect pending changes (do not execute yet):
+- `stage`: the new stage (if transitioning) or current stage (if no change)
+- `next_step`: set to the most immediate Ben action item from the **Step 3 extraction** (not from the L10, which hasn't been generated yet)
+
+### 7.5d: Collect Task Lifecycle Changes
+
+1. **List existing tasks:**
+   ```
+   mcp__claude_ai_Attio__list-tasks with linked_record_object: "deals", linked_record_id: "<deal_id>", is_completed: false
+   ```
+
+2. **Identify tasks to complete.** For each existing task, check if its content matches a known template string from the reference doc's "Consulting Task Templates" section. Matching rules:
+   - Case-insensitive comparison
+   - Replace `{Company}` and `{Name}` in the template with the actual company/contact name
+   - Match if the existing task content **starts with** the substituted template string (tasks may have extra context appended)
+   - If a task doesn't match any template: flag it as "unmatched" and include it in the confirmation UX with a `[?]` marker
+
+3. **Identify tasks to create — only when a stage transition was confirmed.** If the deal stays at the same stage, do NOT create new template tasks. When creating:
+   - Check `offer_type` on the deal to select consulting vs partnership templates
+   - Read the templates for the **target stage** from `deal-creation-tasks.md`
+   - Substitute `{Company}` and `{Name}` with actual values
+   - Check if an incomplete task on the deal already has a matching title (exact match after substitution). If so, skip.
+   - Calculate deadlines from today's date per the template (Day 0 = today, Day +3 = today + 3 days). Use ISO 8601 UTC midnight format.
+
+4. **Filter:** only include deal-advancing tasks (per `attio-task-scope.md`). Non-deal-advancing items should already be GitHub issues from Step 6.
+
+### 7.5-confirm: Present Confirmation
+
+Present all collected changes in one block:
+
+```text
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  CRM UPDATE -- {Company Name}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Deal: {deal name} ({current stage})
+  Proposed stage: {current stage} -> {new stage} (or "no change")
+  Next step: "{most immediate action}"
+
+  Tasks to complete:
+    [x] {task content} (matched template)
+    [x] {task content} (matched template)
+    [?] {task content} (unmatched -- confirm?)
+
+  Tasks to create:
+    [ ] {task content} (Day 0)
+    [ ] {task content} (Day +3)
+
+  consulting-state.md: will update Pipeline section
+
+  [confirm all / skip CRM update]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+Wait for user confirmation. User can: confirm all, skip entirely, or modify individual items.
+
+**Only after confirmation:** proceed to 7.5-execute.
+
+### 7.5-execute: Execute With Error Handling
+
+Execute in this order:
+
+1. **Update deal record** (stage + next_step):
+   ```
+   mcp__claude_ai_Attio__update-record with object: "deals", record_id: "<deal_id>", values: { "stage": "<new_stage>", "next_step": "<next_step>" }
+   ```
+
+2. **Verify the update** — read the deal back to confirm:
+   ```
+   mcp__claude_ai_Attio__get-records-by-ids with object: "deals", record_ids: ["<deal_id>"]
+   ```
+   Confirm stage and next_step match intended values. If verification fails, stop and warn user.
+
+3. **Complete matched tasks** (for each task to complete):
+   ```
+   mcp__claude_ai_Attio__update-task with task_id: "<task_id>", is_completed: true
+   ```
+
+4. **Create new stage tasks** (only if stage transition was confirmed; for each task to create):
+   ```
+   mcp__claude_ai_Attio__create-task with content: "<task content>", assignee_workspace_member_id: "d5828bae-2782-4e17-94d2-a0380207c8a7", linked_record_object: "deals", linked_record_id: "<deal_id>", deadline_at: "<calculated deadline>"
+   ```
+
+5. **Write `attio_deal_id` to meeting note frontmatter** — if the deal was found via search (not from existing frontmatter), edit the meeting note's YAML to add `attio_deal_id: <deal_id>`. This makes future runs idempotent.
+
+6. **Update consulting-state.md** (only after steps 1-4 verified):
+   Edit `02_Areas/consulting/consulting-state.md` Pipeline section. If the Pipeline section is missing, issue a warning and skip this update rather than auto-creating the section. Otherwise, add/update the deal entry with:
+   - Deal ID, current stage, old stage
+   - Dated note: "Moved to {stage} after {meeting_type} on {date}"
+   - Tasks completed and created
+   - Latest context from the meeting
+
+**Error handling:** If any of steps 1-6 fails:
+- Write the full set of intended changes (completed + pending) to `/tmp/crm-update-{deal_id}-{timestamp}.md`
+- Print: "CRM update partially failed at step {N}. Pending changes saved to {path}."
+- Print what succeeded and what didn't
+- Do NOT silently continue to Step 8 — ask user how to proceed
+
+**On full success:** Print:
+```text
+CRM updated: {deal name} ({old stage} -> {new stage}), {N} tasks completed, {M} tasks created
+```
+
 ## Step 8: Generate EOS Level 10 Summary
 
 After all issues processed, generate the L10 summary using the template.
@@ -493,4 +674,11 @@ This workflow is complete when:
 - [ ] All three triage states sum to COMBINED_COUNT
 - [ ] Issues routed to correct repos (project repo for product work, SB for business tasks)
 - [ ] Content angles extracted and appended to angle queue (if meeting had signal AND queue file/Ready section were resolvable); otherwise skip was reported
+- [ ] CRM relevance detected (or correctly skipped for non-sales meetings)
+- [ ] Attio deal found (or user chose to create/skip)
+- [ ] Stage transition proposed and confirmed (or no change)
+- [ ] Pre-meeting tasks completed in Attio
+- [ ] New stage-appropriate tasks created in Attio
+- [ ] consulting-state.md updated with pipeline change
+- [ ] All CRM changes confirmed by user before execution
 </success_criteria>
