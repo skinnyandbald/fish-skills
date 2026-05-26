@@ -34,14 +34,18 @@ You'll be asked to choose:
 
 ### Fireflies MCP
 
-Add the Fireflies MCP server to your Claude Code config. The skill uses these tools:
+Enable the Fireflies integration in Claude Code settings (Settings > Integrations > Fireflies). See [Fireflies MCP docs](https://fireflies.ai/blog/fireflies-mcp-server) for setup details.
+
+The skill uses these tools:
 - `mcp__fireflies__fireflies_search`
 - `mcp__fireflies__fireflies_get_summary`
 - `mcp__fireflies__fireflies_get_transcript`
 
 ### Plaud MCP (optional)
 
-If configured, the skill also pulls recordings from Plaud. Only two tools are used:
+Install the Plaud MCP server to pull recordings from Plaud devices. See [plaud-mcp on GitHub](https://github.com/skinnyandbald/plaud-mcp) for setup instructions.
+
+The skill uses these tools:
 - `mcp__plaud__list_files` — browse/find recordings
 - `mcp__plaud__get_transcript` — full timestamped transcript with speaker labels
 
