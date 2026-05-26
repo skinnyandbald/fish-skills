@@ -14,12 +14,18 @@
 
 ## Deal Stages
 
-| Stage | Meaning |
-|-------|---------|
-| Lead | New opportunity, no conversation yet |
-| In Progress | Discovery done or diagnostic selling |
-| Won | Engagement complete |
-| Lost | Prospect declined or ghosted |
+| Stage | Status ID | Meaning |
+|-------|-----------|---------|
+| Lead | `c3232144-8ed3-423f-bdc5-a9766a8042d2` | New opportunity, no conversation yet |
+| In Progress | `3ad19b88-2ecf-4917-8ee4-b7991c2a1cbf` | Discovery done or diagnostic selling |
+| Waiting | `4d4c71d2-39ff-4ab1-9c64-1272c8021ac2` | Blocked on external party |
+| Nurture | `d4726c6b-1f38-4fe3-ab24-5614551de349` | Long-term relationship, no active deal motion |
+| Booked | `613ef098-ed6e-4320-afea-be0351b3ee26` | Engagement scheduled/confirmed |
+| Won | `b7254f7f-5d74-42f0-bb1d-ed445099f91c` | Engagement complete (title includes emoji in Attio) |
+| Lost | `fbd53783-386b-46a2-be35-4699b16461cc` | Prospect declined or ghosted |
+
+**REST API note:** The `stage` field requires `{"status": "<status_id>"}`, not `{"status": {"title": "..."}}`.
+The `associated_people` field requires `{"target_object": "people", "target_record_id": "<id>"}`.
 
 ## Valid Stage Transitions (from meetings)
 
@@ -77,7 +83,7 @@ curl -s -X POST "https://api.attio.com/v2/objects/deals/records" \
     "data": {
       "values": {
         "name": [{"value": "DEAL_NAME"}],
-        "stage": [{"status": {"title": "Lead"}}],
+        "stage": [{"status": "c3232144-8ed3-423f-bdc5-a9766a8042d2"}],
         "owner": [{"referenced_actor_type": "workspace-member", "referenced_actor_id": "d5828bae-2782-4e17-94d2-a0380207c8a7"}],
         "associated_company": [{"target_record_id": "COMPANY_RECORD_ID"}],
         "associated_people": [{"target_record_id": "PERSON_RECORD_ID"}]
