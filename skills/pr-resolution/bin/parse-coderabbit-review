@@ -14,5 +14,5 @@ gh api "repos/$REPO/pulls/$PR_NUM/reviews" \
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
-node --import tsx "$SCRIPT_DIR/lib/cli-parse-review.ts" "$TEMP"
+"$SCRIPT_DIR/node_modules/.bin/tsx" "$SCRIPT_DIR/lib/cli-parse-review.ts" "$TEMP"
 rm -f "$TEMP"
