@@ -147,7 +147,7 @@ CodeScene posts two types of gates as PR review comments:
 1. Read the latest CodeScene review comment on the PR:
    ```bash
    gh api "repos/$OWNER/$REPO/pulls/$PR_NUM/reviews" \
-     --jq '[.[] | select((.body // "") | contains("cs-code-health") or contains("cs-code-coverage"))] | last | .body'
+     --jq '[.[] | select((.body? // "") | contains("cs-code-health") or contains("cs-code-coverage"))] | last | .body?'
    ```
 
 2. **Coverage gate failure** (body contains "Code Coverage Gates Failed"):
@@ -249,12 +249,12 @@ These checks (e.g., CodeScene) post structured feedback as PR review comments. T
 **a. Fetch the review comment** (the fix strategy in Step 3b tells you what to parse):
 ```bash
 gh api "repos/$OWNER/$REPO/pulls/$PR_NUM/reviews" \
-  --jq '[.[] | select((.body // "") | contains("cs-code-health") or contains("cs-code-coverage"))] | last | .body'
+  --jq '[.[] | select((.body? // "") | contains("cs-code-health") or contains("cs-code-coverage"))] | last | .body?'
 ```
 
 **b. Diagnose:** Parse the review body per Step 3b's instructions (uncovered lines for coverage, biomarkers for code health). Run coverage locally to confirm:
 ```bash
-timeout 120 npm run test -- --coverage 2>&1 | grep -A5 "<failing-file>"
+timeout 120 npm run test -- --coverage 2>&1 | grep -F -A5 "<failing-file>"
 ```
 
 **c. Fix:** Add tests (coverage) or refactor (code health) per Step 3b. Focus on the PR-modified files first.
