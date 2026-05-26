@@ -366,7 +366,7 @@ Read `references/attio-crm-integration.md` before executing this step.
 Evaluate signals in **short-circuit order** to avoid unnecessary API calls:
 
 **Fast path (no API — re-run only):**
-4. **Frontmatter signal:** If a structured meeting note already exists from a prior run (Step 7b writes `attio_deal_id` on first successful CRM update), check its `attio_deal_id` field. On first-run processing, this signal is naturally absent — fall through to local signals. If present, **validate the deal exists** via MCP `get-records-by-ids`. If valid → skip detection, go directly to 7.5a. If deal is missing/archived → clear the ID from frontmatter, fall through to normal detection.
+4. **Frontmatter signal:** If a structured meeting note already exists from a prior run (Step 7b writes `attio_deal_id` on first successful CRM update), check its `attio_deal_id` field. On first-run processing, this signal is naturally absent — fall through to local signals. If present, **validate the deal exists** via MCP `get-records-by-ids`. If valid → skip detection, go directly to 7.5a. If deal is missing/archived → flag the ID as stale (do not clear frontmatter yet — detection must remain read-only), fall through to normal detection. The stale ID is cleared in 7.5-execute after user confirmation.
 
 **Local signals (no API):**
 1. **Meeting type signal:** `meeting_type` (from frontmatter or Fireflies/Plaud metadata) is one of: `sales`, `discovery`, `client`, `diagnostic`
