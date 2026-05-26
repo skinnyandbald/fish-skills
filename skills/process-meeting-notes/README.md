@@ -1,6 +1,6 @@
 # /process-meeting-notes
 
-Process Fireflies meeting transcripts into GitHub issues and EOS Level 10 Meeting summaries.
+Process meeting transcripts from Fireflies and Plaud into GitHub issues and EOS Level 10 Meeting summaries.
 
 ## Usage
 
@@ -9,14 +9,15 @@ Process Fireflies meeting transcripts into GitHub issues and EOS Level 10 Meetin
 ```
 
 You'll be asked to choose:
-1. **Process recent meeting** — Fetch the latest Fireflies meeting
+0. **Process unprocessed inbox** — Scan Fireflies + Plaud for unprocessed meetings and walk through each
+1. **Process recent meeting** — Fetch the latest meeting from Fireflies or Plaud
 2. **Search specific meeting** — Find by date, keyword, or participant
 3. **Create issues from notes** — Convert your own meeting notes to GitHub issues
 4. **Generate L10 summary only** — EOS Level 10 summary without issues
 
 ## What It Does
 
-1. Fetches meeting transcript and action items from Fireflies
+1. Fetches meeting transcript and action items from Fireflies or Plaud
 2. Detects your current GitHub repo context (labels, milestones, projects)
 3. Compares extracted action items against existing issues to avoid duplicates
 4. Creates GitHub issues with your confirmation (never auto-assigns)
@@ -25,6 +26,7 @@ You'll be asked to choose:
 ## Prerequisites
 
 - **Fireflies MCP server** configured in your Claude Code MCP settings
+- **Plaud MCP server** (optional) — enables Plaud recording integration
 - **GitHub CLI** (`gh`) installed and authenticated
 - Must be run from inside a git repository
 
@@ -32,10 +34,20 @@ You'll be asked to choose:
 
 ### Fireflies MCP
 
-Add the Fireflies MCP server to your Claude Code config. The skill uses these tools:
+Enable the Fireflies integration in Claude Code settings (Settings > Integrations > Fireflies). See [Fireflies MCP docs](https://fireflies.ai/blog/fireflies-mcp-server) for setup details.
+
+The skill uses these tools:
 - `mcp__fireflies__fireflies_search`
 - `mcp__fireflies__fireflies_get_summary`
 - `mcp__fireflies__fireflies_get_transcript`
+
+### Plaud MCP (Optional)
+
+Add the Plaud MCP server to your Claude Code config. The skill uses these tools:
+- `mcp__plaud__list_files` — browse/find recordings
+- `mcp__plaud__get_transcript` — full timestamped transcript with speaker labels
+
+The skill generates its own structured summary rather than using Plaud's built-in AI notes. If Plaud MCP is not configured, the skill works normally with Fireflies only.
 
 ### Vault Integration (Optional)
 
