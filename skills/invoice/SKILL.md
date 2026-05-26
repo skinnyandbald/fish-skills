@@ -78,9 +78,18 @@ default_net: 30
 | `aliases` | No | Alternative names for matching (case-insensitive) |
 | `default_net` | No | Default payment terms for this client (fallback: 15) |
 
-### Payee Info
+### Sender Info
 
-The HTML template has a hardcoded "Pay to" address. Edit `invoice-template.html` in the skill directory to change your billing address.
+Create a `sender.yaml` file in the same directory as your client YAML files:
+
+```yaml
+# clients/sender.yaml
+name: "Your Name"
+address_1: "123 Main St"
+address_2: "City, ST 12345"
+```
+
+The generator reads `sender` from the temp config to populate the "Pay to" block on invoices.
 
 ### Dependencies
 
@@ -128,7 +137,7 @@ For `--hourly` mode, interactively collect multiple line items:
 1. Compute invoice date (today) and due date (today + NET days)
 2. Format dates as MM/DD/YYYY
 3. Create a client slug from the YAML filename (used in PDF filename)
-4. Write a temporary YAML config file combining client info + line items
+4. Write a temporary YAML config file combining client info + sender info + line items (load `sender.yaml` from the clients directory)
 5. Determine the skill directory (where generate-invoice.py lives)
 6. Check for a logo override in the clients directory's parent — if it exists, use `--logo` flag; otherwise use the bundled default
 7. Run the generator:
