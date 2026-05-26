@@ -119,10 +119,10 @@ deals, propose stage transitions and task updates, and execute only after
 user confirmation.
 
 **Detection uses short-circuit evaluation to avoid unnecessary API calls:**
-1. Check `attio_deal_id` in frontmatter (validate deal exists before trusting)
-2. Check `meeting_type` (sales/discovery/client/diagnostic) — local, no API
-3. Check Fireflies/Plaud keywords — local, no API
-4. Query Attio for active deal linkage — **only as tiebreaker when exactly 1 local signal exists**
+1. Check `attio_deal_id` in frontmatter — signal 4 (validate deal exists before trusting)
+2. Check `meeting_type` (sales/discovery/client/diagnostic) — signal 1, local, no API
+3. Check Fireflies/Plaud keywords — signal 2, local, no API
+4. Query Attio for active deal linkage — signal 3, **only as tiebreaker when exactly 1 local signal exists**
 Zero-signal meetings never touch the Attio API.
 
 **Key constraints:**

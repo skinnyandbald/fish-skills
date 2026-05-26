@@ -78,7 +78,9 @@ curl -s -X POST "https://api.attio.com/v2/objects/deals/records" \
       "values": {
         "name": [{"value": "DEAL_NAME"}],
         "stage": [{"status": {"title": "Lead"}}],
-        "owner": [{"referenced_actor_type": "workspace-member", "referenced_actor_id": "d5828bae-2782-4e17-94d2-a0380207c8a7"}]
+        "owner": [{"referenced_actor_type": "workspace-member", "referenced_actor_id": "d5828bae-2782-4e17-94d2-a0380207c8a7"}],
+        "associated_company": [{"target_record_id": "COMPANY_RECORD_ID"}],
+        "associated_people": [{"target_record_id": "PERSON_RECORD_ID"}]
       }
     }
   }'

@@ -375,7 +375,7 @@ Evaluate signals in **short-circuit order** to avoid unnecessary API calls:
 **API signal (tiebreaker only):**
 3. **Active deal signal:** Only query Attio if exactly 1 local signal is present. Search for participant emails linked to active deals (Lead or In Progress stage):
    ```
-   mcp__claude_ai_Attio__search-records with object: "deals"
+   mcp__claude_ai_Attio__search-records with object: "deals", query: "<participant email or company name>"
    ```
    Filter results for stages Lead or In Progress. Check if any deal's `associated_people` or `associated_company` matches a meeting participant.
 
@@ -519,7 +519,7 @@ Execute in this order:
 5. **Write `attio_deal_id` to meeting note frontmatter** — if the deal was found via search (not from existing frontmatter), edit the meeting note's YAML to add `attio_deal_id: <deal_id>`. This makes future runs idempotent.
 
 6. **Update consulting-state.md** (only after steps 1-4 verified):
-   Edit `02_Areas/consulting/consulting-state.md` Pipeline section. Add/update the deal entry with:
+   Edit `02_Areas/consulting/consulting-state.md` Pipeline section. If the Pipeline section is missing, issue a warning and skip this update rather than auto-creating the section. Otherwise, add/update the deal entry with:
    - Deal ID, current stage, old stage
    - Dated note: "Moved to {stage} after {meeting_type} on {date}"
    - Tasks completed and created
