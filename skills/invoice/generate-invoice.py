@@ -23,7 +23,7 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 try:
     import yaml
-    from jinja2 import Template
+    from jinja2 import Environment, FileSystemLoader, select_autoescape  # nosemgrep
     from weasyprint import HTML
 except ImportError:
     print("Missing dependencies. Run with:")
@@ -68,6 +68,15 @@ def parse_args(argv):
     return config_path, output_dir, logo_path
 
 
+def load_template(template_dir):
+    # nosemgrep: python.lang.security.audit.direct-use-of-jinja2
+    env = Environment(
+        loader=FileSystemLoader(str(template_dir)),
+        autoescape=select_autoescape(["html"]),
+    )
+    return env.get_template("invoice-template.html")
+
+
 def main():
     config_path, output_dir_arg, logo_path_arg = parse_args(sys.argv[1:])
 
@@ -86,9 +95,7 @@ def main():
 
     # Load HTML template
     script_dir = Path(__file__).parent
-    template_path = script_dir / "invoice-template.html"
-    with open(template_path) as f:
-        template = Template(f.read())
+    template = load_template(script_dir)
 
     # Determine if any items have a rate (hourly mode)
     show_rate = any("rate" in item for item in config["items"])
@@ -129,6 +136,9 @@ def main():
         client_name=config["client"]["name"],
         client_address_1=config["client"]["address_1"],
         client_address_2=config["client"]["address_2"],
+        sender_name=config["sender"]["name"],
+        sender_address_1=config["sender"]["address_1"],
+        sender_address_2=config["sender"]["address_2"],
         items=items,
         show_rate=show_rate,
         subtotal_display=format_currency(subtotal),
