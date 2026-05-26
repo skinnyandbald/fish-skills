@@ -87,4 +87,4 @@ Resolve each review thread one-by-one after confirming the comment was addressed
 
 Verify zero unresolved threads remain. If any remain, investigate each one — don't bulk-resolve to make the number go to zero.
 
-**HARD BLOCK: Workflow is NOT complete until every thread is individually confirmed as addressed and resolved.**
+**HARD BLOCK: Workflow is NOT complete until every non-`unverified` thread is individually confirmed as addressed and resolved.** Threads classified as `unverified` are intentionally left open for human review and excluded from this gate.

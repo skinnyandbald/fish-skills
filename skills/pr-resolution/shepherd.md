@@ -316,11 +316,11 @@ Post or update a summary comment on the PR. Skip if ITERATION_COUNT == 0 (no noi
    ```
    If the API call fails, include the error in the exit report but do not retry.
 
-4. **Final thread sweep** — resolve any threads that slipped through iteration-level resolution:
+4. **Final thread sweep** — resolve any threads that slipped through iteration-level resolution, **except `unverified` threads** (which are intentionally left open for human review):
    ```bash
    "$SKILL_DIR/bin/resolve-all-threads" "$PR_NUM"
    ```
-   This catches threads that were fixed but not resolved due to GraphQL failures, thread ID mismatches, or race conditions. Log the result but do not fail the summary on errors.
+   This catches threads that were fixed but not resolved due to GraphQL failures, thread ID mismatches, or race conditions. Log the result but do not fail the summary on errors. **Note:** If any threads were classified as `unverified` during resolution, verify they remain open after this sweep. If `resolve-all-threads` resolved them, reopen by noting in the summary that human review is still needed.
 
 5. **Exit** with a status report to the user's main session:
 
