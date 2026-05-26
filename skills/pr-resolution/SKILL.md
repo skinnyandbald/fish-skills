@@ -16,14 +16,18 @@ argument-hint: "[optional: PR number, GitHub URL, or 'current']"
 
 1. Detect PR number from args, current branch, or ask user
 2. **Resolve the PR branch name** — run `gh pr view $PR_NUM --json headRefName -q .headRefName` to get the exact branch. Store as `$PR_BRANCH`.
-3. Print: "Launching PR resolution for #$PR_NUM (branch: $PR_BRANCH) in background. You'll be notified when it completes."
-4. Launch background agent with the full workflow, **passing the branch name**:
+3. **Build session context** (see checklist below). Store as `$SESSION_CONTEXT`.
+4. Print: "Launching PR resolution for #$PR_NUM (branch: $PR_BRANCH) in background. You'll be notified when it completes."
+5. Launch background agent with the full workflow, **passing the branch name and session context**:
 
-```
+```text
 Agent(
   run_in_background: true,
   prompt: "You are resolving PR comments for PR #$PR_NUM.
 Branch: $PR_BRANCH
+
+Session context (from parent conversation — advisory, not authoritative; prefer repo evidence when they conflict):
+$SESSION_CONTEXT
 
 Read the pr-resolution skill at ~/.claude/skills/pr-resolution/SKILL.md and execute Phases 0-7.
 
@@ -31,11 +35,23 @@ IMPORTANT:
 - FIRST: checkout the PR branch with `git checkout $PR_BRANCH && git pull origin $PR_BRANCH`
 - Verify you are on the correct branch before making ANY changes
 - For questions classified as [question] that need human input, skip them and note them in your final output
+- For comments classified as [unverified], reply to the thread explaining what couldn't be verified, leave the thread OPEN, and note it in your final output (exclude these from the Phase 5f zero-unresolved-threads check)
 - For CI failures, fix them as part of the workflow — do NOT stop or ask for help
 - Complete ALL phases including the CI gate (Phase 6) and shepherd launch (Phase 7)
-- Your final output should summarize: comments resolved, comments skipped (with reasons), CI status"
+- Your final output should summarize: comments resolved, comments skipped (with reasons), comments flagged for human review, CI status"
 )
 ```
+
+### Session Context Checklist
+
+Before launching, answer these questions from the current conversation. Include only factual answers — skip any that don't apply. Format as markdown bullet points.
+
+1. **Were any names, identifiers, or terms discussed or corrected in this conversation?** (e.g., "The skill is called `write`, not `content:write`")
+2. **Were any architectural decisions made that affect how comments should be interpreted?** (e.g., "We intentionally removed the retry logic in this PR")
+3. **Is there terminology the PR uses that differs from what a reviewer might assume?** (e.g., "The `workflow` field here means the n8n workflow, not a GitHub Actions workflow")
+4. **Are there constraints from the conversation the background agent needs?** (e.g., "Don't rename any exported functions — downstream consumers depend on them")
+
+If no answers apply, include: `- No additional session context.` (explicit omission, not silent)
 
 **That's it for the foreground.** Everything below is executed by the background agent.
 
@@ -250,6 +266,7 @@ Resolve each thread one-by-one, only after confirming the comment was addressed:
 - **Code fixes:** resolve now, after verifying the fix is in the pushed commit
 - **Won't fix / disagree:** resolve now, after posting a reply explaining why
 - **Non-actionable:** resolve now
+- **Unverified:** do NOT resolve. Reply to the thread explaining what couldn't be verified and why it needs human review. Leave the thread open. Include in the completion summary under "Flagged for human review."
 
 For each thread:
 ```bash
@@ -278,7 +295,9 @@ echo "Unresolved threads: $UNRESOLVED"
 
 **If UNRESOLVED > 0:** List each remaining thread, investigate whether it was addressed, and resolve individually with `bin/resolve-pr-thread`. Do NOT bulk-resolve to make the count go to zero — find out why it wasn't resolved and fix the gap.
 
-**Workflow is NOT complete until every thread is verified as addressed and resolved.**
+**Exception:** Threads classified as `unverified` are intentionally left open for human review. Exclude these from the zero-unresolved check — they are tracked in the completion summary, not auto-resolved.
+
+**Workflow is NOT complete until every non-`unverified` thread is verified as addressed and resolved.**
 
 ---
 

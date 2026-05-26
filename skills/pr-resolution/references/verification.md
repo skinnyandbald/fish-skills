@@ -63,8 +63,8 @@ All N comments resolved - READY TO COMMIT
 
 | Check | Requirement |
 |-------|-------------|
-| Status | Must be `resolved` or `acknowledged` (not `pending`) |
-| Resolution Type | Must have `code_fix`, `wont_fix`, `disagree`, or `acknowledged` |
-| Evidence | If `code_fix`: what changed. If `wont_fix`/`disagree`: reason |
+| Status | Must be `resolved`, `acknowledged`, or `unverified` (not `pending`) |
+| Resolution Type | Must have `code_fix`, `wont_fix`, `disagree`, `acknowledged`, or `unverified` |
+| Evidence | If `code_fix`: what changed. If `wont_fix`/`disagree`: reason. If `unverified`: what couldn't be corroborated |
 
 **If ANY comment is missing resolution: STOP. Do NOT commit.**
