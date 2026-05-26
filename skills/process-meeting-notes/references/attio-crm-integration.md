@@ -26,6 +26,9 @@
 
 **REST API note:** The `stage` field requires `{"status": "<status_id>"}`, not `{"status": {"title": "..."}}`.
 The `associated_people` field requires `{"target_object": "people", "target_record_id": "<id>"}`.
+The `associated_company` field requires `{"target_object": "companies", "target_record_id": "<id>"}`.
+
+**MCP note:** The MCP `update-record` tool accepts stage names directly (e.g., `"stage": "In Progress"`). The MCP server resolves names to status IDs internally. Status IDs are only needed for REST API calls.
 
 ## Valid Stage Transitions (from meetings)
 
@@ -91,7 +94,7 @@ curl -s -X POST "https://api.attio.com/v2/objects/deals/records" \
         "name": [{"value": "DEAL_NAME"}],
         "stage": [{"status": "c3232144-8ed3-423f-bdc5-a9766a8042d2"}],
         "owner": [{"referenced_actor_type": "workspace-member", "referenced_actor_id": "d5828bae-2782-4e17-94d2-a0380207c8a7"}],
-        "associated_company": [{"target_record_id": "COMPANY_RECORD_ID"}],
+        "associated_company": [{"target_object": "companies", "target_record_id": "COMPANY_RECORD_ID"}],
         "associated_people": [{"target_object": "people", "target_record_id": "PERSON_RECORD_ID"}]
       }
     }
