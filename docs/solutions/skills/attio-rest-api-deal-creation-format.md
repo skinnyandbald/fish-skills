@@ -7,7 +7,7 @@ date_discovered: 2026-05-26
 ---
 # Problem
 
-The Attio CRM reference doc for the process-meeting-notes skill had incorrect REST API field formats for deal creation, and was missing 3 of 7 deal stages. Live deal creation failed with 400 errors until the correct formats were discovered empirically.
+The Attio CRM reference doc ([skills/process-meeting-notes/references/attio-crm-integration.md](../../../skills/process-meeting-notes/references/attio-crm-integration.md)) for the process-meeting-notes skill had incorrect REST API field formats for deal creation, and was missing 3 of 7 deal stages. Live deal creation failed with 400 errors until the correct formats were discovered empirically.
 
 # Symptoms
 
@@ -21,7 +21,7 @@ Three issues in the original reference doc:
 
 1. **Stage field format:** The `stage` attribute is type `status`. The REST API requires `{"status": "<status_id>"}` where `status_id` is a UUID. The original template used `{"status": {"title": "Lead"}}` (object, not string). The MCP `update-record` tool accepts stage names directly (e.g., `"stage": "In Progress"`) because the MCP server resolves names to IDs internally — but the REST API does not.
 
-2. **Record reference format:** `associated_people` and `associated_company` are record-reference attributes. They require `{"target_object": "people", "target_record_id": "<uuid>"}`. The original template omitted `target_object`.
+2. **Record reference format:** `associated_people` and `associated_company` are record-reference attributes. They require `{"target_object": "people", "target_record_id": "<uuid>"}` (or `"target_object": "companies"` for company references). The original template omitted `target_object`.
 
 3. **Missing stages:** The workspace has 7 stages (Lead, In Progress, Waiting, Nurture, Booked, Won, Lost). The "Won" stage title includes an emoji ("Won :tada:"). Only 4 were documented.
 
