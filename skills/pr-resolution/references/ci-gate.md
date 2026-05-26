@@ -192,7 +192,9 @@ STATUS=$(~/.claude/skills/pr-resolution/bin/check-mergeability "$PR_NUM" | jq -r
 
 ### Step 5: Fix
 
-For each ACTIONS_FIXABLE failure:
+**CRITICAL: Do NOT unilaterally declare any ACTIONS_FIXABLE or THIRD_PARTY_FIXABLE check "non-blocking", "untestable", or "not worth fixing." If the classification says fixable, you MUST attempt to fix it (up to 3 attempts). If you genuinely cannot fix it after 3 attempts, exit CI_ESCALATION — do not silently skip or rationalize.**
+
+#### 5A. For each ACTIONS_FIXABLE failure:
 
 **a. Fetch truncated logs:**
 ```bash
@@ -239,6 +241,29 @@ echo "${CHECK_KEY}:$((CURRENT + 1))" >> "$STATE_FILE"
 - If total elapsed > 30 minutes → **exit CI_TIMEOUT**
 
 **i. Return to Step 1** (appearance wait for new SHA).
+
+#### 5B. For each THIRD_PARTY_FIXABLE failure:
+
+These checks (e.g., CodeScene) post structured feedback as PR review comments. The fix strategies are described in Step 3b — execute them here with the same commit/push/retry discipline as ACTIONS_FIXABLE.
+
+**a. Fetch the review comment** (the fix strategy in Step 3b tells you what to parse):
+```bash
+gh api "repos/$OWNER/$REPO/pulls/$PR_NUM/reviews" \
+  --jq '[.[] | select((.body // "") | contains("cs-code-health") or contains("cs-code-coverage"))] | last | .body'
+```
+
+**b. Diagnose:** Parse the review body per Step 3b's instructions (uncovered lines for coverage, biomarkers for code health). Run coverage locally to confirm:
+```bash
+timeout 120 npm run test -- --coverage 2>&1 | grep -A5 "<failing-file>"
+```
+
+**c. Fix:** Add tests (coverage) or refactor (code health) per Step 3b. Focus on the PR-modified files first.
+
+**d. Verify locally** — re-run coverage or tests to confirm the threshold is met.
+
+**e-i. Same commit/push/retry/bounds as 5A** (commit, capture timestamp, push, update attempt count, check bounds ≥ 3 → CI_ESCALATION, return to Step 1).
+
+**Common pitfall:** Do NOT classify remaining uncovered lines as "untestable" unless they are inside a `/* v8 ignore */` or `/* istanbul ignore */` block AND those blocks existed before your PR. If YOUR PR introduced the code, YOU must cover it or add the ignore pragma and justify it. "main() has process.exit()" is solvable (extract testable logic, add ignore pragma on the remaining shell). Declaring a check "non-blocking" is NEVER correct for a THIRD_PARTY_FIXABLE check — if you can't fix it, exit CI_ESCALATION.
 
 ## Anti-Analysis-Paralysis Rule
 
