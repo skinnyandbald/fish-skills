@@ -9,10 +9,11 @@ fi
 
 REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner')
 TEMP=$(mktemp)
+trap 'rm -f "$TEMP"' EXIT
+
 gh api "repos/$REPO/pulls/$PR_NUM/reviews" \
   --jq '[.[] | select(.user.login == "coderabbitai[bot]")] | max_by(.body | length) | .body // ""' > "$TEMP"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 "$SCRIPT_DIR/node_modules/.bin/tsx" "$SCRIPT_DIR/lib/cli-parse-review.ts" "$TEMP"
-rm -f "$TEMP"
