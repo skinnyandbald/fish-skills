@@ -41,11 +41,9 @@ The skill uses these tools:
 - `mcp__fireflies__fireflies_get_summary`
 - `mcp__fireflies__fireflies_get_transcript`
 
-### Plaud MCP (optional)
+### Plaud MCP (Optional)
 
-Install the Plaud MCP server to pull recordings from Plaud devices. See [plaud-mcp on GitHub](https://github.com/skinnyandbald/plaud-mcp) for setup instructions.
-
-The skill uses these tools:
+Add the Plaud MCP server to your Claude Code config. The skill uses these tools:
 - `mcp__plaud__list_files` — browse/find recordings
 - `mcp__plaud__get_transcript` — full timestamped transcript with speaker labels
 
