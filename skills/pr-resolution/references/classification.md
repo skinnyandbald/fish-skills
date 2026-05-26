@@ -22,7 +22,7 @@ Bot comments are **hypotheses, not instructions**. Every finding must be verifie
 |------|-----------|-------------------|
 | `code_fix` | Comment is valid and addressed by code change | What changed + file:line reference |
 | `invalid` | Finding is factually wrong or doesn't apply to this code | One-line reason explaining why (e.g., "no trailing spaces exist at this line", "secrets context is unavailable at job level") |
-| `unverified` | Comment introduces a claim (name, behavior, API) that cannot be corroborated in the repository | Reply to thread explaining what couldn't be verified. Do NOT resolve the thread — leave it open for human review. Report in completion summary. |
+| `unverified` | Comment introduces a claim (name, behavior, API) that cannot be corroborated in the repository | Reply to thread explaining what couldn't be verified. Do NOT resolve the thread — leave it open for human review. Excluded from Phase 5f zero-unresolved check. Report in completion summary. |
 | `wont_fix` | Valid finding but intentionally not addressing | One-line reason explaining the design choice |
 | `disagree` | Technical disagreement with feedback | Technical argument with evidence |
 | `acknowledged` | Non-actionable comments | None |
@@ -38,7 +38,7 @@ For EACH comment, before writing any code:
 5. **For comments that reference or introduce specific identifiers** (function names, tool names, skill names, component names, namespaces, file paths, imports): corroborate the claim against the repository. Distinguish between these cases:
    - **Bot references an existing concept by a specific name** (e.g., "the `content:write` skill"): search the repository for that exact name using `rg -F --hidden --glob '!.git' --glob '!node_modules' --glob '!dist' '<term>' .` from the repo root. If it doesn't appear but a similar name does in the relevant context, the bot likely hallucinated the name. Classify as `invalid`.
    - **Bot proposes creating a new identifier** (e.g., "add a `validateInput` helper"): absence from the repo is expected. Validate against naming conventions and necessity instead.
-   - **Bot proposes renaming something**: verify the old name exists and the new name follows project conventions. Don't auto-apply renames where the target name was invented by the bot.
+   - **Bot proposes renaming something**: verify the old name exists and the new name follows project conventions. Don't auto-apply renames where the target name was invented by the bot (classify as `invalid` or `wont_fix` as appropriate).
    - **External/product/API term**: verify via docs or session context if available. If unverifiable and nontrivial, classify as `unverified`.
 6. **For comments asserting behavior, architectural patterns, or API semantics** (e.g., "this function throws X when passed Y", "this follows the observer pattern"): verify the assertion against actual code or docs before applying. Grep alone is not proof — check whether the term appears in the relevant files and whether the bot's claim matches actual semantics. If unverified and nontrivial, classify as `unverified`.
 

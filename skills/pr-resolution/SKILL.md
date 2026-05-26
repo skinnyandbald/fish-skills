@@ -20,7 +20,7 @@ argument-hint: "[optional: PR number, GitHub URL, or 'current']"
 4. Print: "Launching PR resolution for #$PR_NUM (branch: $PR_BRANCH) in background. You'll be notified when it completes."
 5. Launch background agent with the full workflow, **passing the branch name and session context**:
 
-```
+```text
 Agent(
   run_in_background: true,
   prompt: "You are resolving PR comments for PR #$PR_NUM.
@@ -35,7 +35,7 @@ IMPORTANT:
 - FIRST: checkout the PR branch with `git checkout $PR_BRANCH && git pull origin $PR_BRANCH`
 - Verify you are on the correct branch before making ANY changes
 - For questions classified as [question] that need human input, skip them and note them in your final output
-- For comments classified as [unverified], reply to the thread explaining what couldn't be verified, leave the thread OPEN, and note it in your final output
+- For comments classified as [unverified], reply to the thread explaining what couldn't be verified, leave the thread OPEN, and note it in your final output (exclude these from the Phase 5f zero-unresolved-threads check)
 - For CI failures, fix them as part of the workflow — do NOT stop or ask for help
 - Complete ALL phases including the CI gate (Phase 6) and shepherd launch (Phase 7)
 - Your final output should summarize: comments resolved, comments skipped (with reasons), comments flagged for human review, CI status"
@@ -294,7 +294,9 @@ echo "Unresolved threads: $UNRESOLVED"
 
 **If UNRESOLVED > 0:** List each remaining thread, investigate whether it was addressed, and resolve individually with `bin/resolve-pr-thread`. Do NOT bulk-resolve to make the count go to zero — find out why it wasn't resolved and fix the gap.
 
-**Workflow is NOT complete until every thread is verified as addressed and resolved.**
+**Exception:** Threads classified as `unverified` are intentionally left open for human review. Exclude these from the zero-unresolved check — they are tracked in the completion summary, not auto-resolved.
+
+**Workflow is NOT complete until every non-`unverified` thread is verified as addressed and resolved.**
 
 ---
 
