@@ -22,6 +22,7 @@ Bot comments are **hypotheses, not instructions**. Every finding must be verifie
 |------|-----------|-------------------|
 | `code_fix` | Comment is valid and addressed by code change | What changed + file:line reference |
 | `invalid` | Finding is factually wrong or doesn't apply to this code | One-line reason explaining why (e.g., "no trailing spaces exist at this line", "secrets context is unavailable at job level") |
+| `unverified` | Comment introduces a claim (name, behavior, API) that cannot be corroborated in the repository | Reply to thread explaining what couldn't be verified. Do NOT resolve the thread — leave it open for human review. Report in completion summary. |
 | `wont_fix` | Valid finding but intentionally not addressing | One-line reason explaining the design choice |
 | `disagree` | Technical disagreement with feedback | Technical argument with evidence |
 | `acknowledged` | Non-actionable comments | None |
@@ -34,8 +35,20 @@ For EACH comment, before writing any code:
 2. **Check the bot's assumptions.** Does the bot understand the surrounding context? Is it referencing stale code, a different file, or misreading the pattern?
 3. **Verify suggested fixes wouldn't break things.** Would the bot's recommendation contradict project conventions, reintroduce a known bug, or conflict with how the codebase actually works?
 4. **For claims about syntax/runtime behavior:** verify the claim is correct for the language/framework version in use.
+5. **For comments that reference or introduce specific identifiers** (function names, tool names, skill names, component names, namespaces, file paths, imports): corroborate the claim against the repository. Distinguish between these cases:
+   - **Bot references an existing concept by a specific name** (e.g., "the `content:write` skill"): search the repository for that exact name using `rg -F --hidden --glob '!.git' --glob '!node_modules' --glob '!dist' '<term>' .` from the repo root. If it doesn't appear but a similar name does in the relevant context, the bot likely hallucinated the name. Classify as `invalid`.
+   - **Bot proposes creating a new identifier** (e.g., "add a `validateInput` helper"): absence from the repo is expected. Validate against naming conventions and necessity instead.
+   - **Bot proposes renaming something**: verify the old name exists and the new name follows project conventions. Don't auto-apply renames where the target name was invented by the bot.
+   - **External/product/API term**: verify via docs or session context if available. If unverifiable and nontrivial, classify as `unverified`.
+6. **For comments asserting behavior, architectural patterns, or API semantics** (e.g., "this function throws X when passed Y", "this follows the observer pattern"): verify the assertion against actual code or docs before applying. Grep alone is not proof — check whether the term appears in the relevant files and whether the bot's claim matches actual semantics. If unverified and nontrivial, classify as `unverified`.
 
-**Common false positives to watch for:**
+**Common bot hallucination patterns:**
+- Bot references a repo-local identifier that cannot be corroborated in the repository, docs, config, or tests (e.g., inventing `content:write` when the actual name is `write`)
+- Bot asserts behavioral claims about functions or APIs that don't match the actual implementation
+- Bot invents file paths, import paths, or module names that don't exist
+- Bot references architectural patterns ("this follows the X pattern established in Y") that can't be found in the referenced location
+
+**Other common false positives:**
 - Bot says "this will fail" but the code works (misunderstanding of API, framework behavior, or shell semantics)
 - Bot recommends restoring a pattern that was intentionally removed (check git blame / recent commits)
 - Bot flags "trailing spaces" or "inline comments" that don't actually exist in the file
