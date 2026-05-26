@@ -424,6 +424,24 @@ Read the current stage from the deal record. Handle by current stage:
 | Won | Payment confirmed or contract signed (require explicit user confirmation — Tally/n8n is normal source of truth. Do not infer Won from transcript language.) |
 | Lost | Explicit no from prospect |
 
+**If Waiting:**
+| Target | Trigger |
+|--------|---------|
+| In Progress | Blocker resolved, active deal motion resumes |
+| Lost | Prospect went dark or declined while waiting |
+
+**If Nurture:**
+| Target | Trigger |
+|--------|---------|
+| Lead | Re-engaged prospect, new opportunity surfaced |
+No stage transition for routine nurture meetings. Update `next_step` only.
+
+**If Booked:**
+| Target | Trigger |
+|--------|---------|
+| Won | Payment confirmed or contract signed (require explicit user confirmation) |
+| In Progress | Engagement rescheduled or scope renegotiation needed |
+
 **If Won or Lost:**
 No stage transition. Update `next_step` only if the meeting produced actionable follow-ups. Won-stage meetings are typically delivery — present as: "This appears to be a delivery meeting on a Won deal. Update next step only?"
 

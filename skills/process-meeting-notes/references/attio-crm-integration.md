@@ -35,6 +35,12 @@ The `associated_people` field requires `{"target_object": "people", "target_reco
 | Lead | Lost | Prospect declined, ghosted, or call revealed bad fit |
 | In Progress | Won | Payment confirmed or contract signed (require explicit user confirmation -- Tally/n8n is normal source of truth) |
 | In Progress | Lost | Explicit no from prospect |
+| Waiting | In Progress | Blocker resolved, active deal motion resumes |
+| Waiting | Lost | Prospect went dark or declined while waiting |
+| Nurture | Lead | Re-engaged prospect, new opportunity surfaced |
+| Nurture | (no transition) | Update next_step only -- nurture meetings maintain relationship |
+| Booked | Won | Payment confirmed or contract signed (require explicit user confirmation) |
+| Booked | In Progress | Engagement rescheduled or scope renegotiation needed |
 | Won | (no transition) | Update next_step only -- delivery meetings don't re-trigger pipeline |
 | Lost | (no transition) | Update next_step only if actionable follow-ups exist |
 
@@ -86,7 +92,7 @@ curl -s -X POST "https://api.attio.com/v2/objects/deals/records" \
         "stage": [{"status": "c3232144-8ed3-423f-bdc5-a9766a8042d2"}],
         "owner": [{"referenced_actor_type": "workspace-member", "referenced_actor_id": "d5828bae-2782-4e17-94d2-a0380207c8a7"}],
         "associated_company": [{"target_record_id": "COMPANY_RECORD_ID"}],
-        "associated_people": [{"target_record_id": "PERSON_RECORD_ID"}]
+        "associated_people": [{"target_object": "people", "target_record_id": "PERSON_RECORD_ID"}]
       }
     }
   }'
