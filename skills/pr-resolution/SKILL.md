@@ -266,6 +266,7 @@ Resolve each thread one-by-one, only after confirming the comment was addressed:
 - **Code fixes:** resolve now, after verifying the fix is in the pushed commit
 - **Won't fix / disagree:** resolve now, after posting a reply explaining why
 - **Non-actionable:** resolve now
+- **Unverified:** do NOT resolve. Reply to the thread explaining what couldn't be verified and why it needs human review. Leave the thread open. Include in the completion summary under "Flagged for human review."
 
 For each thread:
 ```bash
