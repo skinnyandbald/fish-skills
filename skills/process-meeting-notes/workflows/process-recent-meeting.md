@@ -219,6 +219,57 @@ PROPOSED ISSUE #3
 #5-9 [L10 ONLY] Jared's tasks (tracked in L10, no issue)
 ```
 
+## Step 5.75: Group Items into Issue Hierarchy
+
+Before creating issues, apply the hierarchy rules from Principle 8 / `.claude/rules/github-issue-hierarchy.md`:
+
+1. **Count CREATE ISSUE items per source group** (e.g., all Ben tasks from this meeting)
+2. **If 1 item** → standalone issue (proceed to Step 6 as normal)
+3. **If 2+ items** → propose a parent issue:
+   a. Classify each child as **simple** (checklist) or **complex** (sub-issue)
+   b. **Simple:** "send X", "read Y", "look up Z" — no follow-on discussion needed
+   c. **Complex:** needs own labels, assignee, multi-step work, or discussion thread
+
+Present the proposed hierarchy to the user:
+
+```text
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PROPOSED ISSUE HIERARCHY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Parent: [PROJECT] - Follow-up from {Person} call ({date})
+  Repo: skinnyandbald/SecondBrain
+
+  Checklist items (in parent body):
+    - [ ] Send Jon the Devin video link
+    - [ ] Send Jon the Every articles
+
+  Sub-issues (separate issues, linked via API):
+    #1 [PROJECT] - Research - OpenStax API capabilities → skinnyandbald/SecondBrain
+    #2 [PROJECT] - Feature - Add adaptive quiz engine  → skinnyandbald/distil (cross-repo)
+
+  Standalone (no parent):
+    #3 [TODO] - Look up Max Trailer on LinkedIn        → skinnyandbald/SecondBrain
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [confirm / flatten all / modify]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**User can override:** "flatten all" creates standalone issues for everything.
+
+**Creation order when hierarchy is confirmed:**
+1. Create parent issue first (in SecondBrain, with checklist items in body)
+2. Create each sub-issue in its **routed repo** (from Step 5.5 — product tasks go to their project repo, business tasks to SecondBrain)
+3. Attach each sub-issue to parent via REST API — works cross-repo:
+   ```bash
+   # Child may be in a different repo than the parent
+   CHILD_ID=$(gh api repos/$CHILD_REPO_OWNER/$CHILD_REPO_NAME/issues/$CHILD_NUM --jq '.id')
+   # API call targets the PARENT's repo; child id is globally unique
+   echo "{\"sub_issue_id\": $CHILD_ID}" | gh api repos/$PARENT_REPO_OWNER/$PARENT_REPO_NAME/issues/$PARENT_NUM/sub_issues --method POST --input -
+   ```
+4. Add parent + sub-issues to project board
+
 ## Step 6: Create GitHub Issues (with confirmation)
 
 **CRITICAL: Present ALL extracted action items to the user for triage.**

@@ -133,6 +133,30 @@ Zero-signal meetings never touch the Attio API.
 
 See `references/attio-crm-integration.md` for deal stages, task templates,
 MCP tool inventory, and REST API curl template.
+
+### Principle 8: Issue Hierarchy — Parent Issues with Sub-Issues
+
+When a meeting produces 2+ action items for the same source (meeting, project,
+participant cluster), do NOT create N flat standalone issues. Apply hierarchy:
+
+1. **Single item** from a source → standalone issue
+2. **2+ items** from a source → create a parent issue first, then:
+   - Simple items (send a link, read something) → checklist in parent body
+   - Complex items (needs own research thread, labels, multi-step) → native sub-issue via REST API
+
+**Creating sub-issues via API:**
+```bash
+CHILD_ID=$(gh api repos/OWNER/REPO/issues/$CHILD_NUM --jq '.id')
+echo "{\"sub_issue_id\": $CHILD_ID}" | gh api repos/OWNER/REPO/issues/$PARENT_NUM/sub_issues --method POST --input -
+```
+
+**Critical:** `sub_issue_id` is the REST API `id` (large integer), NOT the issue
+number. `-f` sends strings and causes 422 — pipe JSON with `--input -`.
+
+Sub-issues support cross-repo and cross-org attachment.
+
+See `.claude/rules/github-issue-hierarchy.md` for the full decision tree and
+parent body format.
 </essential_principles>
 
 <configuration>
