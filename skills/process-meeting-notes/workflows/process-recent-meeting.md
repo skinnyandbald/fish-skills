@@ -222,12 +222,14 @@ PROPOSED ISSUE #3
 ## Step 5.75: Group Items into Issue Hierarchy
 
 Apply the hierarchy rules from Principle 8 (in `SKILL.md`) to the items the user
-is about to triage. **Ordering note:** the user finalizes each item's
-CREATE ISSUE / L10 ONLY / SKIP state in Step 6. Run this grouping over the
-items *proposed for issue creation*, and fold the hierarchy proposal into the
-Step 6 triage confirmation — only items the user confirms as CREATE ISSUE
-become parents, children, or standalone issues. If the user changes an item to
-L10 ONLY or SKIP during Step 6, drop it from the hierarchy before creation.
+is about to triage. **Ordering note:** every extracted item is initially
+proposed as **CREATE ISSUE** by default (that is the set this step groups over);
+the user finalizes each item's CREATE ISSUE / L10 ONLY / SKIP state in Step 6.
+So: run this grouping *before* Step 6 to produce the parent / child / standalone
+suggestions, then fold those suggestions into the Step 6 triage confirmation —
+only items the user confirms as CREATE ISSUE become parents, children, or
+standalone issues. If the user changes an item to L10 ONLY or SKIP during Step 6,
+drop it from the hierarchy before creation.
 
 1. **Count proposed CREATE ISSUE items per source group** (e.g., all Ben tasks from this meeting)
 2. **If 1 item** → standalone issue (proceed to Step 6 as normal)
@@ -271,10 +273,19 @@ If a routed child lives under a **different owner/org** than the parent, do NOT
 attach it as a native sub-issue — list it as a standalone issue or a checklist
 item in the parent body instead.
 
-**Choosing the parent repo:** create the parent in the repo that owns the most
-children (or the user's routing choice). Do NOT hardcode SecondBrain — derive it
-from the detected/routed context in Step 5.5. The parent's owner determines which
-children can be attached natively.
+**Choosing the parent repo:** derive it from the detected/routed context in
+Step 5.5 — do NOT hardcode SecondBrain. The parent's **owner** determines which
+children can be attached natively (same-owner constraint above).
+
+- **All children share one owner** → create the parent in the repo that holds the
+  most children (or the user's routing choice). All children attach natively.
+- **Children span multiple owners** → there is no single parent owner that can
+  natively attach every child. Default tiebreaker: create the parent in the
+  **owner with the most children**, attach that owner's children natively, and
+  **downgrade every cross-owner child to a checklist item** in the parent body
+  (or leave it standalone). Surface this in the proposed-hierarchy confirmation
+  so the user can instead pick a different parent repo. Never attempt a native
+  cross-owner attachment — it returns 422.
 
 **Creation order when hierarchy is confirmed:**
 1. Create parent issue first (in the routed parent repo from Step 5.5, with checklist items in body)
