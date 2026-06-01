@@ -2,6 +2,8 @@
 
 Resolve all PR review comments in parallel — fetch, classify, fix, verify, and resolve GitHub threads.
 
+**Terminal-safe by design.** The workflow runs in a private detached-HEAD worktree at the PR branch tip, so it never `git checkout`/`git stash`/commits in the tree you are sitting in. It pushes straight to the PR branch ref (`HEAD:refs/heads/<branch>`). Your interactive session is untouched — though if you were on the PR branch, run `git pull --ff-only` afterward to pick up the agent's pushed commits.
+
 ## Usage
 
 ```

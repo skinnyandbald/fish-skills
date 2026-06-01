@@ -32,8 +32,8 @@ $SESSION_CONTEXT
 Read the pr-resolution skill at ~/.claude/skills/pr-resolution/SKILL.md and execute Phases 0-7.
 
 IMPORTANT:
-- FIRST: checkout the PR branch with `git checkout $PR_BRANCH && git pull origin $PR_BRANCH`
-- Verify you are on the correct branch before making ANY changes
+- FIRST: create an isolated detached worktree at the PR branch tip (Phase 0). Do NOT `git checkout` or `git stash` in the tree you inherited — the parent session may be sitting in it.
+- Run every subsequent phase (edits, commit, push, verification) from inside that worktree
 - For questions classified as [question] that need human input, skip them and note them in your final output
 - For comments classified as [unverified], reply to the thread explaining what couldn't be verified, leave the thread OPEN, and note it in your final output (exclude these from the Phase 5f zero-unresolved-threads check)
 - For CI failures, fix them as part of the workflow — do NOT stop or ask for help
@@ -65,11 +65,12 @@ If no answers apply, include: `- No additional session context.` (explicit omiss
 | Parse CodeRabbit | `~/.claude/skills/pr-resolution/bin/parse-coderabbit-review PR_NUM` |
 | Check CI | `gh pr checks` |
 | Resolve thread | `~/.claude/skills/pr-resolution/bin/resolve-pr-thread NODE_ID` |
+| Push detached HEAD to PR branch | `~/.claude/skills/pr-resolution/bin/push-to-pr-branch PR_BRANCH` |
 
 ## Workflow Overview
 
 ```text
-Phase 0: Pre-Flight     → Branch checkout + mergeability check + GoodToGo (if installed)
+Phase 0: Pre-Flight     → Detached worktree at PR tip + mergeability check + GoodToGo (if installed)
 Phase 1: Discovery      → Gather comments, parse bot formats, enumerate
 Phase 2: Classification → Categorize by priority, group by file
 Phase 3: Resolution     → Launch parallel agents by file group
@@ -83,28 +84,68 @@ Phase 7: Shepherd       → Inline polling loop for new bot comments + CI
 
 ## Phase 0: Pre-Flight
 
-### Branch checkout (MANDATORY — do this FIRST)
+### Detached worktree at the PR tip (MANDATORY — do this FIRST)
 
-The background agent inherits whatever branch the user was on. You MUST switch to the PR branch before doing anything else:
+The background agent inherits whatever working tree (and branch) the user was on. **Do NOT `git checkout` or `git stash` in that tree** — the parent session may be sitting in it, and switching its branch or stashing its WIP corrupts the user's state. Instead, operate in a private worktree on a **detached HEAD** at the PR branch tip. A detached worktree commits and pushes to the branch ref without ever claiming the branch name, so it coexists with the interactive session. (Claude Code's `isolation: worktree` flag does NOT solve this — it branches from origin/HEAD onto a fresh branch, not the PR branch — so the skill manages its own worktree explicitly.)
 
 ```bash
-# Get PR branch from the prompt context (passed as $PR_BRANCH)
-# If not provided, resolve it:
-PR_BRANCH=$(gh pr view $PR_NUM --json headRefName -q '.headRefName')
+# PR branch comes from the prompt context ($PR_BRANCH); resolve if absent:
+PR_BRANCH=${PR_BRANCH:-$(gh pr view $PR_NUM --json headRefName -q '.headRefName')}
 
-# Checkout and pull latest
-git checkout "$PR_BRANCH"
-git pull origin "$PR_BRANCH"
-
-# Verify — abort if wrong branch
-CURRENT=$(git branch --show-current)
-if [ "$CURRENT" != "$PR_BRANCH" ]; then
-  echo "FATAL: Expected branch $PR_BRANCH but on $CURRENT"
+# This workflow resolves SAME-REPO PRs — it fetches and pushes origin/$PR_BRANCH. A fork PR's
+# head lives on the contributor's fork, not origin, so fail clearly instead of mis-fetching:
+if [ "$(gh pr view "$PR_NUM" --json isCrossRepository -q '.isCrossRepository' 2>/dev/null)" = "true" ]; then
+  echo "FATAL: PR #$PR_NUM is from a fork; this workflow handles same-repo PRs only." >&2
   exit 1
+fi
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+HOOKS_PATH_BEFORE=$(git config --get core.hooksPath || true)   # guard against husky drift (below)
+
+git fetch origin "$PR_BRANCH"
+WT=$(mktemp -d)
+rmdir "$WT"   # some Git versions refuse to add a worktree into an existing dir; let Git create it cleanly
+git worktree add --detach "$WT" "origin/$PR_BRANCH"   # detached at the remote tip; claims no branch
+cd "$WT"
+```
+
+**Make dependencies available in the worktree** (the verification and CI phases need them) WITHOUT running a fresh install's post-install hooks:
+
+```bash
+# Fast path: reuse the parent's installed deps. No install runs, so husky's `prepare`
+# never fires and core.hooksPath cannot drift. Covers the common case (deps unchanged).
+if [ -d "$REPO_ROOT/node_modules" ] && [ ! -e node_modules ]; then
+  ln -sf "$REPO_ROOT/node_modules" node_modules   # -f so a stale/broken symlink (which `-e` misses) doesn't abort the link
+fi
+if [ -e "$REPO_ROOT/.env" ] && [ ! -e .env ]; then ln -s "$REPO_ROOT/.env" .env; fi   # only when the worktree has no .env — never replace a tracked .env (the commit would capture the symlink)
+
+# Only if the PR changed a dependency manifest/lockfile do you need a real install.
+# Run it with HUSKY=0 so the `prepare` script cannot rewrite core.hooksPath in the shared .git:
+#   HUSKY=0 npm ci        # or the repo's package manager (pnpm i --frozen-lockfile, etc.)
+```
+
+**Guard `core.hooksPath` (defensive).** A dependency install can run package lifecycle scripts (e.g. husky's `prepare`) that rewrite `core.hooksPath` in the **shared** `.git/config`; the exact value they set depends on the husky version, so stay version-agnostic — capture it before setup and restore it after. (`git worktree add` itself runs no lifecycle script, so this only matters if you ran an install above.)
+
+```bash
+NOW=$(git config --get core.hooksPath || true)
+if [ "$NOW" != "$HOOKS_PATH_BEFORE" ]; then
+  if [ -n "$HOOKS_PATH_BEFORE" ]; then git config core.hooksPath "$HOOKS_PATH_BEFORE"; else git config --unset core.hooksPath || true; fi
 fi
 ```
 
-**If checkout fails** (e.g. uncommitted changes on current branch): run `git stash` first, then checkout. Do NOT proceed on the wrong branch.
+**Teardown (MANDATORY on EVERY exit — success or error).** Remove the worktree before the agent ends, from every phase's exit path (see `references/exit-states.md`). **Exception:** if a push failed and the worktree still holds commits not yet on `origin/$PR_BRANCH`, it is the only ref to them — report it instead of removing, so they stay recoverable:
+
+```bash
+cd "$REPO_ROOT"
+if git -C "$WT" rev-parse HEAD >/dev/null 2>&1 \
+   && ! git merge-base --is-ancestor "$(git -C "$WT" rev-parse HEAD)" "origin/$PR_BRANCH" 2>/dev/null; then
+  echo "NOTE: unpushed commits remain in $WT (HEAD $(git -C "$WT" rev-parse --short HEAD)) — NOT removing it; re-push or cherry-pick them, then 'git worktree remove $WT'." >&2
+else
+  git worktree remove "$WT" --force 2>/dev/null || true
+fi
+```
+
+There is no "wrong branch" to guard against anymore — the detached worktree is always at the PR tip — so the old `FATAL: Expected branch` check is gone.
 
 ### Mergeability check (MANDATORY — do this BEFORE Discovery)
 
@@ -122,7 +163,7 @@ git fetch origin "$BASE_REF"
 | Status | Meaning | Action |
 |--------|---------|--------|
 | `CLEAN` | `MERGEABLE` and base is current (or only failing checks) | Continue to Discovery |
-| `BEHIND` | `MERGEABLE` but PR is behind base | Auto-sync: `git merge "origin/$BASE_REF"` (no conflicts expected since GitHub said MERGEABLE). Push. Re-check. Continue. |
+| `BEHIND` | `MERGEABLE` but PR is behind base | Auto-sync: `git merge "origin/$BASE_REF"` (no conflicts expected since GitHub said MERGEABLE), then `~/.claude/skills/pr-resolution/bin/push-to-pr-branch "$PR_BRANCH"`. Re-check. Continue. |
 | `CONFLICT` | `CONFLICTING` / `DIRTY` | **STOP.** Exit `PRE_FLIGHT_CONFLICT`. Report conflicting files (`git merge --no-commit "origin/$BASE_REF"; git diff --name-only --diff-filter=U; git merge --abort`). Do NOT auto-resolve — conflicts often carry semantic meaning a code review missed. |
 | `UNKNOWN` | GitHub couldn't compute after polling | Exit `PRE_FLIGHT_UNKNOWN_MERGE_STATE` — humans should investigate. |
 | `ERROR` | API or usage failure | Exit `PRE_FLIGHT_ERROR` and surface the error message. |
@@ -339,7 +380,7 @@ After Phase 6 completes, continue polling for new bot comments **in the same age
 1. Capture context:
 ```bash
 OWNER_REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner')
-BRANCH=$(git branch --show-current)
+BRANCH="$PR_BRANCH"   # HEAD is detached in the worktree — derive from PR_BRANCH, not `git branch --show-current`
 RUN_ID=$(date +%s)
 ```
 

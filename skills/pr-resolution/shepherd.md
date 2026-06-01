@@ -234,11 +234,13 @@ SKILL_DIR="${SKILL_DIR:-$HOME/.claude/skills/pr-resolution}"
      git commit -m "fix: address PR review feedback (shepherd round $ITERATION_COUNT)"
      LAST_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
      PUSH_ERR=$(mktemp)
-     trap 'rm -f "$PUSH_ERR"' EXIT
-     if ! git push 2>"$PUSH_ERR"; then
+     # Don't set a `trap ... EXIT` here — it would clobber the global worktree-teardown
+     # trap and leak the detached worktree. Clean up the temp file explicitly instead.
+     if ! "$SKILL_DIR/bin/push-to-pr-branch" "$BRANCH" 2>"$PUSH_ERR"; then
        PUSH_ERROR=$(cat "$PUSH_ERR")
        # → go to POST_SUMMARY with reason "push_failed" and PUSH_ERROR
      fi
+     rm -f "$PUSH_ERR"
    fi
    ```
 
