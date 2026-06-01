@@ -1,0 +1,30 @@
+#!/bin/bash
+# Push the current (detached) HEAD to a PR branch ref WITHOUT claiming the branch name.
+#
+# Why: pr-resolution runs in a detached worktree at the PR branch tip so it can
+# coexist with an interactive session sitting on the same branch. Git's lock is on
+# the branch ref (refs/heads/<branch>), not the commit — pushing `HEAD:refs/heads/<branch>`
+# updates the branch without ever checking it out, so there is no "already checked out"
+# collision with the parent worktree.
+#
+# Usage: push-to-pr-branch PR_BRANCH
+#
+# On a concurrent-push race (remote moved since we forked): fetch + rebase onto the
+# remote tip + retry once. NEVER force-pushes a shared branch. A rebase conflict aborts
+# and exits non-zero so the caller surfaces it instead of silently mangling history.
+set -euo pipefail
+
+BRANCH="${1:?usage: push-to-pr-branch PR_BRANCH}"
+
+if git push origin "HEAD:refs/heads/$BRANCH"; then
+  exit 0
+fi
+
+echo "push-to-pr-branch: push rejected — fetching origin/$BRANCH, rebasing, and retrying (no force)" >&2
+git fetch origin "$BRANCH"
+if ! git rebase "origin/$BRANCH"; then
+  git rebase --abort 2>/dev/null || true
+  echo "push-to-pr-branch: rebase onto origin/$BRANCH conflicted — manual resolution needed; nothing pushed" >&2
+  exit 1
+fi
+git push origin "HEAD:refs/heads/$BRANCH"

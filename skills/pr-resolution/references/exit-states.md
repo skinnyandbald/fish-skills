@@ -3,6 +3,17 @@
 > Complete taxonomy of every exit state the PR resolution workflow can produce.
 > Referenced by SKILL.md (Phase 0), ci-gate.md, and shepherd-states.md.
 
+## Worktree teardown (applies to EVERY exit state)
+
+Phase 0 creates a detached worktree (`$WT`) for all file edits, commits, and pushes. On EVERY exit — success, early return, or any error state below — remove it so it never leaks:
+
+```bash
+cd "$REPO_ROOT"
+git worktree remove "$WT" --force 2>/dev/null || true
+```
+
+The parent session's working tree and branch are never modified; a `push_failed` state means the detached commits remain only in reflog until re-pushed.
+
 ## Phase 0: Pre-Flight
 
 | State | Severity | Meaning |

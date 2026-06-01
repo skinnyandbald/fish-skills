@@ -223,7 +223,7 @@ git commit -m "fix(ci): resolve <check-name> failure"
 **f. Push and reset state:**
 ```bash
 LAST_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-git push
+~/.claude/skills/pr-resolution/bin/push-to-pr-branch "$PR_BRANCH"   # detached HEAD -> branch ref, no force
 sleep 60  # Grace period for check registration
 HEAD_SHA=$(git rev-parse HEAD)
 ```
@@ -345,7 +345,7 @@ Before classifying ANY test failure as pre-existing, run these steps:
      --jq '[.check_runs[] | select(.conclusion == "failure") | .name]'
 
    # Option B: Run the failing test against base branch
-   git stash && git checkout "origin/$BASE_REF" && npx vitest run <failing-test-file> ; git checkout - && git stash pop
+   SAVED=$(git rev-parse HEAD); git stash; git checkout "origin/$BASE_REF"; npx vitest run <failing-test-file>; git checkout "$SAVED"; git stash pop   # detached-HEAD safe (no `git checkout -`)
    ```
 
 **Common PR-introduced failures that look pre-existing but are NOT:**
