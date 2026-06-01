@@ -223,7 +223,7 @@ git commit -m "fix(ci): resolve <check-name> failure"
 **f. Push and reset state:**
 ```bash
 LAST_TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-~/.claude/skills/pr-resolution/bin/push-to-pr-branch "$PR_BRANCH"   # detached HEAD -> branch ref, no force
+~/.claude/skills/pr-resolution/bin/push-to-pr-branch "${PR_BRANCH:-$BRANCH}"   # detached HEAD -> branch ref, no force (BRANCH in the shepherd context, PR_BRANCH in Phase 6)
 sleep 60  # Grace period for check registration
 HEAD_SHA=$(git rev-parse HEAD)
 ```

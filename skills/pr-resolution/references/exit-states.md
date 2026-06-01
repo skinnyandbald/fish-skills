@@ -5,14 +5,19 @@
 
 ## Worktree teardown (applies to EVERY exit state)
 
-Phase 0 creates a detached worktree (`$WT`) for all file edits, commits, and pushes. On EVERY exit — success, early return, or any error state below — remove it so it never leaks:
+Phase 0 creates a detached worktree (`$WT`) for all file edits, commits, and pushes. On EVERY exit — success, early return, or any error state below — remove it so it never leaks, using the guarded teardown in SKILL.md Phase 0:
 
 ```bash
 cd "$REPO_ROOT"
-git worktree remove "$WT" --force 2>/dev/null || true
+if git -C "$WT" rev-parse HEAD >/dev/null 2>&1 \
+   && ! git merge-base --is-ancestor "$(git -C "$WT" rev-parse HEAD)" "origin/$PR_BRANCH" 2>/dev/null; then
+  echo "NOTE: unpushed commits remain in $WT — NOT removing it; re-push or cherry-pick, then 'git worktree remove $WT'." >&2
+else
+  git worktree remove "$WT" --force 2>/dev/null || true
+fi
 ```
 
-The parent session's working tree and branch are never modified; a `push_failed` state means the detached commits remain only in reflog until re-pushed.
+The parent session's working tree and branch are never modified. On `push_failed` the detached commits live only in `$WT` (and reflog) — the guard above keeps the worktree so they stay recoverable rather than being force-removed.
 
 ## Phase 0: Pre-Flight
 

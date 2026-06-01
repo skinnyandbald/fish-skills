@@ -92,6 +92,13 @@ The background agent inherits whatever working tree (and branch) the user was on
 # PR branch comes from the prompt context ($PR_BRANCH); resolve if absent:
 PR_BRANCH=${PR_BRANCH:-$(gh pr view $PR_NUM --json headRefName -q '.headRefName')}
 
+# This workflow resolves SAME-REPO PRs — it fetches and pushes origin/$PR_BRANCH. A fork PR's
+# head lives on the contributor's fork, not origin, so fail clearly instead of mis-fetching:
+if [ "$(gh pr view "$PR_NUM" --json isCrossRepository -q '.isCrossRepository' 2>/dev/null)" = "true" ]; then
+  echo "FATAL: PR #$PR_NUM is from a fork; this workflow handles same-repo PRs only." >&2
+  exit 1
+fi
+
 REPO_ROOT=$(git rev-parse --show-toplevel)
 HOOKS_PATH_BEFORE=$(git config --get core.hooksPath || true)   # guard against husky drift (below)
 
@@ -110,14 +117,14 @@ cd "$WT"
 if [ -d "$REPO_ROOT/node_modules" ] && [ ! -e node_modules ]; then
   ln -sf "$REPO_ROOT/node_modules" node_modules   # -f so a stale/broken symlink (which `-e` misses) doesn't abort the link
 fi
-ln -sf "$REPO_ROOT/.env" .env 2>/dev/null || true   # parity with the repo's worktree convention
+if [ -e "$REPO_ROOT/.env" ] && [ ! -e .env ]; then ln -s "$REPO_ROOT/.env" .env; fi   # only when the worktree has no .env — never replace a tracked .env (the commit would capture the symlink)
 
 # Only if the PR changed a dependency manifest/lockfile do you need a real install.
 # Run it with HUSKY=0 so the `prepare` script cannot rewrite core.hooksPath in the shared .git:
 #   HUSKY=0 npm ci        # or the repo's package manager (pnpm i --frozen-lockfile, etc.)
 ```
 
-**Guard `core.hooksPath`.** It lives in the shared `.git/config`, so any husky invocation inside the worktree flips it for the main repo too. Re-assert the original value after worktree/install steps:
+**Guard `core.hooksPath` (defensive).** A dependency install can run package lifecycle scripts (e.g. husky's `prepare`) that rewrite `core.hooksPath` in the **shared** `.git/config`; the exact value they set depends on the husky version, so stay version-agnostic — capture it before setup and restore it after. (`git worktree add` itself runs no lifecycle script, so this only matters if you ran an install above.)
 
 ```bash
 NOW=$(git config --get core.hooksPath || true)
@@ -126,11 +133,16 @@ if [ "$NOW" != "$HOOKS_PATH_BEFORE" ]; then
 fi
 ```
 
-**Teardown (MANDATORY on EVERY exit — success or error).** Remove the worktree before the agent ends, from every phase's exit path (see `references/exit-states.md`):
+**Teardown (MANDATORY on EVERY exit — success or error).** Remove the worktree before the agent ends, from every phase's exit path (see `references/exit-states.md`). **Exception:** if a push failed and the worktree still holds commits not yet on `origin/$PR_BRANCH`, it is the only ref to them — report it instead of removing, so they stay recoverable:
 
 ```bash
 cd "$REPO_ROOT"
-git worktree remove "$WT" --force 2>/dev/null || true
+if git -C "$WT" rev-parse HEAD >/dev/null 2>&1 \
+   && ! git merge-base --is-ancestor "$(git -C "$WT" rev-parse HEAD)" "origin/$PR_BRANCH" 2>/dev/null; then
+  echo "NOTE: unpushed commits remain in $WT (HEAD $(git -C "$WT" rev-parse --short HEAD)) — NOT removing it; re-push or cherry-pick them, then 'git worktree remove $WT'." >&2
+else
+  git worktree remove "$WT" --force 2>/dev/null || true
+fi
 ```
 
 There is no "wrong branch" to guard against anymore — the detached worktree is always at the PR tip — so the old `FATAL: Expected branch` check is gone.
