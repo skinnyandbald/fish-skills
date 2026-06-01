@@ -50,8 +50,16 @@ else
   no "push succeeds from a detached HEAD"
 fi
 REMOTE_SHA=$(git ls-remote "$REMOTE" refs/heads/feat/x | cut -f1)
-[ "$REMOTE_SHA" = "$NEWSHA" ] && ok "remote feat/x fast-forwarded to our commit" || no "remote feat/x advanced (got ${REMOTE_SHA:0:7} want ${NEWSHA:0:7})"
-[ -z "$( cd "$WT" && git branch --show-current )" ] && ok "HEAD stays detached (no local branch claimed)" || no "HEAD stays detached"
+if [ "$REMOTE_SHA" = "$NEWSHA" ]; then
+  ok "remote feat/x fast-forwarded to our commit"
+else
+  no "remote feat/x advanced (got ${REMOTE_SHA:0:7} want ${NEWSHA:0:7})"
+fi
+if [ -z "$( cd "$WT" && git branch --show-current )" ]; then
+  ok "HEAD stays detached (no local branch claimed)"
+else
+  no "HEAD stays detached"
+fi
 
 # === TEST 2: concurrent remote update -> race -> fetch+rebase+retry lands our commit ===
 # Another writer advances feat/x to a commit we don't have yet.
@@ -82,7 +90,8 @@ else
 fi
 
 # === TEST 3: the script never force-pushes ===
-if grep -qE -- '(--force|--force-with-lease| -f |\+HEAD|\+refs)' "$SCRIPT"; then
+# Only inspect git-push invocations so an unrelated `rm -f` doesn't trip the heuristic.
+if grep -E 'git[[:space:]]+push' "$SCRIPT" | grep -qE -- '(--force|--force-with-lease| -f | -f$|\+HEAD|\+refs)'; then
   no "script contains a force-push"
 else
   ok "script never force-pushes"

@@ -16,11 +16,22 @@ set -euo pipefail
 
 BRANCH="${1:?usage: push-to-pr-branch PR_BRANCH}"
 
-if git push origin "HEAD:refs/heads/$BRANCH"; then
+PUSH_ERR=$(mktemp)
+trap 'rm -f "$PUSH_ERR"' EXIT
+if git push origin "HEAD:refs/heads/$BRANCH" 2>"$PUSH_ERR"; then
+  cat "$PUSH_ERR" >&2
   exit 0
 fi
+cat "$PUSH_ERR" >&2
 
-echo "push-to-pr-branch: push rejected — fetching origin/$BRANCH, rebasing, and retrying (no force)" >&2
+# Only the concurrent-push race (remote moved) is retryable. Auth/network/policy
+# failures must fail fast — rebasing on those would rewrite history for nothing.
+if ! grep -qiE 'non-fast-forward|fetch first|failed to push some refs|\[rejected\]' "$PUSH_ERR"; then
+  echo "push-to-pr-branch: push failed for a non-race reason — not retrying" >&2
+  exit 1
+fi
+
+echo "push-to-pr-branch: push rejected (non-fast-forward) — fetching origin/$BRANCH, rebasing, and retrying (no force)" >&2
 git fetch origin "$BRANCH"
 if ! git rebase "origin/$BRANCH"; then
   git rebase --abort 2>/dev/null || true
