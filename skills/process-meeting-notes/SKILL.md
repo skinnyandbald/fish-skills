@@ -153,14 +153,13 @@ echo "{\"sub_issue_id\": $CHILD_ID}" | gh api repos/OWNER/REPO/issues/$PARENT_NU
 **Critical:** `sub_issue_id` is the REST API `id` (large integer), NOT the issue
 number. `-f` sends strings and causes 422 — pipe JSON with `--input -`.
 
-**Same-owner constraint:** GitHub's native sub-issues API requires the sub-issue
-to belong to the **same repository owner** as the parent (per the
-[Add sub-issue REST docs](https://docs.github.com/en/rest/issues/sub-issues#parameters-for-add-sub-issue)).
-Cross-**repository** attachment works as long as both repos share an owner (e.g.
-`skinnyandbald/SecondBrain` ↔ `skinnyandbald/distil`). Cross-**owner / cross-org**
-attachment is NOT supported and returns 422 — for those items, keep them as
-standalone issues or as checklist entries in the parent body instead of native
-sub-issues.
+**Cross-repo and cross-org both work.** Because `sub_issue_id` is the
+globally-unique REST `id`, a parent can attach a child in **any** repo you can
+access — same owner (`skinnyandbald/SecondBrain` ↔ `skinnyandbald/distil`) or a
+**different owner/org**. There is no same-owner restriction. The only cause of a
+422 here is the wrong id (the issue number or `node_id` instead of the integer
+`id`, or `-f` string encoding) — both covered above. (Verified against the live
+GitHub API on 2026-06-01: a cross-owner attach returns `201 Created`.)
 
 See the **Issue Hierarchy decision tree** in the
 `workflows/process-recent-meeting.md` (Step 5.75) for the full grouping logic and
