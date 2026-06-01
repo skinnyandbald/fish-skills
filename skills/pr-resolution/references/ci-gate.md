@@ -345,7 +345,7 @@ Before classifying ANY test failure as pre-existing, run these steps:
      --jq '[.check_runs[] | select(.conclusion == "failure") | .name]'
 
    # Option B: Run the failing test against base branch
-   SAVED=$(git rev-parse HEAD); git stash; git checkout "origin/$BASE_REF"; npx vitest run <failing-test-file>; git checkout "$SAVED"; git stash pop   # detached-HEAD safe (no `git checkout -`)
+   SAVED=$(git rev-parse HEAD); STASHED=false; if ! git diff --quiet || ! git diff --cached --quiet; then git stash -q; STASHED=true; fi; git checkout "origin/$BASE_REF"; npx vitest run <failing-test-file>; git checkout "$SAVED"; [ "$STASHED" = true ] && git stash pop -q   # detached-HEAD safe (no `git checkout -`); only pops what we stashed
    ```
 
 **Common PR-introduced failures that look pre-existing but are NOT:**

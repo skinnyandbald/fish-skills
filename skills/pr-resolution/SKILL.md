@@ -97,6 +97,7 @@ HOOKS_PATH_BEFORE=$(git config --get core.hooksPath || true)   # guard against h
 
 git fetch origin "$PR_BRANCH"
 WT=$(mktemp -d)
+rmdir "$WT"   # some Git versions refuse to add a worktree into an existing dir; let Git create it cleanly
 git worktree add --detach "$WT" "origin/$PR_BRANCH"   # detached at the remote tip; claims no branch
 cd "$WT"
 ```
@@ -107,7 +108,7 @@ cd "$WT"
 # Fast path: reuse the parent's installed deps. No install runs, so husky's `prepare`
 # never fires and core.hooksPath cannot drift. Covers the common case (deps unchanged).
 if [ -d "$REPO_ROOT/node_modules" ] && [ ! -e node_modules ]; then
-  ln -s "$REPO_ROOT/node_modules" node_modules
+  ln -sf "$REPO_ROOT/node_modules" node_modules   # -f so a stale/broken symlink (which `-e` misses) doesn't abort the link
 fi
 ln -sf "$REPO_ROOT/.env" .env 2>/dev/null || true   # parity with the repo's worktree convention
 
