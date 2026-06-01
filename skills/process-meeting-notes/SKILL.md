@@ -153,9 +153,17 @@ echo "{\"sub_issue_id\": $CHILD_ID}" | gh api repos/OWNER/REPO/issues/$PARENT_NU
 **Critical:** `sub_issue_id` is the REST API `id` (large integer), NOT the issue
 number. `-f` sends strings and causes 422 — pipe JSON with `--input -`.
 
-Sub-issues support cross-repo and cross-org attachment.
+**Same-owner constraint:** GitHub's native sub-issues API requires the sub-issue
+to belong to the **same repository owner** as the parent (per the
+[Add sub-issue REST docs](https://docs.github.com/en/rest/issues/sub-issues#parameters-for-add-sub-issue)).
+Cross-**repository** attachment works as long as both repos share an owner (e.g.
+`skinnyandbald/SecondBrain` ↔ `skinnyandbald/distil`). Cross-**owner / cross-org**
+attachment is NOT supported and returns 422 — for those items, keep them as
+standalone issues or as checklist entries in the parent body instead of native
+sub-issues.
 
-See `.claude/rules/github-issue-hierarchy.md` for the full decision tree and
+See the **Issue Hierarchy decision tree** in the
+`workflows/process-recent-meeting.md` (Step 5.75) for the full grouping logic and
 parent body format.
 </essential_principles>
 

@@ -221,9 +221,15 @@ PROPOSED ISSUE #3
 
 ## Step 5.75: Group Items into Issue Hierarchy
 
-Before creating issues, apply the hierarchy rules from Principle 8 / `.claude/rules/github-issue-hierarchy.md`:
+Apply the hierarchy rules from Principle 8 (in `SKILL.md`) to the items the user
+is about to triage. **Ordering note:** the user finalizes each item's
+CREATE ISSUE / L10 ONLY / SKIP state in Step 6. Run this grouping over the
+items *proposed for issue creation*, and fold the hierarchy proposal into the
+Step 6 triage confirmation — only items the user confirms as CREATE ISSUE
+become parents, children, or standalone issues. If the user changes an item to
+L10 ONLY or SKIP during Step 6, drop it from the hierarchy before creation.
 
-1. **Count CREATE ISSUE items per source group** (e.g., all Ben tasks from this meeting)
+1. **Count proposed CREATE ISSUE items per source group** (e.g., all Ben tasks from this meeting)
 2. **If 1 item** → standalone issue (proceed to Step 6 as normal)
 3. **If 2+ items** → propose a parent issue:
    a. Classify each child as **simple** (checklist) or **complex** (sub-issue)
@@ -238,7 +244,7 @@ Present the proposed hierarchy to the user:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   Parent: [PROJECT] - Follow-up from {Person} call ({date})
-  Repo: skinnyandbald/SecondBrain
+  Repo: {detected/routed repo from Step 5.5}   # e.g. skinnyandbald/SecondBrain
 
   Checklist items (in parent body):
     - [ ] Send Jon the Devin video link
@@ -246,7 +252,7 @@ Present the proposed hierarchy to the user:
 
   Sub-issues (separate issues, linked via API):
     #1 [PROJECT] - Research - OpenStax API capabilities → skinnyandbald/SecondBrain
-    #2 [PROJECT] - Feature - Add adaptive quiz engine  → skinnyandbald/distil (cross-repo)
+    #2 [PROJECT] - Feature - Add adaptive quiz engine  → skinnyandbald/distil (cross-repo, same owner)
 
   Standalone (no parent):
     #3 [TODO] - Look up Max Trailer on LinkedIn        → skinnyandbald/SecondBrain
@@ -258,16 +264,30 @@ Present the proposed hierarchy to the user:
 
 **User can override:** "flatten all" creates standalone issues for everything.
 
+**Same-owner constraint (Principle 8):** native sub-issues require the parent and
+sub-issue to share a repository **owner**. Cross-repo is fine when both repos
+belong to the same owner (e.g. `skinnyandbald/SecondBrain` ↔ `skinnyandbald/distil`).
+If a routed child lives under a **different owner/org** than the parent, do NOT
+attach it as a native sub-issue — list it as a standalone issue or a checklist
+item in the parent body instead.
+
+**Choosing the parent repo:** create the parent in the repo that owns the most
+children (or the user's routing choice). Do NOT hardcode SecondBrain — derive it
+from the detected/routed context in Step 5.5. The parent's owner determines which
+children can be attached natively.
+
 **Creation order when hierarchy is confirmed:**
-1. Create parent issue first (in SecondBrain, with checklist items in body)
+1. Create parent issue first (in the routed parent repo from Step 5.5, with checklist items in body)
 2. Create each sub-issue in its **routed repo** (from Step 5.5 — product tasks go to their project repo, business tasks to SecondBrain)
-3. Attach each sub-issue to parent via REST API — works cross-repo:
+3. Attach each same-owner sub-issue to parent via REST API (works across repos of the same owner):
    ```bash
-   # Child may be in a different repo than the parent
+   # Child may be in a different repo than the parent, but must share the parent's owner
    CHILD_ID=$(gh api repos/$CHILD_REPO_OWNER/$CHILD_REPO_NAME/issues/$CHILD_NUM --jq '.id')
-   # API call targets the PARENT's repo; child id is globally unique
+   # API call targets the PARENT's repo; child id is globally unique.
+   # Requires $CHILD_REPO_OWNER == $PARENT_REPO_OWNER, else GitHub returns 422.
    echo "{\"sub_issue_id\": $CHILD_ID}" | gh api repos/$PARENT_REPO_OWNER/$PARENT_REPO_NAME/issues/$PARENT_NUM/sub_issues --method POST --input -
    ```
+   Cross-owner children skip this step — they remain standalone or checklist items.
 4. Add parent + sub-issues to project board
 
 ## Step 6: Create GitHub Issues (with confirmation)
