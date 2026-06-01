@@ -219,6 +219,88 @@ PROPOSED ISSUE #3
 #5-9 [L10 ONLY] Jared's tasks (tracked in L10, no issue)
 ```
 
+## Step 5.75: Group Items into Issue Hierarchy
+
+Apply the hierarchy rules from Principle 8 (in `SKILL.md`) to the items the user
+is about to triage. **Ordering note:** every extracted item is initially
+proposed as **CREATE ISSUE** by default (that is the set this step groups over);
+the user finalizes each item's CREATE ISSUE / L10 ONLY / SKIP state in Step 6.
+So: run this grouping *before* Step 6 to produce the parent / child / standalone
+suggestions, then fold those suggestions into the Step 6 triage confirmation —
+only items the user confirms as CREATE ISSUE become parents, children, or
+standalone issues. If the user changes an item to L10 ONLY or SKIP during Step 6,
+drop it from the hierarchy before creation.
+
+1. **Count proposed CREATE ISSUE items per source group** (e.g., all Ben tasks from this meeting)
+2. **If 1 item** → standalone issue (proceed to Step 6 as normal)
+3. **If 2+ items** → propose a parent issue:
+   a. Classify each child as **simple** (checklist) or **complex** (sub-issue)
+   b. **Simple:** "send X", "read Y", "look up Z" — no follow-on discussion needed
+   c. **Complex:** needs own labels, assignee, multi-step work, or discussion thread
+
+Present the proposed hierarchy to the user:
+
+```text
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  PROPOSED ISSUE HIERARCHY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Parent: [PROJECT] - Follow-up from {Person} call ({date})
+  Repo: {detected/routed repo from Step 5.5}   # e.g. skinnyandbald/SecondBrain
+
+  Checklist items (in parent body):
+    - [ ] Send Jon the Devin video link
+    - [ ] Send Jon the Every articles
+
+  Sub-issues (separate issues, linked via API):
+    #1 [PROJECT] - Research - OpenStax API capabilities → skinnyandbald/SecondBrain
+    #2 [PROJECT] - Feature - Add adaptive quiz engine  → skinnyandbald/distil (cross-repo, same owner)
+
+  Standalone (no parent):
+    #3 [TODO] - Look up Max Trailer on LinkedIn        → skinnyandbald/SecondBrain
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  [confirm / flatten all / modify]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**User can override:** "flatten all" creates standalone issues for everything.
+
+**Same-owner constraint (Principle 8):** native sub-issues require the parent and
+sub-issue to share a repository **owner**. Cross-repo is fine when both repos
+belong to the same owner (e.g. `skinnyandbald/SecondBrain` ↔ `skinnyandbald/distil`).
+If a routed child lives under a **different owner/org** than the parent, do NOT
+attach it as a native sub-issue — list it as a standalone issue or a checklist
+item in the parent body instead.
+
+**Choosing the parent repo:** derive it from the detected/routed context in
+Step 5.5 — do NOT hardcode SecondBrain. The parent's **owner** determines which
+children can be attached natively (same-owner constraint above).
+
+- **All children share one owner** → create the parent in the repo that holds the
+  most children (or the user's routing choice). All children attach natively.
+- **Children span multiple owners** → there is no single parent owner that can
+  natively attach every child. Default tiebreaker: create the parent in the
+  **owner with the most children**, attach that owner's children natively, and
+  **downgrade every cross-owner child to a checklist item** in the parent body
+  (or leave it standalone). Surface this in the proposed-hierarchy confirmation
+  so the user can instead pick a different parent repo. Never attempt a native
+  cross-owner attachment — it returns 422.
+
+**Creation order when hierarchy is confirmed:**
+1. Create parent issue first (in the routed parent repo from Step 5.5, with checklist items in body)
+2. Create each sub-issue in its **routed repo** (from Step 5.5 — product tasks go to their project repo, business tasks to SecondBrain)
+3. Attach each same-owner sub-issue to parent via REST API (works across repos of the same owner):
+   ```bash
+   # Child may be in a different repo than the parent, but must share the parent's owner
+   CHILD_ID=$(gh api repos/$CHILD_REPO_OWNER/$CHILD_REPO_NAME/issues/$CHILD_NUM --jq '.id')
+   # API call targets the PARENT's repo; child id is globally unique.
+   # Requires $CHILD_REPO_OWNER == $PARENT_REPO_OWNER, else GitHub returns 422.
+   echo "{\"sub_issue_id\": $CHILD_ID}" | gh api repos/$PARENT_REPO_OWNER/$PARENT_REPO_NAME/issues/$PARENT_NUM/sub_issues --method POST --input -
+   ```
+   Cross-owner children skip this step — they remain standalone or checklist items.
+4. Add parent + sub-issues to project board
+
 ## Step 6: Create GitHub Issues (with confirmation)
 
 **CRITICAL: Present ALL extracted action items to the user for triage.**
