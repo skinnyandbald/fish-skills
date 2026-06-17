@@ -71,8 +71,8 @@ REVIEWS=$(gh api "repos/$REPO/pulls/$PR_NUM/reviews" 2>/dev/null || echo "[]")
 # directly via the REST API without submitting a formal GitHub review, so they
 # never appear in the GraphQL reviewThreads and are silently missed by thread-only
 # discovery. Always check this field in addition to review_threads.
-THREAD_AUTHORS=$(echo "$THREADS" | jq -r '[.data.repository.pullRequest.reviewThreads.nodes[].comments.nodes[].author.login] | unique | .[]' 2>/dev/null || true)
-THREAD_AUTHORS_JSON=$(echo "$THREADS" | jq '[.data.repository.pullRequest.reviewThreads.nodes[].comments.nodes[].author.login] | unique' 2>/dev/null || echo "[]")
+THREAD_AUTHORS=$(echo "$THREADS" | jq -r '[.data?.repository?.pullRequest?.reviewThreads?.nodes[]?.comments?.nodes[]?.author?.login] | unique | .[]' 2>/dev/null || true)
+THREAD_AUTHORS_JSON=$(echo "$THREADS" | jq '[.data?.repository?.pullRequest?.reviewThreads?.nodes[]?.comments?.nodes[]?.author?.login] | unique' 2>/dev/null || echo "[]")
 
 jq -n \
   --argjson threads "$THREADS" \
@@ -85,7 +85,7 @@ jq -n \
     repo: "'"$REPO"'",
     review_threads: $threads.data.repository.pullRequest.reviewThreads.nodes,
     inline_comments: $comments,
-    orphan_inline_comments: [$comments[] | select(.in_reply_to_id == null and (.user.login as $u | $threadAuthors | index($u) == null))],
+    orphan_inline_comments: [$comments[] | select(.in_reply_to_id == null and (.user?.login as $u | $threadAuthors | index($u) == null))],
     discussion_comments: $issueComments,
     reviews: $reviews,
     summary: {
@@ -93,6 +93,6 @@ jq -n \
       unresolved_threads: [$threads.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)] | length,
       resolved_threads: [$threads.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == true)] | length,
       outdated_threads: [$threads.data.repository.pullRequest.reviewThreads.nodes[] | select(.isOutdated == true)] | length,
-      orphan_inline_comments: [$comments[] | select(.in_reply_to_id == null and (.user.login as $u | $threadAuthors | index($u) == null))] | length
+      orphan_inline_comments: [$comments[] | select(.in_reply_to_id == null and (.user?.login as $u | $threadAuthors | index($u) == null))] | length
     }
   }'

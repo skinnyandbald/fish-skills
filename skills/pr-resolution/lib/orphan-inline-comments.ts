@@ -1,7 +1,7 @@
 export interface ReviewThreadComment {
   id: string;
   body: string;
-  author: { login: string };
+  author: { login: string } | null;
   createdAt: string;
 }
 
@@ -15,7 +15,7 @@ export interface ReviewThread {
 
 export interface InlineComment {
   id: number;
-  user: { login: string };
+  user: { login: string } | null;
   body: string;
   path: string;
   line: number | null;
@@ -44,13 +44,23 @@ export interface GetPrCommentsOutput {
  */
 export function findOrphanInlineComments(output: GetPrCommentsOutput): InlineComment[] {
   const threadAuthors = new Set<string>();
-  for (const thread of output.review_threads) {
-    for (const comment of thread.comments.nodes) {
-      threadAuthors.add(comment.author.login);
+  if (output?.review_threads) {
+    for (const thread of output.review_threads) {
+      if (thread?.comments?.nodes) {
+        for (const comment of thread.comments.nodes) {
+          if (comment?.author?.login) {
+            threadAuthors.add(comment.author.login);
+          }
+        }
+      }
     }
   }
 
+  if (!output?.inline_comments) {
+    return [];
+  }
+
   return output.inline_comments.filter(
-    (c) => c.in_reply_to_id == null && !threadAuthors.has(c.user.login),
+    (c) => c.in_reply_to_id == null && c.user?.login && !threadAuthors.has(c.user.login),
   );
 }
