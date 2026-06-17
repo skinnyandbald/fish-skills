@@ -66,22 +66,33 @@ ISSUE_COMMENTS=$(gh api "repos/$REPO/issues/$PR_NUM/comments" 2>/dev/null || ech
 REVIEWS=$(gh api "repos/$REPO/pulls/$PR_NUM/reviews" 2>/dev/null || echo "[]")
 
 # Combine into single JSON output
+# orphan_inline_comments: root inline comments (no in_reply_to_id) whose author
+# does not appear in any review thread. Bots like chatgpt-codex-connector post
+# directly via the REST API without submitting a formal GitHub review, so they
+# never appear in the GraphQL reviewThreads and are silently missed by thread-only
+# discovery. Always check this field in addition to review_threads.
+THREAD_AUTHORS=$(echo "$THREADS" | jq -r '[.data.repository.pullRequest.reviewThreads.nodes[].comments.nodes[].author.login] | unique | .[]' 2>/dev/null || true)
+THREAD_AUTHORS_JSON=$(echo "$THREADS" | jq '[.data.repository.pullRequest.reviewThreads.nodes[].comments.nodes[].author.login] | unique' 2>/dev/null || echo "[]")
+
 jq -n \
   --argjson threads "$THREADS" \
   --argjson comments "$COMMENTS" \
   --argjson issueComments "$ISSUE_COMMENTS" \
   --argjson reviews "$REVIEWS" \
+  --argjson threadAuthors "$THREAD_AUTHORS_JSON" \
   '{
     pr_number: '"$PR_NUM"',
     repo: "'"$REPO"'",
     review_threads: $threads.data.repository.pullRequest.reviewThreads.nodes,
     inline_comments: $comments,
+    orphan_inline_comments: [$comments[] | select(.in_reply_to_id == null and (.user.login as $u | $threadAuthors | index($u) == null))],
     discussion_comments: $issueComments,
     reviews: $reviews,
     summary: {
       total_threads: ($threads.data.repository.pullRequest.reviewThreads.nodes | length),
       unresolved_threads: [$threads.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)] | length,
       resolved_threads: [$threads.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == true)] | length,
-      outdated_threads: [$threads.data.repository.pullRequest.reviewThreads.nodes[] | select(.isOutdated == true)] | length
+      outdated_threads: [$threads.data.repository.pullRequest.reviewThreads.nodes[] | select(.isOutdated == true)] | length,
+      orphan_inline_comments: [$comments[] | select(.in_reply_to_id == null and (.user.login as $u | $threadAuthors | index($u) == null))] | length
     }
   }'

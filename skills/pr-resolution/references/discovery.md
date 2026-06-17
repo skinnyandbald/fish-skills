@@ -5,13 +5,22 @@ Scripts for gathering all PR comments.
 ## Quick Discovery (Local Scripts)
 
 ```bash
-# Get all review threads (inline comments)
+# Get all review threads + inline comments (including orphan detection)
 ~/.claude/skills/pr-resolution/bin/get-pr-comments "$PR_NUM"
 
 # Get CodeRabbit review body comments (Nitpicks + Outside diff range)
 # IMPORTANT: CodeRabbit embeds comments in <details> sections that aren't posted as threads
 ~/.claude/skills/pr-resolution/bin/parse-coderabbit-review "$PR_NUM"
 ```
+
+**CRITICAL — orphan inline comments:** Some bots (e.g. `chatgpt-codex-connector`) post inline
+comments via the REST API *without* submitting a formal GitHub review. GitHub's GraphQL
+`reviewThreads` only includes comments attached to formal reviews, so these bots are silently
+skipped by thread-only discovery.
+
+`get-pr-comments` now outputs an `orphan_inline_comments` field — root inline comments whose
+author does not appear in any review thread. **Always check `orphan_inline_comments` after
+running `get-pr-comments`.** If it is non-empty, treat each entry as a separate actionable item.
 
 ## Full API Discovery
 
@@ -89,6 +98,7 @@ After discovery, print this enumeration:
 | CodeRabbit | Review body (Nitpicks/Outside) | [N] | [N from review summary] | / |
 | Gemini | Inline threads | [N] | [N from API query] | / |
 | Claude | Discussion comment | [N] | [N numbered items] | / |
+| chatgpt-codex-connector | Orphan inline comments | [N] | [N from summary.orphan_inline_comments] | / |
 | Human | Various | [N] | [manual count] | / |
 
 **All items ([TOTAL]):**
@@ -103,6 +113,7 @@ After discovery, print this enumeration:
 Before proceeding to classification, verify:
 
 - [ ] Ran `~/.claude/skills/pr-resolution/bin/get-pr-comments` for inline threads
+- [ ] Checked `summary.orphan_inline_comments` count — **non-zero means missed bots** (see above)
 - [ ] Ran `~/.claude/skills/pr-resolution/bin/parse-coderabbit-review` for embedded comments
 - [ ] Checked CodeRabbit review for "Nitpick comments (N)" count
 - [ ] Checked CodeRabbit review for "Outside diff range comments (N)" count

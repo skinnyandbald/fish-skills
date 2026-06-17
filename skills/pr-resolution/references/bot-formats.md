@@ -10,6 +10,7 @@ This module documents how different code review bots format their comments.
 | **Gemini** | `![priority]` badges | `![high]` | `![medium]` | `![low]` |
 | **Claude** | Numbered `### 1.` in discussion comment | `## Critical` | `## Important` | `## Suggestions` |
 | **CodeScene** | `[//]: # (cs-code-health)` markers, biomarker links | Complex Method, Complex Conditional, Large Method | Code Duplication, Bumpy Road Ahead, Primitive Obsession | — (no nitpicks) |
+| **chatgpt-codex-connector** | `![P1/P2/P3 Badge]` header, bold title, plain prose | P1 | P2 | P3 |
 | **Human** | Free-form, file:line references | Explicit urgency | "should", "consider" | "nit", "minor" |
 
 ---
@@ -112,6 +113,41 @@ CLAUDE_COUNT=$(gh api repos/$OWNER/$REPO/issues/$PR_NUM/comments \
 - Author: `codescene-delta-analysis[bot]`
 - Comments contain biomarker links to CodeScene documentation
 - Posted as PR review comments on specific file:line locations
+
+---
+
+## ChatGPT Codex Connector Format
+
+**CRITICAL — discovery:** `chatgpt-codex-connector` posts inline comments *without* submitting
+a formal GitHub review, so they do NOT appear in `reviewThreads` (GraphQL). They are only
+visible in `inline_comments` (REST) and in the `orphan_inline_comments` field of `get-pr-comments`
+output. See `discovery.md` for the detection procedure.
+
+| Badge / Signal | Priority | Action |
+|----------------|----------|--------|
+| `![P1 Badge]` (`P1-red`) | `blocking` | Must fix before merge |
+| `![P2 Badge]` (`P2-yellow`) | `suggestion` | Should address or reply with rationale |
+| `![P3 Badge]` (`P3-green`) | `nitpick` | Optional improvement |
+
+**Parsing instructions:**
+1. Each comment is a standalone inline comment on a specific file:line
+2. Starts with a `<sub><sub>![P1/P2/P3 Badge]</sub></sub>` badge header
+3. Followed by a bold title: `**Title of the finding**`
+4. Followed by a prose explanation and sometimes a code block
+5. Comments are independent — each is a separate actionable item
+6. `in_reply_to_id` is `null` for root comments (use this to identify the primary item vs. any human replies)
+
+**Identifying chatgpt-codex-connector comments:**
+```bash
+gh api repos/$OWNER/$REPO/pulls/$PR_NUM/comments \
+  --jq '.[] | select(.user.login == "chatgpt-codex-connector[bot]") | {id: .id, path: .path, line: .line, body: .body[:100]}'
+```
+
+**Replying to a chatgpt-codex-connector comment** (to mark it addressed):
+```bash
+gh api repos/$OWNER/$REPO/pulls/$PR_NUM/comments/$COMMENT_ID/replies \
+  --method POST --field body="Fixed in <sha>. <brief explanation>"
+```
 
 ---
 
