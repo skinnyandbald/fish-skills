@@ -31,7 +31,7 @@ jobs:
           claude_code_oauth_token: ${{ env.CLAUDE_CODE_OAUTH_TOKEN }}
           # Linear's GitHub app opens/toggles PRs it syncs; without this the action
           # refuses with "Workflow initiated by non-human actor: linear-code".
-          allowed_bots: 'linear-code'
+          allowed_bots: 'linear-code,linear-code[bot]'
           plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
           plugins: 'code-review@claude-code-plugins'
           prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}'

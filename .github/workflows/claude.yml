@@ -41,6 +41,6 @@ jobs:
           claude_code_oauth_token: ${{ env.CLAUDE_CODE_OAUTH_TOKEN }}
           # Linear's GitHub app acts on PRs/issues it syncs; without this the action
           # refuses with "Workflow initiated by non-human actor: linear-code".
-          allowed_bots: 'linear-code'
+          allowed_bots: 'linear-code,linear-code[bot]'
           additional_permissions: |
             actions: read
